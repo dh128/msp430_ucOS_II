@@ -59,6 +59,7 @@ static OS_STK ManagerTaskStartStk[DEFAULT_TASK_STK_SIZE];
 */
 static  void  ScadaTaskStart(void *p_arg);
 
+
 /*
 *********************************************************************************************************
 *                                                main()
@@ -102,6 +103,7 @@ void  main (void)
 
 static  void  ScadaTaskStart (void *p_arg)
 {
+    
     (void)p_arg;
 #if (OS_TASK_STAT_EN > 0)
     OSStatInit();                            /* Determine CPU capacity                       */
@@ -110,9 +112,11 @@ static  void  ScadaTaskStart (void *p_arg)
 	struct hal_timeval after_Scada;
 	int32_t	Scada_timeout_sec;
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.       */
+
+    
         if(Hal_getCurrent_work_Mode() == 0){
             if(AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_OFF){
-                g_Printf_info("SenSor_Power_On\r\n");
+                // g_Printf_info("SenSor_Power_On\r\n");
                 OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
                 OSBsp.Device.IOControl.PowerSet(Sensor_Power_On);
                 OSBsp.Device.IOControl.PowerSet(Max485_Power_On);
@@ -122,18 +126,18 @@ static  void  ScadaTaskStart (void *p_arg)
                     InqureSensor();  
                 }
                 AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCANNING;
-                g_Printf_info("%s ... ...\n",__func__);
+                // g_Printf_info("%s ... ...\n",__func__);
                 Hal_GetTimeOfDay(&before_Scada);
             }else if(AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCANNING){
                 InqureSensor();
                 Hal_GetTimeOfDay(&after_Scada);
                 Scada_timeout_sec = after_Scada.tv_sec - before_Scada.tv_sec;
-                g_Printf_info("Scada_timeout_sec = %d\r\n",Scada_timeout_sec);
+                // g_Printf_info("Scada_timeout_sec = %d\r\n",Scada_timeout_sec);
                 // if(Scada_timeout_sec >= SCADATIME){
                 if(Scada_timeout_sec >= 30){
                 // if(Scada_timeout_sec >= 10){
                 AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCAN_OVER;
-                g_Printf_info("ScadaTask is over\n");
+                // g_Printf_info("ScadaTask is over\n");
                 OSTimeDly(500);
                 // OSBsp.Device.IOControl.PowerSet(Max485_Power_Off);
                 // // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);

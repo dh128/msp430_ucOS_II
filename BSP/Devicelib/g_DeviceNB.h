@@ -20,9 +20,9 @@ enum NB_STATUS {
 	NB_Init_Done,
 	NB_Get_IP,
 	NB_Registered,
-	NB_Send_Done,
+	NB_Send_Over,
 	NB_Send_Error,
-	NB_Get_Receive,
+	NB_Get_PCP,
 	NB_Check_Receive,
 	NB_Idel
 };

@@ -215,7 +215,7 @@ void g_Device_IO_Init(void)
 
 	OSBsp.Device.IOControl.PowerSet = Power;
 
-	P2REN |= BIT2;
+	// P2REN |= BIT2;
 	// OSBsp.Device.IOControl.ResetWirelesModule = ResetWirelesModule;
 }
 

@@ -83,6 +83,7 @@ static void BSP_OSCloseWatchDog(void);
 
 void  BSP_Init(void)
 {
+    
     __disable_interrupt();                                      /* Disable all int. until we are ready to accept them   */
     
     BSP_OSCloseWatchDog();
@@ -108,10 +109,12 @@ void  BSP_Init(void)
     g_Device_SDCard_Check();               
     hal_Delay_ms(100);
     g_Printf_info("SD init over\r\n");
-
+    
     Recive_485_Enable;
     ScadaData_base_Init();
     hal_Delay_ms(100);
+
+    
 }
 
 

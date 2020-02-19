@@ -40,8 +40,8 @@ uint8_t Rcv_TimeData[50];
 // uint8_t TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16杩涘埗鐨勬椂闂碆uffer  2018骞�鏈�5鍙�20鏃�0鍒�0绉�鏄熸湡4
 
 
-char aRxBuff[aRxLength];		//UART0 receive data buff
-uint8_t aRxNum=0;		        //UART0 receive data num
+char aRxBuff[1050];		//UART0 receive data buff
+uint16_t aRxNum=0;		        //UART0 receive data num
 
 g_Device_Config_CMD bRxBuff;
 // g_Device_Config_CMD cRxBuff;
@@ -58,9 +58,9 @@ static Mutex_t gUartMutex = null;
 * Input para     : *Cmd,Len
 * Output para    : None
 *******************************************************************************/
-void Clear_CMD_Buffer(uint8_t *data,uint8_t Len)
+void Clear_CMD_Buffer(uint8_t *data,uint16_t Len)
 {
-	uint8_t m;
+	uint16_t m;
 	for(m=0;m<Len;m++)
 	{
 		data[m] = 0x00;
@@ -72,9 +72,9 @@ void Clear_CMD_Buffer(uint8_t *data,uint8_t Len)
 * Input para     : *Cmd,*Len
 * Output para    : None
 *******************************************************************************/
-void Clear_Buffer(unsigned char *Cmd,unsigned char *Len)
+void Clear_Buffer(unsigned char *Cmd,unsigned int *Len)
 {
-	unsigned char m;
+	unsigned int m;
 	for(m=0;m<*Len;m++)
 	{
 		Cmd[m] = 0x00;
@@ -407,13 +407,18 @@ g_Device_Config_CMD g_Device_Usart_UserCmd_Copy(G_UART_PORT Port)
 	if(Port == Usart2){
 		dst.cmdLenth = cRxNum;
 		cRxNum = 0;
+		#ifdef dh
 		g_Printf_info("%s len:%d data:",__func__,dst.cmdLenth);
+		#endif // DEBUG
 		for(m=0;m<dst.cmdLenth;m++){
 			dst.hexcmd[m] = cRxBuff[m];
+			#ifdef dh
 			g_Printf_info("%02x ",dst.hexcmd[m]);
+			#endif
 		}
+		#ifdef dh
 		g_Printf_info("\r\n");
-		
+		#endif
 		memset(cRxBuff,0x0,cRxLength);
 	}else if(Port == Usart1){
 		dst = bRxBuff;
@@ -459,7 +464,7 @@ __interrupt void USCI_A0_ISR(void)
 				OSBsp.Device.Usart2.WriteData(UCA0RXBUF);  //GLZ测试屏蔽+++++++++++++++++++++++++++++++++++
 				aRxBuff[aRxNum++] = UCA0RXBUF;
 #if(TRANSMIT_TYPE == NBIoT_BC95_Mode)
-				if(aRxNum >= aRxLength){
+				if(aRxNum >= 1050){
 					aRxNum = 0;
 				}
 				// if((aRxBuff[aRxNum-2] == 0x0D)&&(aRxBuff[aRxNum-1] == 0x0A)){

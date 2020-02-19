@@ -209,7 +209,7 @@ static int SimulationSensorData(void)
     if(AppDataPointer->TerminalInfoData.SensorStatusSimulation != AppDataPointer->TerminalInfoData.SensorStatusSimulation_Old) {
 		infor_ChargeAddrBuff[24] = (uint8_t)(temp >> 8);
 		infor_ChargeAddrBuff[25] = (uint8_t)temp;
-		OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+//		OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 	}
     AppDataPointer->TerminalInfoData.SensorStatusSimulation_Old = AppDataPointer->TerminalInfoData.SensorStatusSimulation;
 
@@ -430,7 +430,7 @@ void InqureSensor(void)
 			{
 				infor_ChargeAddrBuff[21] = SensorStatus_H;
 				infor_ChargeAddrBuff[22] = SensorStatus_L;
-				OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+//				OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 			}
 			AppDataPointer->TerminalInfoData.SensorFlashWriteStatusPrintf = SENSOR_STATUS_WRITEFLASH_PRINTF_ENABLE;
 		}
@@ -638,6 +638,11 @@ void Terminal_Para_Init(void)
 	Send_Buffer[4] = App.Data.TerminalInfoData.DeviceType;
 	/**************************SendPeriod***************************************/
 	App.Data.TerminalInfoData.SendPeriod = Hal_getTransmitPeriod();  //发送周期
+	if(App.Data.TerminalInfoData.SendPeriod > 60)
+	{
+		App.Data.TerminalInfoData.SendPeriod = 5;
+		g_Printf_info("Period change as 5 min\r\n");
+	}
 	Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
 	Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
 	/**************************Version******************************************/

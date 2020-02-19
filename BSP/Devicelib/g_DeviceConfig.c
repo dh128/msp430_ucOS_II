@@ -30,8 +30,8 @@
 #include  <bsp.h>
 
 unsigned char *Uart0_RxBuff;     //+++++++++++++//
-unsigned char Uart0_RxBuff_Num=0;
-unsigned char Uart0_RxBuff_data[50];
+unsigned int  Uart0_RxBuff_Num=0;
+unsigned char Uart0_RxBuff_data[1024];	
 unsigned char TimebuffNum=0;
 unsigned char TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16杩涘埗鐨勬椂闂碆uffer  2018骞�3鏈�15鍙� 20鏃�50鍒�00绉� 鏄熸湡4
 
@@ -495,12 +495,12 @@ static void g_Device_Board_Config(g_Device_Config_CMD ClientCmd)
 		if((ClientCmd.hexcmd[0]=='A' && ClientCmd.hexcmd[1]=='T' && 
 				ClientCmd.hexcmd[ClientCmd.cmdLenth-2]==0x0D && ClientCmd.hexcmd[ClientCmd.cmdLenth-1]==0x0A))
 		{
-			g_Printf_info((char *)ClientCmd.hexcmd);
+			// g_Printf_info((char *)ClientCmd.hexcmd);
 			User_Printf((char *)ClientCmd.hexcmd);
 		}else{
 			if(FirmCMD_Receive(ClientCmd.hexcmd, ClientCmd.cmdLenth) < 0)//上位机指令解析
 			{
-				g_Printf_info("ah hahahahahaha\n");
+				// g_Printf_info("ah hahahahahaha\n");
 			}
 		}
 		// memset(&cRxBuff,0x0,sizeof(g_Device_Config_CMD));
@@ -526,8 +526,10 @@ void ManagerTaskStart(void *p_arg)
 			int ret = Hal_QueueRecv(g_ConfigQueue,&ConfigMsg,0);
 			if(ret == 0) {
 				// hal_Delay_ms(50);	        //延时等待接收完成
+				#ifdef dh
 				g_Printf_info("Recv message type %d\r\n",ConfigMsg.what);
 				g_Printf_info("Recv message content %s\r\n",(char *)ConfigMsg.content);
+				#endif // DEBUG
 				
 				if (ConfigMsg.what == G_WIRELESS_UPLAOD){
 					char *cmdType = (char *)ConfigMsg.content;
