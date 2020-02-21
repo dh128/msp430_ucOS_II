@@ -68,6 +68,7 @@ uint8_t HexToBCD(uint8_t hex);
 char* Itoa(int val,char* dst,int radix);
 uint16_t Crc16(uint8_t *bufferpoint,int16_t sum);
 uint16_t CRC16CCITT(uint32_t *message, int l);
+uint16_t CRC16CCITT_Byte(uint8_t *message, int l);
 char Hal_CheckString(char *dst ,char *src);
 void *Hal_Malloc(int size);
 void *Hal_Calloc(int count, int size);

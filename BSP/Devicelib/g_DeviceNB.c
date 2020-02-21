@@ -61,7 +61,9 @@ uint32_t getBuffer[26]={0xFF,0xFE,0x01,0x15,0x00,0x00,0x00,0x12,0x31,0x00,0x00,0
 uint8_t reportCommand[63]="AT+NMGS=25,FFFE0113164700110056322E31300000000000000000000000\r\n";
 uint8_t getCommand[65]="AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n";
 unsigned char Receive_data[1024]={0};
+uint16_t PackageSize;
 uint16_t PackageLen;
+uint8_t CRCFlag = 0;
 static long addr_write = FOTA_ADDR_START;
 unsigned long readAddr = 0;     //SPI_Flash 读写地址
 // static unsigned char ECL_data=0;
@@ -553,8 +555,9 @@ void GetCode(int num)
 void ProcessPCP(unsigned char *p)
 {
 	uint8_t PCPData[512];
-//	uint16_t CRCtemp;
-	uint16_t temp2=0;	
+	uint16_t CRCtemp;
+//	uint16_t temp2=0;
+	uint16_t ret = 0;	
 //	uint16_t bai,shi,ge;
 	long ii;
 	long m;
@@ -575,9 +578,9 @@ void ProcessPCP(unsigned char *p)
 		//CRC
 		report[3]= 0x13;
 		report[4] = report[5] = 0;
-		temp2 = CRC16CCITT(report,25);
-		report[4] =temp2/256;
-		report[5] =temp2%256;
+		CRCtemp = CRC16CCITT(report,25);
+		report[4] =CRCtemp/256;
+		report[5] =CRCtemp%256;
 		//Send
 		Hex2Str(reportCommand,report,25,11);
 		for(ii=0;ii<63;ii++)
@@ -592,23 +595,13 @@ void ProcessPCP(unsigned char *p)
 	case 0x14:			//新版本通知
 		g_Printf_info("get 0x14 command\r\n");
 		//提取版本号
-//		if(PCPData[8] > 0x30)
-//			bai = PCPData[8] - 0x30;
-//		else
-//			bai = 0;
-//		if(PCPData[9] > 0x30)
-//			shi = PCPData[9] - 0x30;
-//		else
-//			shi = 0;
-//		if(PCPData[10] > 0x30)
-//			ge = PCPData[10] - 0x30;
-//		else
-//			ge = 0;
-//
 		newVersion = (PCPData[8]-0x30)*100 + (PCPData[9]-0x30)*10 + PCPData[10] - 0x30;
 		getBuffer[8] = PCPData[8];
 		getBuffer[9] = PCPData[9];
 		getBuffer[10] = PCPData[10];
+		//获取没报长度
+		PackageSize = PCPData[24];
+		PackageSize = PackageSize*256 + PCPData[25];
 		//获取总包数
 		PackageLen = PCPData[26];
 		PackageLen = PackageLen*256 + PCPData[27];
@@ -635,14 +628,40 @@ void ProcessPCP(unsigned char *p)
 		//System.Device.Timer.Start(6,TimerSystick,20,GetCode);
 	break;
 	case 0x15:			//请求升级包，不用
+	//	byte[9],byte[10]为数据包数，应该等于PackageNum
+		ret = PCPData[9]*256 + PCPData[10];
+		length = strlen(p)/2-11;		//去除包头FFFE等11个字节数据
+		CRCtemp = PCPData[4]*256+PCPData[5];
+		PCPData[4] = PCPData[5] = 0;
+		if(CRCtemp == CRC16CCITT_Byte(PCPData,length+11))
+			CRCFlag = 1;
+		else
+			CRCFlag = 0;
+	//	if(PackageNum < PackageLen-1)	//最后一包前，length应该等于PackageLen
+	//	{
+		// && (length == PackageSize)PackageNum < PackageLen 时包长度应该都时500字节、
+		// CRC校验通过、设备包正确则存储继续获取否则重新获取
+		if((CRCFlag == 1) && (ret == PackageNum))	
+		{
+
+			PackageNum ++;
+			for(m=0;m<length;m++)
+			{
+				SPI_Flash_Write_Data(PCPData[m+11],addr_write++);
+			}
+		}
+		else
+		{
+			g_Printf_info("CRCFlah= %d,ret= %d, PackageNum= %d\r\n",(uint32_t)CRCFlag,(uint32_t)ret,(uint32_t)PackageNum);
+		}
+		
+	//	}
+		
+		
+	
 		//g_SD_File_Write(codeFile,PCPData+11);
 		//写入SPI_Flash
-		PackageNum ++;
-		length = strlen(p)/2-11;		//去除包头FFFE等11个字节数据
-		for(m=0;m<length;m++)
-		{
-			SPI_Flash_Write_Data(PCPData[m+11],addr_write++);
-		}
+		
 //		User_Printf("AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n");
 		GetCode(PackageNum);
 	break;
@@ -657,9 +676,9 @@ void ProcessPCP(unsigned char *p)
 		//CRC
 		report[3]= 0x18;
 		report[4] = report[5] = 0;
-		temp2 = CRC16CCITT(report,25);
-		report[4] =temp2/256;
-		report[5] =temp2%256;
+		CRCtemp = CRC16CCITT(report,25);
+		report[4] =CRCtemp/256;
+		report[5] =CRCtemp%256;
 		//Send
 		Hex2Str(reportCommand,report,25,11);
 		for(ii=0;ii<63;ii++)
@@ -956,7 +975,7 @@ void  TransmitTaskStart (void *p_arg)
 			{
 				//NB-IoT 第一次开机时对NB上电操作，后续进入低功耗不关电
 				g_Printf_dbg("Turn on NB power\r\n");
-				g_Printf_info("NB-IoT Fota Test\r\n");	//测试打印
+				g_Printf_info("\r\n\r\nNB-IoT Fota Test version 3\r\n\r\n");	//测试打印
 				OSTimeDly(500);
                 OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);		//打开NB电源
 				//reset脚电平

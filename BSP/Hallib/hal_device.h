@@ -89,8 +89,8 @@
 #define LoRa_OM402_Mode		  		0x06
 #define GPRS_AIR202_Mode      		0x07
 
-  #define TRANSMIT_TYPE 			    GPRS_Mode
-//#define TRANSMIT_TYPE 			    NBIoT_BC95_Mode
+//  #define TRANSMIT_TYPE 			    GPRS_Mode
+#define TRANSMIT_TYPE 			    NBIoT_BC95_Mode
 //#define TRANSMIT_TYPE 			    LoRa_F8L10D_Mode
 
 #if (TRANSMIT_TYPE == GPRS_Mode)

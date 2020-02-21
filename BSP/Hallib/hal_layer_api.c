@@ -220,7 +220,15 @@ uint16_t CRC16CCITT(uint32_t *message, int l)
 	}
 	return crc_reg;
 }
-
+uint16_t CRC16CCITT_Byte(uint8_t *message, int l)
+{
+	uint16_t crc_reg = 0;
+	int i = 0;
+	for ( i = 0; i < l; i++) {
+		crc_reg = (crc_reg >> 8) ^ crc16_ccitt_table[(crc_reg ^ message[i]) & 0xff];
+	}
+	return crc_reg;
+}
 char Hal_CheckString(char *dst ,char *src)
 {
     if(strstr((const char *)dst,(const char *)src) != null)
