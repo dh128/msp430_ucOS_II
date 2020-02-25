@@ -37,8 +37,7 @@ const char *g_30000IoT_PATH = "/iot/data/receive";
 //unsigned long readAddr = 0;     //SPI_Flash 读写地址
 //uint8_t buf0[16]={0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x37,0x36,0x35,0x34,0x33,0x32,0x0D,0x0A},buf1[256] = {0},buf2[1024] ={0};
 
-char codeFile[11]={"0:/1106.txt"};
-
+uint32_t newVersion = 0;		//Fota 临时存储版本
 #define TestD 0
 #ifdef TestD
 long addr_write = FOTA_ADDR_START;
@@ -219,7 +218,7 @@ void g_Device_Establish_TCP_Connection(const char *ip,uint32_t port)
 int16_t g_Device_http_post(const char *host,const char* path,const char *apikey,const char *data,
                       char *response,int timeout)
 {
-	int timer = 0;
+//	int timer = 0;
 #ifdef SIM800C
     uint32_t datalen = 0;
 	datalen = strlen(data);
@@ -343,230 +342,16 @@ char data_write[300];
 void g_Device_GPRS_Fota_Start(void)
 {
 	long i = 0;
-	long j=0;
 	int m;
-	// char tempdata[10];
+	char *StartString = NULL;
+	char *EndString  = NULL;
+	char tempLen[10];
 	// long add_temp;
 	// char d_t[7524];
+	uint8_t TestData[3]={0};
 	uint8_t Flash_Tmp[3];					//flash操作中间变量
 	int length=0;
-	if(g_ftp_allow_get == 1){
-		g_ftp_allow_get = 0;
-		if(data1_len != 0){
-			hal_Delay_sec(2);			//添加测试，等待接收完全结束
-
-			
-			length = strlen(download_data_1);
-			/**************************************************************************/
-			#if TestD
-//				OS_ENTER_CRITICAL();// Disable interrupts
-			// _DINT();
-				UCA0IE &= ~UCRXIE; 		//使能串口0中断
-				OSTimeDly(50);
-				// __disable_interrupt();
-				// UCB2CTL1 |= UCSWRST;               		    // Enable SW reset
-				// UCB2BR0 = 0;								//6��Ƶ
-				// UCB2BR1 = 0;
-				// UCB2CTL1 &= ~UCSWRST;
-
-				for(i=0;i<16;i++)                                          //填充数据
-				{
-					memcpy(&buf1[i*16], buf0,16);
-				} 
-				
-
-				g_Printf_info("check erase\r\n");
-
-				for(i=FOTA_ADDR_START;i<0xB0000;i++)
-				{
-					
-					OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(i));
-					// hal_Delay_ms(1);
-				} 
-				g_Printf_info("write flash\r\n");   
-				// WDTCTL = WDTPW + WDTHOLD;             //CloseWatchDog
-				// 				SFRIE1 &= 0;   
-				for (i=0;i<768;i++)
-				{
-					SPI_Flash_Write_Page(buf1, addr_write,256);
-					// SPI_Flash_Write_Page(download_data_1+j,addr_write,256);
-					// hal_Delay_ms(3);
-					addr_write += 256;
-					// j += 256;
-				}
-				// WDTCTL  = WDT_MDLY_32;
-				// 					SFRIE1 |= 1;
-				g_Printf_info("check write\r\n");
-				for(i=FOTA_ADDR_START;i<addr_write;i++)
-				{					
-					OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(i));
-					// hal_Delay_ms(1);
-				}
-				// __enable_interrupt();
-				UCA0IE |= UCRXIE; 		//使能串口0中断
-//				OS_EXIT_CRITICAL();  // Enable  interrupts
-				// _EINT();
-				while(1)
-				{
-					LED_ON
-					hal_Delay_sec(1);
-					LED_OFF;
-					hal_Delay_sec(1);
-				}
-				#endif	
-
-				/**************************************************************************/
-//			__disable_interrupt();
-					// WDTCTL = WDTPW + WDTHOLD;             //CloseWatchDog
-   					// SFRIE1 &= 0; 
-			UCA0IE &= ~UCRXIE; 		//失能串口0中断，避免中断干扰SPI时序
-			// RTCCTL0 &= ~RTCTEVIE;//关闭每分钟中断标志
-			OSTimeDly(50);
-			j = 1;
-			for (i=0;i<4;i++)
-			{
-				// SPI_Flash_Write_Page(buf1, addr_write,256);
-				SPI_Flash_Write_Page(download_data_1+j,addr_write,256);
-				// hal_Delay_ms(3);
-				addr_write += 256;
-				j += 256;
-			}
-			UCA0IE |= UCRXIE; 		//使能串口0中断
-			// RTCCTL0 |= RTCTEVIE;//打开每分钟中断标志
-			// hal_Delay_sec(1);
-			// g_Printf_info("write Done\r\n");
-//			__enable_interrupt();
-			// SPI_Flash_Write_Page(download_data_1+1,addr_write,256);
-			// for(m=1;m<length-5;m++)
-			// {
-			// 	// OSBsp.Device.Usart2.WriteData(download_data_1[m]);
-			// 	SPI_Flash_Write_Data(download_data_1[m],addr_write++);
-			// 	hal_Delay_ms(3);
-			// }
-		
-			
-			/****************测试按页写***********************/
-			// SPI_Flash_Write_Page(download_data_1+1,addr_write,1024);
-			// addr_write += 1024;
-			/****************测试按页写***********************/
-//			OSTimeDly(100);
-			// download_data_1[length-5] = '\0';
-			// g_SD_File_Write(codeFile,download_data_1+1);
-			// g_SD_File_Write(codeFile,"Hello world\r\n");
-			// int addr = 0;
-			// char *fm = mymalloc(1050*sizeof(char));
-			// memset(fm,0x0,1050);
-			// fm = strtok(download_data_1,"OK");
-			// g_Printf_info("fm size = %d\r\n",strlen(fm));
-			// int lenth = 1025;
-			// OSBsp.Device.Usart2.WriteString(fm);
-			// for(m=0;m<5;m++){
-			// 	if(lenth > 256){
-			// 		memset(data_write,0x0,300);
-			// 		strncpy(data_write,&download_data_1[addr],256);
-			// 		addr += 256;
-			// 		g_SD_File_Write("0:/fm1.txt",data_write);
-			// 		lenth -= 256;
-			// 	}else{
-			// 		memset(data_write,0x0,300);
-			// 		strncpy(data_write,&download_data_1[addr],lenth);
-			// 		g_SD_File_Write("0:/fm1.txt",data_write);
-			// 		break;
-			// 	}
-			// }
-			memset(download_data_1,0x0,1536);
-			data1_len = 0;
-			
-			// addr_write = g_MTD_spiflash_writeSector(addr_write,fm,1024);
-		}
-
-		// g_Printf_info("AT+FTPGET=2,1024\r\n");	
-		User_Printf("AT+FTPGET=2,1024\r\n");	
-		
-		OSTimeDly(100);
-	}else if(g_ftp_allow_get == 2){
-		g_ftp_allow_get = 0;
-
-		if(data1_len != 0){
-			length = strlen(download_data_1);
-			download_data_1[length]  = '\0';		//加入结束符，待测试
-			
-			UCA0IE &= ~UCRXIE; 		//使能串口0中断
-			OSTimeDly(50);
-			//  hal_Delay_ms(10);
-			for(m=1;m<length-5;m++)
-			{
-				// OSBsp.Device.Usart2.WriteData(download_data_1[m]);
-				SPI_Flash_Write_Data(download_data_1[m],addr_write++);
-				// hal_Delay_us(100);
-			}
-			// hal_Delay_ms(10);
-			
-			// download_data_1[length-5] = '\0';
-			// g_SD_File_Write(codeFile,download_data_1+1);
-			
-			g_Printf_info("code printf begin:");
-			
-			for(i=FOTA_ADDR_START;i<addr_write;i++)
-			{
-				
-				OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(i));
-				// hal_Delay_ms(1);
-			}
-			UCA0IE |= UCRXIE; 		//使能串口0中断
-			//两次读取打印对比
-			// g_Printf_info("\r\ncode printf begin:");
-			// for(i=FOTA_ADDR_START;i<addr_write;i++)
-			// {
-			// 	OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(i));
-			// }	
-			
-		//	tempdata = Read_Byte(FOTA_ADDR_START+1);
-			g_Printf_info("code head:");
-			// OSBsp.Device.Usart2.WriteData(tempdata[0]);
-			//判断存储数据头尾是否正确 然后配置启动标志位存放于infor_BootAddr
-			if(SPI_Flash_ReadByte(addr_write-1) == 'q' && SPI_Flash_ReadByte(FOTA_ADDR_START+1) == 'c')	//确认C400和q
-			{	        
-				g_Printf_info("Enter %s and System will goto bootloader\r\n",__func__);
-				loop8:
-					Flash_Tmp[0] = 0x02; 		//置位Flash 标志位	//把infor_BootAddr写0x02，建立FOTA升级标志位
-					OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 1, infor_BootAddr, 0);
-					hal_Delay_ms(10);
-					if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02)
-						hal_Reboot();			//重启MCU
-					else
-						goto loop8;	
-			}
-			// hal_Reboot();
-			// char *fm;
-			// int addr = 0;
-			// fm = strtok(download_data_1,"OK");
-			// strncpy(data_write,fm,strlen(download_data_1)-3);
-			// int lenth = strlen(download_data_1)-3;
-			// OSBsp.Device.Usart2.WriteString(fm);
-			// for(m=0;m<4;m++){
-			// 	if(lenth > 256){
-			// 		memset(data_write,0x0,300);
-			// 		strncpy(data_write,&fm[addr],256);
-			// 		addr += 256;
-			// 		g_SD_File_Write("0:/fm1.txt",data_write);
-			// 		lenth -= 256;
-			// 	}else{
-			// 		memset(data_write,0x0,300);
-			// 		strncpy(data_write,&fm[addr],lenth);
-			// 		g_SD_File_Write("0:/fm1.txt",data_write);
-			// 		break;
-			// 	}
-			// }
-			// OSBsp.Device.Usart2.WriteString(fm);
-			// addr_write = g_MTD_spiflash_writeSector(addr_write,fm,strlen(download_data_1)-3);
-			// g_Printf_info("==>> end addr 0x%04x\r\n",addr_write);
-			memset(download_data_1,0x0,1536);
-			data1_len = 0;
-		}
-		
-		OSTimeDly(100);
-	}
+	
 	if(gprs_tick == 0){
 		if(AppDataPointer->TransMethodData.GPRSATStatus == GPRS_Waitfor_OK){
 			g_Printf_dbg("AT+SAPBR=3,1,\"CONTYPE\",\"GPRS\"\r\n");
@@ -679,22 +464,6 @@ void g_Device_GPRS_Fota_Start(void)
 		}
 	}else if(gprs_tick == 12){      
 		if(AppDataPointer->TransMethodData.GPRSATStatus == GPRS_Waitfor_OK){
-
-			
-			// //擦除SPI
-			W25Q16_CS_HIGH();
-			OSTimeDly(50);
-			Base_3V3_ON;
-			// P4OUT |= BIT0;
-			W25Q16_Init();
-			readAddr = FOTA_ADDR_START;
-			for (i=0;i<6;i++)
-			{
-				SPI_Flash_Erase_Block(readAddr);
-				readAddr += 0x10000;
-			}
-			g_Printf_info("Erase SPI_Flash\r\n");
-			//擦除结束
 			g_Printf_info("AT+FTPGET=1\r\n");
 			User_Printf("AT+FTPGET=1\r\n");
 			g_Printf_info("start download ==");
@@ -703,13 +472,72 @@ void g_Device_GPRS_Fota_Start(void)
 			gprs_tick = 13;
 			AppDataPointer->TransMethodData.GPRSATStatus = GPRS_Waitfor_OK;
 		}
+	}
+	//存储固件
+	if(g_ftp_allow_get == 1){
+		User_Printf("AT+FTPGET=2,1024\r\n");
+		OSTimeDly(1000);		//延时2秒，等待读取完毕
+		g_ftp_allow_get = 0;
+		g_ftp_allow_storage = 0;
+		
+		//计算数据长度
+		StartString = strstr(download_data_1,"FTPGET: 2, ");
+		EndString = strstr(StartString,"\r\n");
+		if(EndString > StartString && StartString != NULL)
+		{
+			memcpy(tempLen, StartString+11, EndString - StartString - 10);
+		}
+		length = atoi(tempLen);	
+		
+		for(m=0;m<length;m++)
+		{
+			SPI_Flash_Write_Data(EndString[2+m],addr_write++);
+		//	hal_Delay_us(3);
+		}
+		OSTimeDly(100);
+		memset(download_data_1,0x0,1536);
+		data1_len = 0;
+		StartString = NULL;
+		EndString = NULL;
+			
+	}else if(g_ftp_allow_get == 2){
+		g_ftp_allow_get = 0;
+		g_ftp_allow_storage = 0;
+		g_Printf_info("code printf begin:");
+		for(i=FOTA_ADDR_START;i<addr_write;i++)
+		{
+			
+			OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(i));
+			// hal_Delay_ms(1);
+		}
+		OSTimeDly(1000);	//延时2s
+		//判断存储数据头尾是否正确 然后配置启动标志位存放于infor_BootAddr
+		TestData[0] = SPI_Flash_ReadByte(addr_write-3);
+		TestData[1] = SPI_Flash_ReadByte(FOTA_ADDR_START+1);
+		if(TestData[0] == 'q' && TestData[1] == 'c')	//确认@c400和q\r\n,存储结束后addr_writer值为\n后面一位
+		{	        
+			g_Printf_info("Enter %s and System will goto bootloader\r\n",__func__);
+			loop8:
+				Flash_Tmp[0] = 0x02; 		//置位Flash 标志位	//把infor_BootAddr写0x02，建立FOTA升级标志位
+				Flash_Tmp[1] = (uint8_t)newVersion;
+				OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 2, infor_BootAddr, 0);
+				hal_Delay_ms(10);
+				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == newVersion)
+					hal_Reboot();			//重启MCU
+				else
+					goto loop8;	
+		}
+		else
+		{
+			g_Printf_info("Error code!\r\n");
+			AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;
+		}
 	}	
 	
 }
 
 void g_Device_check_Response(char *res)
 {
-	static uint8_t res_len = 0;
 	if(g_has_response == -1){
 		g_has_response = 0;
 		memset(g_response,0x0,256);
@@ -835,10 +663,13 @@ void g_Device_check_Response(char *res)
 			AppDataPointer->TransMethodData.Ftp_Cid = res[8] - 0x30;
 		}else if(Hal_CheckString(res,"+FTPGET: 1,1")){
 			g_ftp_allow_get = 1;
-		}else if(Hal_CheckString(res,"+FTPGET: 2")){
 			g_ftp_allow_storage = 1;
+		}else if(Hal_CheckString(res,"+FTPGET: 2")){
+			// g_ftp_allow_storage = 1;
 		}else if(Hal_CheckString(res,"+FTPGET: 1,0")){
 			g_ftp_allow_get = 2;
+		}else if(Hal_CheckString(res,"+FTPGET: 1,")) {//除了+FTPGET: 1,1和+FTPGET: 1,0之外异常情况
+			AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;	//FTP过程出现故障退出，恢复到正常上报流程
 		}
 	}
 #endif
@@ -849,7 +680,7 @@ void  TransmitTaskStart (void *p_arg)
 	long i = 0;
 	uint32_t datalen = 0;
 //	uint8_t i=0;
-	uint8_t scadaADCIndex = 0,scadaBATIndex = 0;
+//	uint8_t scadaADCIndex = 0,scadaBATIndex = 0;
     (void)p_arg;   
     OSTimeDlyHMSM(0u, 0u, 0u, 100u);      
     g_Printf_info("%s ... ...\n",__func__);      
@@ -944,18 +775,9 @@ void  TransmitTaskStart (void *p_arg)
 							strcpy(AppDataPointer->FotaInfor.imgpath,"/sanwanwulianw/web/");
 							strcpy(AppDataPointer->FotaInfor.imgname,"dh_msp430_ucOS_II.txt");
 
-							AppDataPointer->TransMethodData.GPRSStatus = GPRS_Fota_Process;
-
-							g_Printf_info("FotaInfor.ip:%s\r\n",AppDataPointer->FotaInfor.ip);
-							g_Printf_info("FotaInfor.port:%d\r\n",AppDataPointer->FotaInfor.port);
-							g_Printf_info("FotaInfor.username:%s\r\n",AppDataPointer->FotaInfor.username);
-							g_Printf_info("FotaInfor.password:%s\r\n",AppDataPointer->FotaInfor.password);
-							g_Printf_info("FotaInfor.imgpath:%s\r\n",AppDataPointer->FotaInfor.imgpath);
-							g_Printf_info("FotaInfor.imgname:%s\r\n",AppDataPointer->FotaInfor.imgname);
-
-							//擦除SPI
+							// //擦除SPI
 							W25Q16_CS_HIGH();
-							OSTimeDly(50);
+							OSTimeDly(100);
 							Base_3V3_ON;
 							// P4OUT |= BIT0;
 							W25Q16_Init();
@@ -966,7 +788,16 @@ void  TransmitTaskStart (void *p_arg)
 								readAddr += 0x10000;
 							}
 							g_Printf_info("Erase SPI_Flash\r\n");
-							
+							//擦除结束
+
+							AppDataPointer->TransMethodData.GPRSStatus = GPRS_Fota_Process;
+
+							g_Printf_info("FotaInfor.ip:%s\r\n",AppDataPointer->FotaInfor.ip);
+							g_Printf_info("FotaInfor.port:%d\r\n",AppDataPointer->FotaInfor.port);
+							g_Printf_info("FotaInfor.username:%s\r\n",AppDataPointer->FotaInfor.username);
+							g_Printf_info("FotaInfor.password:%s\r\n",AppDataPointer->FotaInfor.password);
+							g_Printf_info("FotaInfor.imgpath:%s\r\n",AppDataPointer->FotaInfor.imgpath);
+							g_Printf_info("FotaInfor.imgname:%s\r\n",AppDataPointer->FotaInfor.imgname);
 						}else{
 							 AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;
 						}

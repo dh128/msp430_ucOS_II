@@ -486,14 +486,17 @@ __interrupt void USCI_A0_ISR(void)
 					}	
 #endif	//(TRANSMIT_TYPE == LoRa_F8L10D_Mode)
 #if(TRANSMIT_TYPE == GPRS_Mode)
-				if((aRxBuff[aRxNum-2] == 0x0D)&&(aRxBuff[aRxNum-1] == 0x0A)){
+				if(g_ftp_allow_storage != 0){
+					download_data_1[data1_len++] = UCA0RXBUF;
+					if(data1_len > 1535){
+						data1_len = 0;
+					}
+				}else if((aRxBuff[aRxNum-2] == 0x0D)&&(aRxBuff[aRxNum-1] == 0x0A)){
 					aRxNum = 0;
 					g_Device_check_Response(aRxBuff);
 					memset(aRxBuff,0x0,256);
 				}
-				if(g_ftp_allow_storage != 0){
-					download_data_1[data1_len++] = UCA0RXBUF;
-				}
+				
 #endif	//(TRANSMIT_TYPE == GPRS_Mode)
 				
 			}//while
