@@ -705,7 +705,7 @@ void ProcessPCP(unsigned char *p)
 		//判断存储数据头尾是否正确 然后配置启动标志位存放于infor_BootAddr
 		TestData[0] = SPI_Flash_ReadByte(addr_write-3);
 		TestData[1] = SPI_Flash_ReadByte(FOTA_ADDR_START+1);
-		if(TestData[0] == 'q' && TestData[1] == 'c')	//确认C400和q
+		if(TestData[0] == 'q' && TestData[1] == 'c')	//确认@c400和q\r\n,存储结束后addr_writer值为\n后面一位
 		{	        
 			g_Printf_info("Enter %s and System will goto bootloader\r\n",__func__);
 			loop8:
