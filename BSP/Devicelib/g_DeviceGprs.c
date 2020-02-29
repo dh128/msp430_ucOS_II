@@ -53,6 +53,7 @@ enum CoordinateSystem{
 };
 
 static char gprs_tick = 0;
+static char gprs_over_tick = 0;
 static uint32_t HTTP_Status_Code = 0;
 static int g_has_response = 0;
 static char g_response[256];
@@ -83,10 +84,11 @@ void g_Device_GPRS_Init(void)
 			g_Printf_dbg("AT+CSQ\r\n");
 			User_Printf("AT+CSQ\r\n");   //查询信号质量
 			gprs_tick ++;
-			OSTimeDly(1000);
+			OSTimeDly(1500);
 			if(gprs_tick == 5){
 				gprs_tick = 0;
 				g_Printf_info("%s failed : Poor signal quality\r\n",__func__);
+				AppDataPointer->TransMethodData.GPRSStatus = GPRS_Init_Failed;
 			}	
 		}else if((AppDataPointer->TransMethodData.GPRSNet == 1)&&
 				(AppDataPointer->TransMethodData.GPRSAttached == 0)){
@@ -94,26 +96,47 @@ void g_Device_GPRS_Init(void)
 			User_Printf("AT+CGATT?\r\n"); 		//查询GPRS附着状态 ，0表示分离，1表示附着
 			gprs_tick ++;
 			OSTimeDly(1000);	
-			if((gprs_tick == 5)&&(AppDataPointer->TransMethodData.GPRSAttached == 0)){
+			if((gprs_tick == 8)&&(AppDataPointer->TransMethodData.GPRSAttached == 0)){
 				gprs_tick = 0;
 				g_Printf_info("Manual gain access to network\r\n");
 				g_Printf_dbg("AT+CGATT=1\r\n"); //手动附着GPRS网络
 				User_Printf("AT+CGATT=1\r\n");
 				OSTimeDly(1000);
+				AppDataPointer->TransMethodData.GPRSAttached = 1;       //手动附着GPRS网络,防止进入到这个死循环,信号差不一定附着不上的
 			}	
-		}else if((AppDataPointer->TransMethodData.GPRSNet == 1)&&
+		}else if((AppDataPointer->TransMethodData.GPRSNet == 1)
+		       &&(AppDataPointer->TransMethodData.GPRSAttached == 1)
+			   &&(AppDataPointer->TerminalInfoData.AutomaticTimeStatus == AUTOMATIC_TIME_ENABLE)){
+				AppDataPointer->TransMethodData.GPRSTime = 0;
+				AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
+				memset(aRxBuff,0x0,256);
+				g_Printf_dbg("AT+AMGSMLOC\r\n");
+				User_Printf("AT+AMGSMLOC\r\n");  //获取基站定位和日期
+				OSTimeDly(2000);//2ms
+		}
+		else if((AppDataPointer->TransMethodData.GPRSNet == 1)&&
 				(AppDataPointer->TransMethodData.GPRSAttached == 1)){
 #ifdef SIM800C
 			g_Printf_dbg("AT+CIPSHUT\r\n");
 			User_Printf("AT+CIPSHUT\r\n");
 #endif
 			OSTimeDly(2000);
-			AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Init_Done;
+				AppDataPointer->TransMethodData.GPRSStatus = GPRS_Init_Done;
 #ifdef AIR202
 			AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Preinit;
 			AppDataPointer->TransMethodData.GPRSATStatus = GPRS_Waitfor_OK;
 #endif
 		}	
+		else
+		{
+			gprs_tick ++;
+			if (gprs_tick >= 10)
+			{
+				gprs_tick = 0;
+				g_Printf_info("%s failed : GPRS_Preinit Wrong!\r\n",__func__);
+				AppDataPointer->TransMethodData.GPRSStatus = GPRS_Init_Failed;
+			}
+		}
 	}
 #ifdef AIR202
 	else if(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Http_Preinit){
@@ -189,8 +212,20 @@ void g_Device_GPRS_Init(void)
 					g_Printf_info("%s done and ready to post\r\n",__func__);
 				}
 			}
+
+
+				gprs_over_tick++;
+				//wj20200215-问题在于gprs_over_tick > 12，如果要加这段代码，12要改成13以上；入网时有可能失败，故防止死循环
+				// if(gprs_over_tick > 3)
+				if(gprs_over_tick > 15)
+				{
+					AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Err;  //重新进入此程序
+					gprs_tick = 10;  //>7即可
+				}
+
 		}
 		gprs_tick = 0;
+			gprs_over_tick = 0;
 	}
 #endif
 }
@@ -259,12 +294,13 @@ int16_t g_Device_http_post(const char *host,const char* path,const char *apikey,
 	struct hal_timeval tmp_tv;
 	int32_t	sub_timeout_sec;
 	Hal_GetTimeOfDay(&now);
+	gprs_tick = 0; //wj20200215 add
 	while(g_err == 0){
 		if(gprs_tick == 0){      //设置Http会话参数
 			if(AppDataPointer->TransMethodData.GPRSATStatus == GPRS_Waitfor_OK){
 				g_Printf_dbg("AT+HTTPPARA=\"URL\",\"%s%s\"\r\n",host,path);
 				User_Printf("AT+HTTPPARA=\"URL\",\"%s%s\"\r\n",host,path);
-				OSTimeDly(1000);
+				OSTimeDly(1500);
 			}else{
 				gprs_tick = 1;
 				AppDataPointer->TransMethodData.GPRSATStatus = GPRS_Waitfor_OK;
@@ -321,7 +357,7 @@ int16_t g_Device_http_post(const char *host,const char* path,const char *apikey,
 		if(sub_timeout_sec > timeout){
 			now.tv_sec = tmp_tv.tv_sec;
 			g_Printf_info("%s timerout ",__func__);	
-			if((gprs_tick < 2)&&(gprs_tick > 0)){
+			if((gprs_tick < 2)&&(gprs_tick >= 0)){       //ML 20191104 增加=0的判断，=0的出现故障之后会进入死循环
 				g_Printf_info(": para set timerout\r\n");	
 				g_err = -1;					
 			}else if(gprs_tick == 2){
@@ -538,6 +574,14 @@ void g_Device_GPRS_Fota_Start(void)
 
 void g_Device_check_Response(char *res)
 {
+	uint8_t *a;
+	uint8_t i=0,m=0;
+	uint8_t gpts_Timedata[25]={0};
+	uint8_t time_buf[8];
+	uint8_t time_buf_bcd[8];
+
+	//static uint8_t res_len = 0;
+
 	if(g_has_response == -1){
 		g_has_response = 0;
 		memset(g_response,0x0,256);
@@ -577,7 +621,8 @@ void g_Device_check_Response(char *res)
 #endif
 
 #ifdef AIR202
-	if(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Power_on){
+	if( (AppDataPointer->TransMethodData.GPRSStatus == GPRS_Power_on) ||
+			(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Waitfor_SMSReady) ){
 		if(Hal_CheckString(res,"SMS Ready")){
 			AppDataPointer->TransMethodData.GPRSStatus = GPRS_Preinit;
 		}
@@ -597,11 +642,37 @@ void g_Device_check_Response(char *res)
 			if (Hal_CheckString(res," 0,0")){
 				AppDataPointer->TransMethodData.GPRSNet = 0;
 			}else{
+				AppDataPointer->TransMethodData.GPRSNet = 1;
+				AppDataPointer->TransMethodData.GPRSStatus = GPRS_Preinit;
 				memset(CSQBuffer, '\0', 15);	//清空buffer
 				StartString = strstr(aRxBuff,"+CSQ:");
 				EndString  = strstr(aRxBuff, ",");
 				memcpy(CSQBuffer, StartString + 6, EndString - StartString - 6);	//复制CSQ值
-				AppDataPointer->TransMethodData.GPRSNet = 1;
+			}
+		}else if(Hal_CheckString(res,"+AMGSMLOC:")){   //基站定位和日期
+        	a=strstr(res,",20");
+			if((a!=NULL)&&(*(a+3)!="."))
+			{
+				while(*(a+3)!='\r')
+				{
+					gpts_Timedata[i]=*(a+3);
+					i++;
+					a++;
+				}	
+				gpts_Timedata[i]='\n';	
+				
+				time_buf[1]=(gpts_Timedata[0]-0x30)*10+(gpts_Timedata[1]-0x30)*1;	       //年
+				time_buf[2]=(gpts_Timedata[3]-0x30)*10+(gpts_Timedata[4]-0x30)*1;	       //月
+				time_buf[3]=(gpts_Timedata[6]-0x30)*10+(gpts_Timedata[7]-0x30)*1;	       //日
+				time_buf[4]=(gpts_Timedata[9]-0x30)*10+(gpts_Timedata[10]-0x30)*1;	       //时
+				time_buf[5]=(gpts_Timedata[12]-0x30)*10+(gpts_Timedata[13]-0x30)*1;	       //分
+				time_buf[6]=(gpts_Timedata[15]-0x30)*10+(gpts_Timedata[16]-0x30)*1;	       //秒
+				for(m=1;m<7;m++) {
+					time_buf_bcd[m]= HexToBCD(time_buf[m]);    //存“年月日时分秒”
+				}
+				OSBsp.Device.RTC.ConfigExtTime(time_buf_bcd,RealTime);
+				g_Printf_dbg("Gprs Automatic Time OK\r\n");
+				AppDataPointer->TransMethodData.GPRSTime = 1;
 				AppDataPointer->TransMethodData.GPRSStatus = GPRS_Preinit;
 			}
 		}
@@ -681,16 +752,16 @@ void  TransmitTaskStart (void *p_arg)
 	uint32_t datalen = 0;
 //	uint8_t i=0;
 //	uint8_t scadaADCIndex = 0,scadaBATIndex = 0;
+	static uint8_t idle_times = 0;
+	static uint8_t failed_times = 0;
+
     (void)p_arg;   
     OSTimeDlyHMSM(0u, 0u, 0u, 100u);      
     g_Printf_info("%s ... ...\n",__func__);      
-	for(i=0;i<16;i++)                                          //填充数据
-	{
-	   memcpy(&buf1[i*16], buf0,16);
-	}     
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.       */
         if(Hal_getCurrent_work_Mode() == 0){
             if(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Power_off){
+				OSTimeDly(1000); 
                 OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
                 OSBsp.Device.IOControl.PowerSet(SIM800C_Power_On);
                 OSTimeDly(500); 
@@ -704,16 +775,30 @@ void  TransmitTaskStart (void *p_arg)
                 OSTimeDly(1000);
                 g_Printf_dbg("ATE0\r\n");
                 User_Printf("ATE0\r\n");         //关闭回显，初始化阶段关闭
-                OSTimeDly(1500);
-                AppDataPointer->TransMethodData.GPRSStatus = GPRS_Preinit;
-            }else if((AppDataPointer->TransMethodData.GPRSStatus >= GPRS_Power_on)&&
+					OSTimeDly(1000);
+
+            //     AppDataPointer->TransMethodData.GPRSStatus = GPRS_Preinit;
+            // }else if((AppDataPointer->TransMethodData.GPRSStatus >= GPRS_Power_on)&&
+            //         	(AppDataPointer->TransMethodData.GPRSStatus < GPRS_Http_Init_Done)){
+					AppDataPointer->TransMethodData.GPRSStatus = GPRS_Waitfor_SMSReady;
+
+            }
+            else if(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Waitfor_SMSReady)
+            {
+            	idle_times++;
+            	OSTimeDlyHMSM(0u, 0u, 2u, 0u);
+            	if (idle_times == 30)  //60s 空跑1min
+            	{
+            		idle_times = 0;
+            		AppDataPointer->TransMethodData.GPRSStatus = GPRS_Init_Failed;
+            	}
+            }
+			else if((AppDataPointer->TransMethodData.GPRSStatus > GPRS_Waitfor_SMSReady)&&
                     	(AppDataPointer->TransMethodData.GPRSStatus < GPRS_Http_Init_Done)){
+				idle_times = 0;
                 g_Device_GPRS_Init();
             }else if(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Http_Init_Done){
                 if(AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER){
-
-
-
 					if (App.Data.TerminalInfoData.DeviceFirstRunStatus == DEVICE_STATUS_FIRSTRUN_BEGIN) {
 						App.Data.TerminalInfoData.DeviceFirstRunStatus = DEVICE_STATUS_FIRSTRUN_OVER;
 						App.Data.TransMethodData.SeqNumber = 0;
@@ -724,15 +809,16 @@ void  TransmitTaskStart (void *p_arg)
 	                GetADCValue();
                     //************电量处理End*************//
 
-					char response[256];
+					char response[512];
 					char data[512];
 					uint32_t datalen = snprintf(data,512,MakeJsonBodyData(AppDataPointer));
 					g_Printf_info("datalen:%d\ndata:%s\r\n",datalen,data);
 				
                    
-                	memset(response,0x0,128);
+                	memset(response,0x0,512);
 					int16_t code = 0;
-                    code = g_Device_http_post(g_30000IoT_HOST,g_30000IoT_PATH,null,data,response,20);//时间延长至20s
+                    code = g_Device_http_post(g_30000IoT_HOST,g_30000IoT_PATH,null,data,response,30);//时间延长至30s
+
                     if(code == 200){
                         g_Printf_info("response : %s \r\n",response);   //对response解析，可以执行配置或ota操作
 
@@ -802,17 +888,138 @@ void  TransmitTaskStart (void *p_arg)
 							 AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;
 						}
                     }else{    //这里可以做失败重发操作
-					    AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;  //ML 20190828
+					    //AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;  //ML 20190828
+                    	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Err;
                         g_Printf_dbg("http_post failed\r\n");
                     }                        
                 }    
             }else if(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Fota_Process){
-								
 				g_Device_GPRS_Fota_Start();
             }else if(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Http_Post_Done){
                 // OSBsp.Device.IOControl.PowerSet(AIR202_Power_On);
-                Hal_EnterLowPower_Mode();
+            	if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD)
+            	{
+            		Hal_EnterLowPower_Mode();//上传频率大于5min，才进低功耗模式，对应取消RTC_ISR
+            	}
+            	else
+            	{  //不进入低功耗模式，用延时函数来实现上传周期
+            		g_Printf_dbg("POST OK!\r\n");
+            		g_Printf_dbg("No LowPower!\r\n");
+            		AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Preinit;
+            		//AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF; //在RTC里设置过了
+            		//恢复到模块http初始化完成的时候，就不必二次初始化了。
+            		if (App.Data.TerminalInfoData.SendPeriod == 1)  //最好不要设置成1
+            		{
+						OSTimeDlyHMSM(0u, 0u, 27u, 0u);//GPRS上传全部完成需要30s
+            		}
+            		else if (App.Data.TerminalInfoData.SendPeriod == 2)
+            		{
+            			OSTimeDlyHMSM(0u, 1u, 27u, 0u);
+            		}
+            		else
+            		{
+            			OSTimeDlyHMSM(0u, 2u, 27u, 0u);
             }
+            	}
+            }
+            else if (AppDataPointer->TransMethodData.GPRSStatus == GPRS_Http_Err)
+            {  //入网遇到问题，本包丢，并做模块重启处理，重新上传
+            	if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD)
+            	{
+            		g_Printf_dbg("POST ERR!\r\n");
+
+            	    Hal_EnterLowPower_Mode();//上传频率大于5min，才进低功耗模式，对应取消RTC_ISR
+            	}
+            	else
+            	{  //用模块重启来实现故障自恢复
+					OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+					OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+					OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+					OSTimeDly(1000); //2s
+					AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
+					AppDataPointer->TransMethodData.GPRSNet = 0;
+					AppDataPointer->TransMethodData.GPRSAttached =0;
+					AppDataPointer->TransMethodData.GPRSATStatus = 0;
+            	}
+
+            }
+			else if(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Init_Failed){
+
+			 	g_Printf_info("Gprs init failed\r\n");
+			 	failed_times++;
+			 	if (failed_times == 1) //第一次初始化失败，重启GPRS模块
+			 	{
+					OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+					OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+					OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+					//清零
+					AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
+					AppDataPointer->TransMethodData.GPRSNet = 0;
+					AppDataPointer->TransMethodData.GPRSAttached =0;
+					AppDataPointer->TransMethodData.GPRSATStatus = 0;
+					//关闭2s
+					OSTimeDlyHMSM(0u, 0u, 2u, 0u);
+			 	}
+			 	else if (failed_times < 10)
+			 	{
+			 		if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD)
+			 		{
+			 		    g_Printf_dbg("GPRS Init ERR!\r\n");
+			 		    failed_times = 0;
+			 		    Hal_EnterLowPower_Mode();//上传频率大于5min，才进低功耗模式，对应取消RTC_ISR
+			 		}
+			 		else
+			 		{
+			 			g_Printf_dbg("GPRS Init Retry!\r\n");
+						OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+						OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+						OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+						//清零
+						AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
+						AppDataPointer->TransMethodData.GPRSNet = 0;
+						AppDataPointer->TransMethodData.GPRSAttached =0;
+						AppDataPointer->TransMethodData.GPRSATStatus = 0;
+						//关闭2s
+						OSTimeDlyHMSM(0u, 0u, 2u, 0u);
+			 		}
+			 	}
+			 	else // 9次初始化失败，重启，只存在于<NO_LOWPER_PERIOD的逻辑里
+			 	{
+			 		    g_Printf_dbg("GPRS Init Retry vaild,try reboot!\r\n");
+			 			failed_times = 0;
+						App.Data.TransMethodData.SeqNumber = 0;
+						App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
+						OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+						OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+						OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+
+						hal_Reboot();  //直接复位
+			 	}
+
+            }
+            else  //GPRS unkonw err, such as GPRS_Wait_Idle
+            {
+            	idle_times++;
+            	OSTimeDlyHMSM(0u, 0u, 2u, 0u);
+            	if (idle_times == 60)  //120s 空跑2min
+            	{
+            		g_Printf_dbg("GPRS Unkonw error,try reboot!\r\n");
+            		idle_times = 0;
+					App.Data.TransMethodData.SeqNumber = 0;
+					App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
+					OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+					OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+					OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+
+					hal_Reboot();  //复位 是否需要主机都复位？或者只需要
+            	}
+            }
+
+            OSTimeDlyHMSM(0u, 0u, 0u, 200u);  
+        }
+        else
+        {
+        	g_Printf_dbg("TransmitTaskStart ERR!\r\n");
             OSTimeDlyHMSM(0u, 0u, 0u, 200u);  
         }
     }

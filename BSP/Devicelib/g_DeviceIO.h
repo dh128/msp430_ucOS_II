@@ -35,13 +35,19 @@ typedef enum {
     BaseBoard_5V_Power_On,
     BaseBoard_5V_Power_Off,
     Sensor_Power_On,
+    Sensor_Power1_On,
+    Sensor_Power2_On,   
     Sensor_Power_Off,
+    Sensor_Power1_Off,
+    Sensor_Power2_Off,   
     AIR202_Power_On,
     AIR202_Power_Off,
     SIM800C_Power_On,
     SIM800C_Power_Off,
     LPModule_Power_On,
     LPModule_Power_Off,
+    Base3V3_Power_On,
+    Base3V3_Power_Off,
     GPS_Power_On,
     GPS_Power_Off,
     SDCard_Power_On,
@@ -89,6 +95,8 @@ typedef enum {
 #define Socket_5V_OFF         P6OUT &=~BIT5     //插口5V电源         掉电
 #define Socket_3V3_ON		  P4OUT |= BIT1     //插口3.3V电源       上电
 #define Socket_3V3_OFF        P4OUT &=~BIT1     //插口3.3V电源       掉电
+#define Socket_485_SendEnable   P1OUT |= BIT6     //插口485芯片        发送使能 
+#define Socket_485_RevEnable    P1OUT &=~BIT6     //插口485芯片        接收使能 
 //*****************电池电量采集******************//
 #define ScadaBAT_ON		      P2OUT |= BIT0     //电池电量采集       允许
 #define ScadaBAT_OFF          P2OUT &=~BIT0     //电池电量采集       禁止

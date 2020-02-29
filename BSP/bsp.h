@@ -67,15 +67,17 @@
 #include <g_DeviceSD.h>
 #include <g_DeviceSDMMC.h>
 #include <g_DeviceFlash.h>
-#include <g_DeviceGprs.h>
 #include <g_DevicePrintf.h>
 #include <g_DeviceConfig.h>
+//#include <g_DeviceDisplay.h>
 #include <g_DeviceSPIFlash.h>
 
+#include <g_DeviceGprs.h>
 #include <g_DeviceNB.h>
 #include <g_DeviceLoRa.h>
 
 #include <g_Platform.h>
+
 
 #include <Diskio.h>
 #include <FatFS.h>

@@ -428,26 +428,50 @@ __interrupt void RTC_ISR(void)
 
         case RTC_RTCTEVIFG:		//分钟
 			{
+				if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //上传频率大于5min才具备低功耗模式
+				{
 				g_MinuteTick ++;
 				g_Printf_dbg("g_MinuteTick wakeup %d times\r\n",g_MinuteTick);
+					if(g_MinuteTick == (App.Data.TerminalInfoData.SendPeriod-1)){       //ML 20191121强行进低功耗
+						if(Hal_getCurrent_work_Mode() == 0){          //当前为未进入低功耗状态
+							Hal_EnterLowPower_Mode();
+						}
+					}
 				if(g_MinuteTick == App.Data.TerminalInfoData.SendPeriod){
 					g_MinuteTick = 0;
 					if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
 						__bic_SR_register_on_exit(LPM0_bits);
 						WDTCTL  = WDT_MDLY_32;
 						SFRIE1 |= 1;  
-						Hal_ExitLowPower_Mode();
+							// Hal_ExitLowPower_Mode();
+							Hal_ExitLowPower_Mode(Rtc_Int);
 					}		
 				}
+				}
+
 				g_MinuteTimeTick ++;
 				if(g_MinuteTimeTick == 60)
 				{
 					g_MinuteTimeTick = 0;
 					g_HourTimeTick ++;
-					if(g_HourTimeTick == 24)
+					if(g_HourTimeTick == 24)//TEST
 					{
 						g_HourTimeTick = 0;
 						App.Data.TransMethodData.SeqNumber = 0;
+						App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
+						//复位前把模块电源控制都关闭
+						#if (TRANSMIT_TYPE == GPRS_Mode)
+							OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+							OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+							OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+						#endif
+						#if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
+							OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+							// OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+							OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+						#endif
+
+						hal_Reboot();  //定时24h复位一次
 					}
 				}
 			} 

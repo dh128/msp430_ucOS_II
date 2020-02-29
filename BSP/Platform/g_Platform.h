@@ -6,29 +6,40 @@
 
 enum DEVICE_STATUS_FIRSTRUN {
 	DEVICE_STATUS_FIRSTRUN_BEGIN = 0x01, 
-	DEVICE_STATUS_FIRSTRUN_OVER = 0x02,
+	DEVICE_STATUS_FIRSTRUN_OVER = 0x02
 };
 
 enum DEVICE_STATUS_e {
 	DEVICE_STATUS_POWER_OFF = 0x01, 
 	DEVICE_STATUS_POWER_SCANNING = 0x02,
 	DEVICE_STATUS_POWER_SCAN_OVER = 0x03,
+	DEVICE_STATUS_POWER_IDLE = 0x04
 };
 
 enum SENSOR_STATUS_READFLASH {
 	SENSOR_STATUS_READFLASH_NOTYET = 0x01,           //未读取Flash中存储的传感器状态
 	SENSOR_STATUS_READFLASH_ALREADY = 0x02,          //准备好读取Flash中存储的传感器状态
-	SENSOR_STATUS_READFLASH_OK = 0x03,               //成功读取Flash中存储的传感器状态
+	SENSOR_STATUS_READFLASH_OK = 0x03               //成功读取Flash中存储的传感器状态
 };
 
 enum SENSOR_STATUS_WRITEFLASH {
 	SENSOR_STATUS_WRITEFLASH_NOTYET = 0x01,          //未写入Flash中存储的传感器状态
-	SENSOR_STATUS_WRITEFLASH_ALREADY = 0x02,         //准备好写入Flash中存储的传感器状态
+	SENSOR_STATUS_WRITEFLASH_ALREADY = 0x02          //准备好写入Flash中存储的传感器状态
 };
 
 enum SENSOR_STATUS_WRITEFLASH_PRINTF {
 	SENSOR_STATUS_WRITEFLASH_PRINTF_ENABLE = 0x01,   //Flash中存储的传感器状态允许打印
-	SENSOR_STATUS_WRITEFLASH_PRINTF_DISABLE = 0x02,  //Flash中存储的传感器状态不允许打印
+	SENSOR_STATUS_WRITEFLASH_PRINTF_DISABLE = 0x02   //Flash中存储的传感器状态不允许打印
+};
+
+enum AUTOMATIC_TIME_STATUS {
+	AUTOMATIC_TIME_ENABLE = 0x01,     //允许同步时间
+	AUTOMATIC_TIME_DISABLE = 0x02     //禁止同步时间
+};
+
+enum RAINGAUGE_SCADA_STATUS {
+	RAINGAUGE_SCADA_ENABLE = 0x01,     //允许采集雨量
+	RAINGAUGE_SCADA_DISABLE = 0x02     //禁止采集雨量
 };
 
 // typedef struct
@@ -45,6 +56,7 @@ enum SENSOR_STATUS_WRITEFLASH_PRINTF {
 typedef struct
 {
 	char DeviceFirstRunStatus;          //设备首次运行状态
+	char AutomaticTimeStatus;           //同步时间状态
 
 	double    Longitude;                //地理位置经度
 	double    Latitude;                 //地理位置纬度
@@ -90,6 +102,7 @@ typedef struct
 
 	char 	 *nIP;				 //如涉及IP地址
 	char 	 *nPort;			 //如涉及Port
+	uint8_t  GPRSTime;           //GPRS网络时间状态
 	uint8_t  GPRSNet;            //GPRS网络信号状态
 	uint8_t  GPRSAttached;       //GPRS网络附着状态
 	uint8_t  GPRSConnect;        //GPRS网络TCP连接状态
@@ -101,6 +114,8 @@ typedef struct
 	float    RSRP;
 	float    SINR;
 	uint16_t PCI;
+	uint16_t ECL;
+	uint32_t CELLID;
 	uint8_t	 NBStatus;			//NB模组运行状态
 	uint8_t  NBNet;				//NB网络标志位
 	uint8_t  NBSendStatus;		//NB发送状态，发送后以OK位判断，收到OK即发送成功
@@ -134,16 +149,17 @@ typedef struct
 
 typedef struct
 {
+	char      RainGaugeScadaStatus;
 	float WindSpeed;			 //风速                  0~30.0    m/s
 	int   WindDirection;		 //风向                  0~360     °
-	float Temperature;		     //室外温度             -40~60.0      ℃
-	float Humidity;				 //室外湿度              0~100.0   %
+	float     AirTemperature;		 //室外温度             -40~60.0    ℃
+	float     AirHumidity;		     //室外湿度              0~100.0    %
+	float     AirPressure;           //大气压
+	float     RainGauge;             //雨量                  0~4.0     mm/min
 	float PM25;			         //PM2.5     0~6000     ug/m3
 	float PM10;			      	 //PM10      0~6000     ug/m3
 	uint32_t Illumination;       //光照                  0~200000  Lux
-	float AirPressure;           //大气压
-	float RainGauge;             //雨量                  0~4.0     mm/min
-	float Radiation;             //总辐射                0~2000    W/m2
+	uint16_t  Radiation;             //总辐射                 0~2000    W/m2
 }MeteorologyPlatform;//气象检测平台
 
 typedef struct
@@ -160,7 +176,7 @@ typedef struct
 	float DOValue;
 	float DORealValue;
 	float NH4Value;
-	float TempValue;
+	float    WaterTemp;
 	int16_t ORPValue;
 	float ZSValue;
 	float PHValue;
@@ -171,8 +187,8 @@ typedef struct
 typedef struct
 {
 	float SoilTemp;				 //土壤温度                -40~80.00   ℃
-	float SoilHum;		         //土壤水分（湿度）        0~80.00   %
-	uint16_t SoilConductivity;	 //土壤电导率             0~20000   us/cm
+	float SoilHum;		         //土壤水分（湿度）        0~100.00   %
+	uint16_t SoilCond;	         //土壤电导率              0~20000   us/cm  SoilConductivity
 	float SoilPH;			     //土壤PH                 0~14.00   PH
 }SoilPlatform;   //土壤检测平台
 
@@ -248,7 +264,7 @@ typedef struct
 	float SoilHum;		         //土壤水分（湿度）         0~100.00   %
 	uint16_t SoilConductivity;	 //土壤电导率              0~20000   us/cm
 	uint16_t CO2;		         //CO2                    0~5000    ppm
-}WetherSoilPlatform;             //气象土壤监测平台
+}WeatherSoilPlatform;             //气象土壤监测平台
 
 typedef struct
 {
@@ -308,12 +324,11 @@ typedef struct
     DustPlatform               DustData;
 #elif (PRODUCT_TYPE == WRain_Station) 
     WRainPlatform              WRainData;
+#elif (PRODUCT_TYPE == Weather_Station) 
+	MeteorologyPlatform        MeteorologyData;
 #elif (PRODUCT_TYPE == Water_Station) 
     WaterPlatform			   WaterData;	
-#endif
-
-    MeteorologyPlatform        MeteorologyData;
-#if (PRODUCT_TYPE == Soil_Station) 
+#elif (PRODUCT_TYPE == Soil_Station) 
 	SoilPlatform               SoilData;
 #elif (PRODUCT_TYPE == Agriculture_Station) 
 	AgriculturePlatform        AgricultureData;
@@ -330,7 +345,7 @@ typedef struct
 	InputmodeWellPlatform      InputmodeWellData;
 
 	NoxiousGasPlatform         NoxiousGasData;
-	WetherSoilPlatform         WetherSoilData;
+	WeatherSoilPlatform        WeatherSoilData;
 
 	PlantingPlatform           PlantingData;
 	LevelFlowratePlatform      LevelFlowrateData;
@@ -368,6 +383,7 @@ void InqureSensor(void);
 char *MakeJsonBodyData(DataStruct *DataPointer);
 void ScadaData_base_Init();
 void Terminal_Para_Init(void);
+void Teminal_Data_Init(void);
 
 #endif
 

@@ -83,7 +83,6 @@ static void BSP_OSCloseWatchDog(void);
 
 void  BSP_Init(void)
 {
-    
     __disable_interrupt();                                      /* Disable all int. until we are ready to accept them   */
     
     BSP_OSCloseWatchDog();
@@ -98,23 +97,22 @@ void  BSP_Init(void)
     g_Device_Usart3_Init(9600);                                //485串口
     g_Device_ADC_Init(); 
     g_Device_SD_Init();
-    // g_Device_SPI3_Init();
+    // g_Device_SPI3_Init();  //++++
     g_Device_InnerFlash_Init();
     hal_Delay_ms(100);
     g_Printf_info("BSP init over\r\n");
     g_Device_ExtRTC_Init();
     hal_Delay_ms(100);
     g_Printf_info("RTC init over\r\n");
-
-    g_Device_SDCard_Check();               
+#if HAVE_SDCARD_SERVICE
+    SD_Status = g_Device_SDCard_Check();
     hal_Delay_ms(100);
     g_Printf_info("SD init over\r\n");
-    
+    OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);
+#endif  
     Recive_485_Enable;
-    ScadaData_base_Init();
+   // ScadaData_base_Init();   //后面已经执行了一�
     hal_Delay_ms(100);
-
-    
 }
 
 
@@ -137,7 +135,7 @@ static void  BSP_OSTickInit(void)
                                                                 /* ... ms for SMCLK = 1 MHz.                            */
                                                                 /* BE SURE TO SET TICK RATE IN OS_CFG.H ...             */
                                                                 /* ... TO CORRESPOND WITH THIS FREQUENCY!               */
-
+   //wj02200218 将看门狗做成了系统时钟源 实际2ms
     SFRIE1 |= 1;                                                /* Enable WDT interrupts.                               */
 }
 

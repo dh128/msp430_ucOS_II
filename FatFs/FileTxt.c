@@ -51,23 +51,23 @@ void g_SD_FileName_Creat(const char *docPath,uint8_t *date,char *filename)
 
 void g_SD_File_Write(const char *file_path,const char *dat)
 {
-	g_Printf_info("write file to %s......\n\r",file_path);
+	g_Printf_dbg("write file to %s......\n\r",file_path);
 	res=f_mount(0, &fs);
 	res=f_open(&fsrc,(char *)file_path, FA_OPEN_ALWAYS | FA_WRITE);
 	if(res != FR_OK){
 		uint32_t res_s = res;
-		g_Printf_info("open file error = %d\n\r",res_s);
+		g_Printf_dbg("open file error = %d\n\r",res_s);
 	}else{
-		g_Printf_info("open file OK!\n\r");
+		g_Printf_dbg("open file OK!\n\r");
 		f_lseek(&fsrc,fsrc.fsize);                      //移动指针到末�?
 		res = f_write(&fsrc, dat, strlen(dat), &bw);    /* Write it to the dst file */
 		if(res == FR_OK){
 			uint32_t num_w;
 			num_w=strlen(dat);
-			g_Printf_info("%d bytes has been writted!\r\n",num_w);
-			g_Printf_info("write data ok! \n\r");
+			g_Printf_dbg("%d bytes has been writted!\r\n",num_w);
+			g_Printf_dbg("write data ok! \n\r");
 		}else{
-			g_Printf_info("write data error \n\r");
+			g_Printf_dbg("write data error \n\r");
 		}
 		/*close file */
 		f_close(&fsrc);

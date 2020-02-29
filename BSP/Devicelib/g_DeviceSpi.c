@@ -94,14 +94,14 @@ void g_Device_SPI2_Init(void)
 	P7SEL |= BIT2+BIT3+BIT4;				    // Set P7.2-4 as SPI peripheral
 	P7DIR |= BIT2+BIT3+BIT5;
 	UCB2CTL1 |= UCSWRST;               		    // Enable SW reset
-	UCB2CTL0 |= UCCKPH+UCMSB+UCMST+UCSYNC;;      //+UCCKPL;  //3��SPIģʽ����UCxSTE=1ʱ�ӻ�ʹ��
-	                                        	//UCCKPH(SD CARD��Ҫ�������ض�д�����UCCKPL==0��
-												//8λ���SPI�����״̬Ϊ�ߵ�ƽ����λ��ǰ
-	UCB2CTL1 |= UCSSEL__SMCLK;                  //ѡ��ο�ʱ��ΪSCMLK=16MHz
-	UCB2BR0 = 6;								//6��Ƶ
+	UCB2CTL0 |= UCCKPH+UCMSB+UCMST+UCSYNC;;      //+UCCKPL;  //3线SPI模式，当UCxSTE=1时从机使能
+	                                        	//UCCKPH(SD CARD需要在上升沿读写数据且UCCKPL==0）
+												//8位数据SPI主机，不活动状态为高电平，高位在前
+	UCB2CTL1 |= UCSSEL__SMCLK;                  //选择参考时钟为SCMLK=16MHz
+	UCB2BR0 = 6;								//6分频
 	UCB2BR1 = 0;
-	UCB2CTL1 &= ~UCSWRST;						//��ɼĴ�������
-	//UCB2IE |= UCRXIE;							//ʹ���ж�
+	UCB2CTL1 &= ~UCSWRST;						//完成寄存器设置
+	//UCB2IE |= UCRXIE;							//使能中断
 	OSBsp.Device.Spi2.WriteData = g_Device_SendByte_SPI2;
 	OSBsp.Device.Spi2.WriteNData = g_Device_SendNByte_SPI2;
 	OSBsp.Device.Spi2.WriteReadData = g_Device_SPI2_ReadWriteByte;

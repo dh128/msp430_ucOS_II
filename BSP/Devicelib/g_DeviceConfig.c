@@ -208,164 +208,164 @@ static void g_Device_WirelessUpload_Config(g_Device_Config_CMD uploadCmd)   //�
 	}
 }
 
-#if ((ACCESSORY_TYPR == RS485_Mode)||(ACCESSORY_TYPR == RS232_Mode))
-static void g_Device_WiredUpload_Config(g_Device_Config_CMD uploadCmd)  //485/232有线指令下发配置(串口1)
-{
-	if(uploadCmd.cmdLenth != 0)
-	{
-		if( (uploadCmd.hexcmd[0] == 'F')&&(bRxBuff[1] == 'F')&&
-				(uploadCmd.hexcmd[uploadCmd.cmdLenth-2] == 'A')&&(uploadCmd.hexcmd[uploadCmd.cmdLenth-1] == 'A') ) //判断包头包尾
-		{
-			if((uploadCmd.hexcmd[2] == '0')&&(uploadCmd.hexcmd[3] == '1')
-					&&(uploadCmd.hexcmd[4] == '0')&&(uploadCmd.hexcmd[5] == '2')) //更改上传周期
-			{
-				uint16_t Temp_SendPeriod = (uploadCmd.hexcmd[6]-0x30)*1000 + (uploadCmd.hexcmd[7]-0x30)*100 + (uploadCmd.hexcmd[8]-0x30)*10 + (uploadCmd.hexcmd[9]-0x30)*1;
-				if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) ){
-					uint8_t Flash_Tmp[14];  //flash操作中间变量
-					App.Data.TerminalInfoData.SendPeriod = (uint8_t)(Temp_SendPeriod & 0x00FF);
-					OSBsp.Device.Usart2.WriteString("RS485/RS232 Set SendPeriod OK\r\n");
-					//将发送周期的信息存入Flash
-					Flash_Tmp[0] = OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_ChargeAddr);
-					Flash_Tmp[1] = OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_ChargeAddr);
-					Flash_Tmp[2] = OSBsp.Device.InnerFlash.innerFLASHRead(2, infor_ChargeAddr);
-					Flash_Tmp[3] = OSBsp.Device.InnerFlash.innerFLASHRead(3, infor_ChargeAddr);
-					Flash_Tmp[4] = OSBsp.Device.InnerFlash.innerFLASHRead(4, infor_ChargeAddr);
-					Flash_Tmp[5] = OSBsp.Device.InnerFlash.innerFLASHRead(5, infor_ChargeAddr);
-					Flash_Tmp[6] = OSBsp.Device.InnerFlash.innerFLASHRead(6, infor_ChargeAddr);
-					Flash_Tmp[7] = OSBsp.Device.InnerFlash.innerFLASHRead(7, infor_ChargeAddr);		//终端类型
-					Flash_Tmp[8] = OSBsp.Device.InnerFlash.innerFLASHRead(8, infor_ChargeAddr);		//传输方式
-					Flash_Tmp[9] = OSBsp.Device.InnerFlash.innerFLASHRead(9, infor_ChargeAddr);		//DevEUI_H(高八位)
-					Flash_Tmp[10] = OSBsp.Device.InnerFlash.innerFLASHRead(10, infor_ChargeAddr);	//DevEUI_L(低八位)
-					Flash_Tmp[11] = App.Data.TerminalInfoData.SendPeriod;							//上传周期（min）
-					OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 12, infor_ChargeAddr, 0);		//把终端信息写入FLASH
-				}else{
-					OSBsp.Device.Usart2.WriteString("RS485/RS232 Set SendPeriod Failed！\r\n");
-				}
-			}
-			if((uploadCmd.hexcmd[2] == '0')&&(uploadCmd.hexcmd[3] == '2')&&
-					(uploadCmd.hexcmd[4] == '0')&&(uploadCmd.hexcmd[5] == '8')) //同步时钟
-			{
-				uint8_t TimebuffNum=0;
-				uint8_t time_buf[8];
-				uint8_t TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16进制的时间Buffer  2018年3月15号 20时50分00秒 星期4
-				for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++){
-					TimeBuff_Hex[TimebuffNum] = (uploadCmd.hexcmd[6+TimebuffNum*2]-0x30)*10 + (uploadCmd.hexcmd[7+TimebuffNum*2]-0x30)*1;
-				}
-				if( (TimeBuff_Hex[0]==20) && (TimeBuff_Hex[1]>=18) && (TimeBuff_Hex[2]>=1) && (TimeBuff_Hex[2]<=12) && (TimeBuff_Hex[3]>=1) && (TimeBuff_Hex[3]<=31)
-				    && (TimeBuff_Hex[4]<24)  && (TimeBuff_Hex[5]<60) && (TimeBuff_Hex[6]<60) && (TimeBuff_Hex[7]>=1) && (TimeBuff_Hex[7]<=7) )
-				{
-					for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++){
-						time_buf[TimebuffNum]= HexToBCD(TimeBuff_Hex[TimebuffNum]);    //存“年月日时分秒周”
-					}
-					OSBsp.Device.RTC.ConfigExtTime(time_buf,RealTime);   //写入时间
-					OSBsp.Device.Usart2.WriteString("RS485/RS232 Time Set Done\r\n");
-				}else{
-					OSBsp.Device.Usart2.WriteString("RS485/RS232 Time Set Failed！\r\n");
-				}
-			}
-			if((uploadCmd.hexcmd[2] == '0')&&(uploadCmd.hexcmd[3] == '3')&&
-					(uploadCmd.hexcmd[4] == '0')&&(uploadCmd.hexcmd[5] == '1')) //复位
-			{
-				if((uploadCmd.hexcmd[6] == '0')&&(uploadCmd.hexcmd[7] == '1')) //复位
-				{
-					OSBsp.Device.Usart2.WriteString("RS485/RS232 Reset Device OK！\r\n");
-					hal_Delay_ms(50);
-					hal_Reboot(); //******软件复位*******//
-				}
-			}
-		}else{
-			OSBsp.Device.Usart2.WriteString("RS485/RS232 Wrong Command！\r\n");
-		}
-	}
-}
-#endif
+// #if ((ACCESSORY_TYPR == RS485_Mode)||(ACCESSORY_TYPR == RS232_Mode))
+// static void g_Device_WiredUpload_Config(g_Device_Config_CMD uploadCmd)  //485/232有线指令下发配置(串口1)
+// {
+// 	if(uploadCmd.cmdLenth != 0)
+// 	{
+// 		if( (uploadCmd.hexcmd[0] == 'F')&&(bRxBuff[1] == 'F')&&
+// 				(uploadCmd.hexcmd[uploadCmd.cmdLenth-2] == 'A')&&(uploadCmd.hexcmd[uploadCmd.cmdLenth-1] == 'A') ) //判断包头包尾
+// 		{
+// 			if((uploadCmd.hexcmd[2] == '0')&&(uploadCmd.hexcmd[3] == '1')
+// 					&&(uploadCmd.hexcmd[4] == '0')&&(uploadCmd.hexcmd[5] == '2')) //更改上传周期
+// 			{
+// 				uint16_t Temp_SendPeriod = (uploadCmd.hexcmd[6]-0x30)*1000 + (uploadCmd.hexcmd[7]-0x30)*100 + (uploadCmd.hexcmd[8]-0x30)*10 + (uploadCmd.hexcmd[9]-0x30)*1;
+// 				if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) ){
+// 					uint8_t Flash_Tmp[14];  //flash操作中间变量
+// 					App.Data.TerminalInfoData.SendPeriod = (uint8_t)(Temp_SendPeriod & 0x00FF);
+// 					OSBsp.Device.Usart2.WriteString("RS485/RS232 Set SendPeriod OK\r\n");
+// 					//将发送周期的信息存入Flash
+// 					Flash_Tmp[0] = OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_ChargeAddr);
+// 					Flash_Tmp[1] = OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_ChargeAddr);
+// 					Flash_Tmp[2] = OSBsp.Device.InnerFlash.innerFLASHRead(2, infor_ChargeAddr);
+// 					Flash_Tmp[3] = OSBsp.Device.InnerFlash.innerFLASHRead(3, infor_ChargeAddr);
+// 					Flash_Tmp[4] = OSBsp.Device.InnerFlash.innerFLASHRead(4, infor_ChargeAddr);
+// 					Flash_Tmp[5] = OSBsp.Device.InnerFlash.innerFLASHRead(5, infor_ChargeAddr);
+// 					Flash_Tmp[6] = OSBsp.Device.InnerFlash.innerFLASHRead(6, infor_ChargeAddr);
+// 					Flash_Tmp[7] = OSBsp.Device.InnerFlash.innerFLASHRead(7, infor_ChargeAddr);		//终端类型
+// 					Flash_Tmp[8] = OSBsp.Device.InnerFlash.innerFLASHRead(8, infor_ChargeAddr);		//传输方式
+// 					Flash_Tmp[9] = OSBsp.Device.InnerFlash.innerFLASHRead(9, infor_ChargeAddr);		//DevEUI_H(高八位)
+// 					Flash_Tmp[10] = OSBsp.Device.InnerFlash.innerFLASHRead(10, infor_ChargeAddr);	//DevEUI_L(低八位)
+// 					Flash_Tmp[11] = App.Data.TerminalInfoData.SendPeriod;							//上传周期（min）
+// 					OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 12, infor_ChargeAddr, 0);		//把终端信息写入FLASH
+// 				}else{
+// 					OSBsp.Device.Usart2.WriteString("RS485/RS232 Set SendPeriod Failed！\r\n");
+// 				}
+// 			}
+// 			if((uploadCmd.hexcmd[2] == '0')&&(uploadCmd.hexcmd[3] == '2')&&
+// 					(uploadCmd.hexcmd[4] == '0')&&(uploadCmd.hexcmd[5] == '8')) //同步时钟
+// 			{
+// 				uint8_t TimebuffNum=0;
+// 				uint8_t time_buf[8];
+// 				uint8_t TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16进制的时间Buffer  2018年3月15号 20时50分00秒 星期4
+// 				for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++){
+// 					TimeBuff_Hex[TimebuffNum] = (uploadCmd.hexcmd[6+TimebuffNum*2]-0x30)*10 + (uploadCmd.hexcmd[7+TimebuffNum*2]-0x30)*1;
+// 				}
+// 				if( (TimeBuff_Hex[0]==20) && (TimeBuff_Hex[1]>=18) && (TimeBuff_Hex[2]>=1) && (TimeBuff_Hex[2]<=12) && (TimeBuff_Hex[3]>=1) && (TimeBuff_Hex[3]<=31)
+// 				    && (TimeBuff_Hex[4]<24)  && (TimeBuff_Hex[5]<60) && (TimeBuff_Hex[6]<60) && (TimeBuff_Hex[7]>=1) && (TimeBuff_Hex[7]<=7) )
+// 				{
+// 					for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++){
+// 						time_buf[TimebuffNum]= HexToBCD(TimeBuff_Hex[TimebuffNum]);    //存“年月日时分秒周”
+// 					}
+// 					OSBsp.Device.RTC.ConfigExtTime(time_buf,RealTime);   //写入时间
+// 					OSBsp.Device.Usart2.WriteString("RS485/RS232 Time Set Done\r\n");
+// 				}else{
+// 					OSBsp.Device.Usart2.WriteString("RS485/RS232 Time Set Failed！\r\n");
+// 				}
+// 			}
+// 			if((uploadCmd.hexcmd[2] == '0')&&(uploadCmd.hexcmd[3] == '3')&&
+// 					(uploadCmd.hexcmd[4] == '0')&&(uploadCmd.hexcmd[5] == '1')) //复位
+// 			{
+// 				if((uploadCmd.hexcmd[6] == '0')&&(uploadCmd.hexcmd[7] == '1')) //复位
+// 				{
+// 					OSBsp.Device.Usart2.WriteString("RS485/RS232 Reset Device OK！\r\n");
+// 					hal_Delay_ms(50);
+// 					hal_Reboot(); //******软件复位*******//
+// 				}
+// 			}
+// 		}else{
+// 			OSBsp.Device.Usart2.WriteString("RS485/RS232 Wrong Command！\r\n");
+// 		}
+// 	}
+// }
+// #endif
 
 
-#if (ACCESSORY_TYPR == GPS_Mode)
-static void g_Device_GPS_Config(g_Device_Config_CMD uploadCmd)
-{
-	uint8_t i=0,ii=0;
-    char *a,*b,*c;
-	uint8_t GPSLng_data[20];      //longitude  //经度
-	uint8_t GPSLat_data[20];      //latitude   //纬度
-	static char GPSPowerOffNum = 0;
+// #if (ACCESSORY_TYPR == GPS_Mode)
+// static void g_Device_GPS_Config(g_Device_Config_CMD uploadCmd)
+// {
+// 	uint8_t i=0,ii=0;
+//     char *a,*b,*c;
+// 	uint8_t GPSLng_data[20];      //longitude  //经度
+// 	uint8_t GPSLat_data[20];      //latitude   //纬度
+// 	static char GPSPowerOffNum = 0;
 
-	if(uploadCmd.cmdLenth != 0)
-	{
-		a=strstr(uploadCmd.strcmd,",A,");         //判断接收到的数据是否有效
-        //strstr(str1,str2) 函数用于判断字符串str2是否是str1的子串;如果是，则该函数返回str2在str1中首次出现的地址；否则，返回NULL。
-		if(a!=null){
-			b=strstr(uploadCmd.strcmd,"$GNGLL,");  //接收到的“纬度”数据有效
-			while(*(b+7) != ',')
-			{
-				GPSLat_data[i] = *(b+7);        //3200.6362
-				i++;
-				b++;
-			}
-			c=strstr(uploadCmd.strcmd,",N,");      //接收到的“经度”数据有效
-			while(*(c+3) != ',')
-			{
-				GPSLng_data[ii] = *(c+3);       //11846.8892
-				ii++;
-				c++;
-			}
-			//********清0上组GPS定位信息*********//
-			AppDataPointer->TransMethodData.GPSLat_Point = 0; //纬度
-			AppDataPointer->TransMethodData.GPSLng_Point = 0; //经度
-			//将GPS得到的“WGS-84数据”转换“GCJ-02”
-			//公式：abcde.fghi————abc+(de/60)+(fghi/600000)
-		    //*****纬度    3200.6362,N*****//
-			AppDataPointer->TransMethodData.GPSLat_Point = (float)(GPSLat_data[0]-0x30)*10 + (float)(GPSLat_data[1]-0x30)*1
-					                                     + ( (float)(GPSLat_data[2]-0x30)*10 + (float)(GPSLat_data[3]-0x30)*1 )/60
-					                                     + ( (float)(GPSLat_data[5]-0x30)*1000 + (float)(GPSLat_data[6]-0x30)*100 + (float)(GPSLat_data[7]-0x30)*10 + (float)(GPSLat_data[8]-0x30)*1 )/600000 ;
-			//*****经度   11846.8892,E*****//
-			AppDataPointer->TransMethodData.GPSLng_Point = (float)(GPSLng_data[0]-0x30)*100 + (float)(GPSLng_data[1]-0x30)*10 + (float)(GPSLng_data[2]-0x30)*1
-		                                                 + ( (float)(GPSLng_data[3]-0x30)*10 + (float)(GPSLng_data[4]-0x30)*1 )/60
-		                                                 + ( (float)(GPSLng_data[6]-0x30)*1000 + (float)(GPSLng_data[7]-0x30)*100 + (float)(GPSLng_data[8]-0x30)*10 + (float)(GPSLng_data[9]-0x30)*1 )/600000 ;
-
-		    OSBsp.Device.Usart2.WriteString("GPS positioning ok\r\n"); //串口打印定位成功信息
-			////关闭GPS_3V3 电源
-			GPSPowerOffNum++;
-			if(GPSPowerOffNum>=3)       //设置GPS定位15s一次，成功定位3次后停止
-			{
-				GPSPowerOffNum = 0;
-				OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
-//				Flag_GPSPositionOK = 1;
-			}
-		}else{
-		    OSBsp.Device.Usart2.WriteString("GPS positioning failed!\r\n"); //串口打印定位失败信息
-			////关闭GPS_3V3 电源
-			GPSPowerOffNum++;
-			if(GPSPowerOffNum>=8)       //GPS定位15s一次，成功失败10次后停止
-			{
-				GPSPowerOffNum = 0;
-				OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
-//				Flag_GPSPositionOK = 0;
-			}
-		}
-
+// 	if(uploadCmd.cmdLenth != 0)
+// 	{
+// 		a=strstr(uploadCmd.strcmd,",A,");         //判断接收到的数据是否有效
+//         //strstr(str1,str2) 函数用于判断字符串str2是否是str1的子串;如果是，则该函数返回str2在str1中首次出现的地址；否则，返回NULL。
+// 		if(a!=null){
+// 			b=strstr(uploadCmd.strcmd,"$GNGLL,");  //接收到的“纬度”数据有效
+// 			while(*(b+7) != ',')
+// 			{
+// 				GPSLat_data[i] = *(b+7);        //3200.6362
+// 				i++;
+// 				b++;
+// 			}
+// 			c=strstr(uploadCmd.strcmd,",N,");      //接收到的“经度”数据有效
+// 			while(*(c+3) != ',')
+// 			{
+// 				GPSLng_data[ii] = *(c+3);       //11846.8892
+// 				ii++;
+// 				c++;
+// 			}
+// 			//********清0上组GPS定位信息*********//
+// 			AppDataPointer->TransMethodData.GPSLat_Point = 0; //纬度
+// 			AppDataPointer->TransMethodData.GPSLng_Point = 0; //经度
 //		//将GPS得到的“WGS-84数据”转换“GCJ-02”
 //		//公式：abcde.fghi————abc+(de/60)+(fghi/600000)
-//
-//	    //纬度    3200.6362,N
+// 		    //*****纬度    3200.6362,N*****//
 //		AppDataPointer->TransMethodData.GPSLat_Point = (float)(GPSLat_data[0]-0x30)*10 + (float)(GPSLat_data[1]-0x30)*1
 //				                                     + ( (float)(GPSLat_data[2]-0x30)*10 + (float)(GPSLat_data[3]-0x30)*1 )/60
 //				                                     + ( (float)(GPSLat_data[5]-0x30)*1000 + (float)(GPSLat_data[6]-0x30)*100 + (float)(GPSLat_data[7]-0x30)*10 + (float)(GPSLat_data[8]-0x30)*1 )/600000 ;
-//		//经度     11846.8892,E
+// 			//*****经度   11846.8892,E*****//
 //		AppDataPointer->TransMethodData.GPSLng_Point = (float)(GPSLng_data[0]-0x30)*100 + (float)(GPSLng_data[1]-0x30)*10 + (float)(GPSLng_data[2]-0x30)*1
 //	                                                 + ( (float)(GPSLng_data[3]-0x30)*10 + (float)(GPSLng_data[4]-0x30)*1 )/60
 //	                                                 + ( (float)(GPSLng_data[6]-0x30)*1000 + (float)(GPSLng_data[7]-0x30)*100 + (float)(GPSLng_data[8]-0x30)*10 + (float)(GPSLng_data[9]-0x30)*1 )/600000 ;
 
-//		bRxNum=0; //TEST专用
-//		iii++;
-//		if(iii>=3)
+// 		    OSBsp.Device.Usart2.WriteString("GPS positioning ok\r\n"); //串口打印定位成功信息
+// 			////关闭GPS_3V3 电源
+// 			GPSPowerOffNum++;
+// 			if(GPSPowerOffNum>=3)       //设置GPS定位15s一次，成功定位3次后停止
 //		{
-//			GPS_3V_OFF;   //关闭GPS_3V3 电源
+// 				GPSPowerOffNum = 0;
+// 				OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
+// 	//				Flag_GPSPositionOK = 1;
+// 			}
+// 		}else{
+// 		    OSBsp.Device.Usart2.WriteString("GPS positioning failed!\r\n"); //串口打印定位失败信息
+// 			////关闭GPS_3V3 电源
+// 			GPSPowerOffNum++;
+// 			if(GPSPowerOffNum>=8)       //GPS定位15s一次，成功失败10次后停止
+// 			{
+// 				GPSPowerOffNum = 0;
+// 				OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
+// 	//				Flag_GPSPositionOK = 0;
+// 			}
 //		}
 
-	}
-}
-#endif
+// 	//		//将GPS得到的“WGS-84数据”转换“GCJ-02”
+// 	//		//公式：abcde.fghi————abc+(de/60)+(fghi/600000)
+// 	//
+// 	//	    //纬度    3200.6362,N
+// 	//		AppDataPointer->TransMethodData.GPSLat_Point = (float)(GPSLat_data[0]-0x30)*10 + (float)(GPSLat_data[1]-0x30)*1
+// 	//				                                     + ( (float)(GPSLat_data[2]-0x30)*10 + (float)(GPSLat_data[3]-0x30)*1 )/60
+// 	//				                                     + ( (float)(GPSLat_data[5]-0x30)*1000 + (float)(GPSLat_data[6]-0x30)*100 + (float)(GPSLat_data[7]-0x30)*10 + (float)(GPSLat_data[8]-0x30)*1 )/600000 ;
+// 	//		//经度     11846.8892,E
+// 	//		AppDataPointer->TransMethodData.GPSLng_Point = (float)(GPSLng_data[0]-0x30)*100 + (float)(GPSLng_data[1]-0x30)*10 + (float)(GPSLng_data[2]-0x30)*1
+// 	//	                                                 + ( (float)(GPSLng_data[3]-0x30)*10 + (float)(GPSLng_data[4]-0x30)*1 )/60
+// 	//	                                                 + ( (float)(GPSLng_data[6]-0x30)*1000 + (float)(GPSLng_data[7]-0x30)*100 + (float)(GPSLng_data[8]-0x30)*10 + (float)(GPSLng_data[9]-0x30)*1 )/600000 ;
+
+// 	//		bRxNum=0; //TEST专用
+// 	//		iii++;
+// 	//		if(iii>=3)
+// 	//		{
+// 	//			GPS_3V_OFF;   //关闭GPS_3V3 电源
+// 	//		}
+
+// 	}
+// }
+// #endif
 
 
 static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
@@ -397,10 +397,9 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 				Send_Tmp[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i-1,infor_ChargeAddr);
 			}
 			Send_Tmp[33] = 0xEE;
-			OSBsp.Device.Usart2.WriteNData(Send_Tmp, 34);
-
+			// OSBsp.Device.Usart2.WriteNData(Send_Tmp, 34);
 			Hex2Str(Send_Tmp_String,Send_Tmp,34,0); //将16进制转化成字符串
-			g_Printf_info("InfoData:%s\r\n",Send_Tmp_String);
+			g_Printf_info("InfoData:%s\r\n",Send_Tmp_String);    //直接吐给上位机，上位机解析字符串
 			return 0;
 		}else if(RxBuff[1] == 0xF5){	    //时钟同步
 			uint8_t time_buf[8];
@@ -420,6 +419,10 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 				infor_ChargeAddrBuff[20] = RxBuff[6]; //FLASH修改标志位       01允许修改  FF禁止修改
 				infor_ChargeAddrBuff[23] = RxBuff[7]; //模拟数据标志位        01允许修改  FF禁止修改                 
 				OSBsp.Device.InnerFlash.FlashRsvWrite(infor_ChargeAddrBuff, 32, infor_ChargeAddr, 0);//把终端信息写入FLASH
+				// App.Data.TerminalInfoData.SendPeriod = Hal_getTransmitPeriod();
+				App.Data.TerminalInfoData.SendPeriod = infor_ChargeAddrBuff[11]*256 + infor_ChargeAddrBuff[12];
+				Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
+				Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
 				hal_Delay_ms(10);
 				if( OSBsp.Device.InnerFlash.innerFLASHRead(9, infor_ChargeAddr) == RxBuff[2] && 
 					OSBsp.Device.InnerFlash.innerFLASHRead(10, infor_ChargeAddr) == RxBuff[3] && 
@@ -495,12 +498,13 @@ static void g_Device_Board_Config(g_Device_Config_CMD ClientCmd)
 		if((ClientCmd.hexcmd[0]=='A' && ClientCmd.hexcmd[1]=='T' && 
 				ClientCmd.hexcmd[ClientCmd.cmdLenth-2]==0x0D && ClientCmd.hexcmd[ClientCmd.cmdLenth-1]==0x0A))
 		{
-			// g_Printf_info((char *)ClientCmd.hexcmd);
-			User_Printf((char *)ClientCmd.hexcmd);
+			g_Printf_info((char *)ClientCmd.hexcmd);
+			g_Printf_info("ah receive client set AT cmd\r\n");
+			User_Printf((char *)ClientCmd.hexcmd);           //AT指令直接转发给模块
 		}else{
 			if(FirmCMD_Receive(ClientCmd.hexcmd, ClientCmd.cmdLenth) < 0)//上位机指令解析
 			{
-				// g_Printf_info("ah hahahahahaha\n");
+				g_Printf_info("ah receive client setpra cmd\r\n");
 			}
 		}
 		// memset(&cRxBuff,0x0,sizeof(g_Device_Config_CMD));
@@ -511,7 +515,7 @@ static void g_Device_Board_Config(g_Device_Config_CMD ClientCmd)
 void ManagerTaskStart(void *p_arg)
 {
 	(void)p_arg;    
-	OSTimeDlyHMSM(0u, 0u, 0u, 200u);
+	OSTimeDlyHMSM(0u, 0u, 0u, 150u);
 	static int index = 0;
 	g_ConfigQueue = Hal_QueueCreate(QConfiMsgTb,QConfigMsgTb_Size);    
 	g_Printf_info("%s ... ...\n",__func__);     
@@ -537,18 +541,20 @@ void ManagerTaskStart(void *p_arg)
 #if ((ACCESSORY_TYPR == RS485_Mode)||(ACCESSORY_TYPR == RS232_Mode))
 						g_Device_Config_CMD g_ConfigCMD;
 						memset(&g_ConfigCMD,0x0,sizeof(g_Device_Config_CMD));
-						OSTimeDlyHMSM(0u, 0u, 0u, 50u);	        //延时等待接收完成
+						OSTimeDlyHMSM(0u, 0u, 0u, 10u);	        //延时等待接收完成
 						g_ConfigCMD = g_Device_Usart_UserCmd_Copy(Usart1);
 						g_Device_WiredUpload_Config(g_ConfigCMD);
 #endif
-					}else if(strcmp(cmdType,"Wireless") == 0){
-						hal_Delay_ms(50);	        //延时等待接收完成					
-					}else if(strcmp(cmdType,"GPS_Info") == 0){
-						g_Device_Config_CMD g_ConfigCMD;
-						memset(&g_ConfigCMD,0x0,sizeof(g_Device_Config_CMD));
-						g_ConfigCMD = g_Device_Usart_UserCmd_Copy(Usart1);
-						g_Device_GPS_Config(g_ConfigCMD);
 					}
+					else if(strcmp(cmdType,"Wireless") == 0){
+						hal_Delay_ms(50);	        //延时等待接收完成					
+					}
+					// else if(strcmp(cmdType,"GPS_Info") == 0){
+					// 	g_Device_Config_CMD g_ConfigCMD;
+					// 	memset(&g_ConfigCMD,0x0,sizeof(g_Device_Config_CMD));
+					// 	g_ConfigCMD = g_Device_Usart_UserCmd_Copy(Usart1);
+					// 	g_Device_GPS_Config(g_ConfigCMD);
+					// }
 				}else if (ConfigMsg.what == G_CLIENT_CMD){
 					char *cmdType = (char *)ConfigMsg.content;
 					if(strcmp(cmdType,"ClientCMD") == 0){
@@ -562,6 +568,11 @@ void ManagerTaskStart(void *p_arg)
 
 			OSTimeDly(100);
 			// GetADCValue();
+        }
+else
+        {
+        	g_Printf_dbg("ManagerTaskStart ERR!\r\n");
+        	OSTimeDlyHMSM(0u, 0u, 0u, 300u);
         }
     }
 }

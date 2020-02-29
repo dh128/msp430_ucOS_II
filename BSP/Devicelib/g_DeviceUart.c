@@ -458,7 +458,7 @@ __interrupt void USCI_A0_ISR(void)
 	{
 		case 0:break;                             // Vector 0 - no interrupt
 		case 2:                                   // Vector 2 - RXIFG
-		     __bic_SR_register_on_exit(LPM0_bits);//退出低功耗  ML20191022*********************************
+		    //  __bic_SR_register_on_exit(LPM0_bits);//退出低功耗  ML20191022*********************************
 			while(!(UCA0IFG&UCTXIFG));            // USCI_A3 TX buffer ready?
 			{
 				OSBsp.Device.Usart2.WriteData(UCA0RXBUF);  //GLZ测试屏蔽+++++++++++++++++++++++++++++++++++
@@ -559,7 +559,13 @@ __interrupt void USCI_A2_ISR(void)
 	{
 		case 0:break;                             // Vector 0 - no interrupt
 		case 2:                                   // Vector 2 - RXIFG
+		   if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
 			__bic_SR_register_on_exit(LPM0_bits);	
+				WDTCTL  = WDT_MDLY_32;
+				SFRIE1 |= 1;  
+				Hal_ExitLowPower_Mode(Uart_Int);
+			}
+
 			while(!(UCA2IFG&UCTXIFG));            // USCI_A1 TX buffer ready?
 			{
 				if(cRxNum < cRxLength){

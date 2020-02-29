@@ -71,7 +71,7 @@ void  App_TaskDelHook (OS_TCB *ptcb)
 #if OS_VERSION >= 251
 void  App_TaskIdleHook (void)
 {
-    __low_power_mode_3();                                       /* Enter Low Power Mode 1.                              */
+	//__low_power_mode_0();                                       /* Enter Low Power Mode 1.                              */
 }
 #endif
 

@@ -269,8 +269,8 @@ void  OSTimeTickHook (void)
 {
     static uint32_t kk =0;
     kk++;
-    if(kk == 4000){
-        if(Hal_getCurrent_work_Mode() == 1){
+    if(kk == 4000){  //按道理这里强制进lowpower�
+        if(Hal_getCurrent_work_Mode() == 1){  //如果在低功耗状态，但道理已经禁用了节拍（看门狗时钟�
             g_Printf_info("aho~~~~Enter lowpower mode fail\r\n");
         }
         

@@ -27,16 +27,45 @@
 #include <bsp.h>
 
 
-uint8_t SD_Type=0;              //SD卡的类型
+uint8_t SD_Type=0;              //SD��������
 
-unsigned long cardSize = 0;  //SD卡容量
-unsigned char status = 1;    //状态
-unsigned int timeout = 0;    //次数
+unsigned long cardSize = 0;     //SD������
+uint8_t status = 1;             //״̬
+uint8_t timeout = 0;            //����
+uint8_t SD_Status = 1;
+//*************************************************//
+//      SD_Storage_DebugLog
+//*************************************************//
+uint8_t date[8];
+char fileNameStr[12] = {"000000.txt"};
+
+char SD_DebugLogStr[5][30] = {
+                                {"\r\n"},                      //0-\r\n
+                                {"2019-09-01 00:00:03   "},    //1-Uptime
+                                {"Init module ok; "},          //2
+                                {"Init module error; "},       //3
+                                {"Scan sensor ok; "}           //4
+                                }; 
+//*************************************************//
+void SD_Storage_DebugLog(uint8_t index)
+{
+    OSBsp.Device.RTC.ReadExtTime(date,RealTime);
+    fileNameStr[0]=((date[1]>>4)&0x0f)+0x30;	     //1           
+    fileNameStr[1]=(date[1]&0x0f)+0x30;			     //9
+    fileNameStr[2]=((date[2]>>4)&0x0f)+0x30;		 //1
+    fileNameStr[3]=(date[2]&0x0f)+0x30; 		     //0
+    fileNameStr[4]=((date[3]>>4)&0x0f)+0x30;		 //2
+    fileNameStr[5]=(date[3]&0x0f)+0x30; 		     //5
+    g_Device_RTCstring_Creat(date,SD_DebugLogStr[1]);// 
+
+    Write_ToDirTxt("0:/DebugLog",fileNameStr,SD_DebugLogStr[index]);//在DebugLog文件夹中，添加191025.TXT文档，存放SD_DebugLogStr字符串
+}
+
 
 //*************************************************//
 //      g_Device_SDCard_Check
 //*************************************************//
-void g_Device_SDCard_Check(void)
+uint8_t g_Device_SDCard_Check(void)
 {
 	/***********Test SD Card*******************/
 	while((status != 0)&(timeout < 100))          //初始化50次MMC/SD卡，如果依然返回错误代码，则初始化失败，可能是没有SD卡或损坏
@@ -53,6 +82,8 @@ void g_Device_SDCard_Check(void)
 		// SDsizeDisplay(cardSize);
 		g_Printf_info("SD Size: %d MB",cardSize/1048576);
 	}
+
+	 return status;
 	/***********End*******************/
 }
 

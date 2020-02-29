@@ -20,6 +20,10 @@ typedef OS_EVENT*                     Mutex_t;
 typedef void                          (*message_free_cb)(void* content);
 
 
+typedef struct {
+    char systemLowpower;
+}gHal_Device_Manager;
+extern gHal_Device_Manager gManager;
 
 
 struct hal_message{
@@ -45,6 +49,12 @@ typedef union
 	float Data;
 }Hex2Double;
 
+enum Int_Src{                 //GLZ
+	Rtc_Int = 0x1,		
+	Uart_Int
+};
+
+
 /*Bit Operation Function*/
 #define hal_SetBit(data, offset)      data |= 1 << offset      //置位某位为1
 #define hal_ResetBit(data, offset)    data &= ~(1 << offset)   //复位某位为0
@@ -61,6 +71,8 @@ typedef union
 #define PRODUCT_KEY_LEN               (64)
 #define DEVICE_NAME_LEN               (64)
 #define DEVICE_SECRET_LEN             (70)
+
+
 
 // void Hex2Str(unsigned char *d,uint8_t *p,unsigned char Len, unsigned char offset);
 void Hex2Str(unsigned char *d,uint32_t *p,unsigned char Len, unsigned char offset);
@@ -104,7 +116,8 @@ int Hal_getDeviceSecret(char *devSecret);
 #endif
 
 void Hal_EnterLowPower_Mode(void);
-void Hal_ExitLowPower_Mode(void);
+// void Hal_ExitLowPower_Mode(void);
+void Hal_ExitLowPower_Mode(uint8_t int_Src);   //GLZ
 char Hal_getCurrent_work_Mode(void);
 
 

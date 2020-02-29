@@ -209,7 +209,7 @@ static int SimulationSensorData(void)
     if(AppDataPointer->TerminalInfoData.SensorStatusSimulation != AppDataPointer->TerminalInfoData.SensorStatusSimulation_Old) {
 		infor_ChargeAddrBuff[24] = (uint8_t)(temp >> 8);
 		infor_ChargeAddrBuff[25] = (uint8_t)temp;
-//		OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+		OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 	}
     AppDataPointer->TerminalInfoData.SensorStatusSimulation_Old = AppDataPointer->TerminalInfoData.SensorStatusSimulation;
 
@@ -430,7 +430,7 @@ void InqureSensor(void)
 			{
 				infor_ChargeAddrBuff[21] = SensorStatus_H;
 				infor_ChargeAddrBuff[22] = SensorStatus_L;
-//				OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+				OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 			}
 			AppDataPointer->TerminalInfoData.SensorFlashWriteStatusPrintf = SENSOR_STATUS_WRITEFLASH_PRINTF_ENABLE;
 		}
