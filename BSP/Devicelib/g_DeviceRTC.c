@@ -430,8 +430,9 @@ __interrupt void RTC_ISR(void)
 			{
 				if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //上传频率大于5min才具备低功耗模式
 				{
-				g_MinuteTick ++;
-				g_Printf_dbg("g_MinuteTick wakeup %d times\r\n",g_MinuteTick);
+					g_MinuteTick ++;
+					g_Printf_info("g_MinuteTick wakeup %d times\r\n",g_MinuteTick);	
+					//强行进低功耗会影响FOTA接收dh202029
 					if(g_MinuteTick == (App.Data.TerminalInfoData.SendPeriod-1)){       //ML 20191121强行进低功耗
 						if(Hal_getCurrent_work_Mode() == 0){          //当前为未进入低功耗状态
 							Hal_EnterLowPower_Mode();

@@ -919,7 +919,7 @@ void  TransmitTaskStart (void *p_arg)
             		else
             		{
             			OSTimeDlyHMSM(0u, 2u, 27u, 0u);
-            }
+            		}
             	}
             }
             else if (AppDataPointer->TransMethodData.GPRSStatus == GPRS_Http_Err)

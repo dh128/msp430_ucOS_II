@@ -696,18 +696,17 @@ void Hal_EnterLowPower_Mode(void)
     OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
     OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+
+    AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
+    AppDataPointer->TransMethodData.GPRSNet = 0;        //ML 20190829
+    AppDataPointer->TransMethodData.GPRSAttached = 0;
+	AppDataPointer->TransMethodData.GPRSATStatus = 0;
 #endif
 #if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
     OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
     // OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);	
 #endif
-   
-    AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
-    AppDataPointer->TransMethodData.GPRSNet = 0;        //ML 20190829
-    AppDataPointer->TransMethodData.GPRSAttached = 0;
-	AppDataPointer->TransMethodData.GPRSATStatus = 0;
-
     // AppDataPointer->TransMethodData.LoRaNet = 0;
 	hal_Delay_ms(1000);
 
@@ -771,7 +770,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
         AppDataPointer->TransMethodData.GPRSStatus = GPRS_Wait_Idle;
         #endif
         #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-        AppDataPointer->TransMethodData.NBStatus = NB_Wait_Idle;
+        AppDataPointer->TransMethodData.NBStatus = NB_Idel;
         #endif
         #if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
         AppDataPointer->TransMethodData.LoRaStatus = LoRa_Wait_Idle;

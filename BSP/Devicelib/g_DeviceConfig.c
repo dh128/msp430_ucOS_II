@@ -149,19 +149,19 @@ static void g_Device_WirelessUpload_Config(g_Device_Config_CMD uploadCmd)   //�
 					App.Data.TerminalInfoData.SendPeriod = (uint8_t)(Temp_SendPeriod & 0x00FF);
 					OSBsp.Device.Usart2.WriteString("NB Set SendPeriod OK\r\n");
 					//将发送周期的信息存入Flash
-					Flash_Tmp[0] = OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_ChargeAddr);
-					Flash_Tmp[1] = OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_ChargeAddr);
-					Flash_Tmp[2] = OSBsp.Device.InnerFlash.innerFLASHRead(2, infor_ChargeAddr);
-					Flash_Tmp[3] = OSBsp.Device.InnerFlash.innerFLASHRead(3, infor_ChargeAddr);
-					Flash_Tmp[4] = OSBsp.Device.InnerFlash.innerFLASHRead(4, infor_ChargeAddr);
-					Flash_Tmp[5] = OSBsp.Device.InnerFlash.innerFLASHRead(5, infor_ChargeAddr);
-					Flash_Tmp[6] = OSBsp.Device.InnerFlash.innerFLASHRead(6, infor_ChargeAddr);
-					Flash_Tmp[7] = OSBsp.Device.InnerFlash.innerFLASHRead(7, infor_ChargeAddr);//终端类型
-					Flash_Tmp[8] = OSBsp.Device.InnerFlash.innerFLASHRead(8, infor_ChargeAddr);//传输方式
-					Flash_Tmp[9] = OSBsp.Device.InnerFlash.innerFLASHRead(9, infor_ChargeAddr);//DevEUI_H(高八位)
-					Flash_Tmp[10] = OSBsp.Device.InnerFlash.innerFLASHRead(10, infor_ChargeAddr);//DevEUI_L(低八位)
+//					Flash_Tmp[0] = OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_ChargeAddr);
+//					Flash_Tmp[1] = OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_ChargeAddr);
+//					Flash_Tmp[2] = OSBsp.Device.InnerFlash.innerFLASHRead(2, infor_ChargeAddr);
+//					Flash_Tmp[3] = OSBsp.Device.InnerFlash.innerFLASHRead(3, infor_ChargeAddr);
+//					Flash_Tmp[4] = OSBsp.Device.InnerFlash.innerFLASHRead(4, infor_ChargeAddr);
+//					Flash_Tmp[5] = OSBsp.Device.InnerFlash.innerFLASHRead(5, infor_ChargeAddr);
+//					Flash_Tmp[6] = OSBsp.Device.InnerFlash.innerFLASHRead(6, infor_ChargeAddr);
+//					Flash_Tmp[7] = OSBsp.Device.InnerFlash.innerFLASHRead(7, infor_ChargeAddr);//终端类型
+//					Flash_Tmp[8] = OSBsp.Device.InnerFlash.innerFLASHRead(8, infor_ChargeAddr);//传输方式
+//					Flash_Tmp[9] = OSBsp.Device.InnerFlash.innerFLASHRead(9, infor_ChargeAddr);//DevEUI_H(高八位)
+//					Flash_Tmp[10] = OSBsp.Device.InnerFlash.innerFLASHRead(10, infor_ChargeAddr);//DevEUI_L(低八位)
 					Flash_Tmp[11] = App.Data.TerminalInfoData.SendPeriod;//上传周期（min）
-					OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 12, infor_ChargeAddr, 0);
+					OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp[11], 1, infor_ChargeAddr, 11);
 				}else{
 					OSBsp.Device.Usart2.WriteString("NB Set SendPeriod Failed!\r\n");
 				}
@@ -417,7 +417,7 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 				infor_ChargeAddrBuff[11] = RxBuff[4]; //上传周期（min）(高八位)
 				infor_ChargeAddrBuff[12] = RxBuff[5]; //上传周期（min）(低八位)
 				infor_ChargeAddrBuff[20] = RxBuff[6]; //FLASH修改标志位       01允许修改  FF禁止修改
-				infor_ChargeAddrBuff[23] = RxBuff[7]; //模拟数据标志位        01允许修改  FF禁止修改                 
+				infor_ChargeAddrBuff[23] = RxBuff[7]; //模拟数据标志位        01允许修改  FF禁止修改
 				OSBsp.Device.InnerFlash.FlashRsvWrite(infor_ChargeAddrBuff, 32, infor_ChargeAddr, 0);//把终端信息写入FLASH
 				// App.Data.TerminalInfoData.SendPeriod = Hal_getTransmitPeriod();
 				App.Data.TerminalInfoData.SendPeriod = infor_ChargeAddrBuff[11]*256 + infor_ChargeAddrBuff[12];
@@ -444,7 +444,7 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 				infor_ChargeAddrBuff[5] = RxBuff[7];//出厂编号低八位
 				infor_ChargeAddrBuff[6] = RxBuff[8];//设备编号高八位
 				infor_ChargeAddrBuff[7] = RxBuff[9];//设备编号中八位
-				infor_ChargeAddrBuff[8] = RxBuff[10];//设备编号低八位	
+				infor_ChargeAddrBuff[8] = RxBuff[10];//设备编号低八位
 				OSBsp.Device.InnerFlash.FlashRsvWrite(infor_ChargeAddrBuff, 32, infor_ChargeAddr, 0);//把终端信息写入FLASH
 				hal_Delay_ms(10);
 				if( OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_ChargeAddr) == RxBuff[2] && 
@@ -547,7 +547,7 @@ void ManagerTaskStart(void *p_arg)
 #endif
 					}
 					else if(strcmp(cmdType,"Wireless") == 0){
-						hal_Delay_ms(50);	        //延时等待接收完成					
+						hal_Delay_ms(50);	        //延时等待接收完成
 					}
 					// else if(strcmp(cmdType,"GPS_Info") == 0){
 					// 	g_Device_Config_CMD g_ConfigCMD;

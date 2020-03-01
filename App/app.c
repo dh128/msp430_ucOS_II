@@ -149,7 +149,7 @@ static  void  ScadaTaskStart (void *p_arg)
                     g_Printf_info("ScadaTask is over\n");
 
 // #if HAVE_SDCARD_SERVICE
-
+//
 //                         if (SD_Status == 0)  //只是一个示例
 //                         {
 //                             OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
@@ -169,12 +169,14 @@ static  void  ScadaTaskStart (void *p_arg)
             {
                 if(App.Data.TerminalInfoData.SendPeriod <= NO_LOWPER_PERIOD)
                 {
+#if(TRANSMIT_TYPE == GPRS_Mode)
                     //注意，如果httpinit已经完成，说明要发送数据了，就不置位
                     if(AppDataPointer->TransMethodData.GPRSStatus < GPRS_Http_Init_Done)
                     {
                             //使scada函数能够一直运行1s/次(0u, 0u, 0u, 500u)时，其他值类比
                             AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;//让scada函数再次启动
                     }
+#endif
 
                 }
         

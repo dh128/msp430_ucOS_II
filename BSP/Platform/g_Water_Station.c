@@ -1276,6 +1276,11 @@ void Terminal_Para_Init(void)
 	App.Data.TerminalInfoData.SendPeriod = Hal_getTransmitPeriod();  //发送周期
 	Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
 	Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
+	if(App.Data.TerminalInfoData.SendPeriod > 60)
+	{
+		App.Data.TerminalInfoData.SendPeriod = 5;
+		g_Printf_info("Period change as 5 min\r\n");
+	}
 	/**************************Version******************************************/
 	App.Data.TerminalInfoData.Version = Hal_getFirmwareVersion();    //软件版本
 	Send_Buffer[34] = App.Data.TerminalInfoData.Version;

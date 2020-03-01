@@ -30,8 +30,20 @@
 
 #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
 
-//static int g_has_response = 0;
-//static char g_response[256];
+static int g_has_response = 0;
+static char g_response[256];
+
+//                                          [0]   [1]  [2]  [3]  [4]  [5]  [6]  [7]  [8]  [9] [10] [11] [12] [13] [14] [15]                                                                            
+uint32_t Send_Buffer_CTwing_NBSignal[16] = {0x02,0x00,0x02,0x00,0x0B,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};   //test
+//                                      |数据上报|平台服务ID| 数据长度|   RSRP  |   SNR   |   PCI   | ECL |     CELL ID     
+
+//                                            [0]   [1]  [2]  [3]  [4]  [5]  [6]  [7]  [8]  [9] [10] [11] [12]                                                                         
+uint32_t Send_Buffer_CTwing_NBSoildata[13] = {0x02,0x00,0x02,0x00,0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; 
+//                                        |数据上报|平台服务ID| 数据长度|     Soil_Temp     |   Soil_Humi       |                                   
+
+//                                              [0]   [1]  [2]  [3]  [4]  [5]  [6]                                                                        
+uint32_t Send_Buffer_CTwing_NBWeatherdata[7] = {0x02,0x00,0x01,0x00,0x02,0x00,0x00}; 
+//                                         |数据上报|平台服务ID| 数据长度 |Temp|Humi|    
 
 //断点续传使用
 uint16_t BackupIndex = 0;
@@ -47,6 +59,8 @@ uint8_t cacheBuf[7];
 static unsigned char Singal_data[6]={0};
 static unsigned char SINR_data[5]={0};
 static unsigned char PCI_data[5]={0};
+static unsigned char ECL_data[5]={0};
+static unsigned char CellID_data[10]={0};
 
 //PCP测试
 char NB_Fota = 0;		//Fota状态，开始时置1，结束时置0
@@ -171,7 +185,7 @@ char g_Device_NB_Init(void)
 	uint8_t ii = 0;
 	//ML
 	unsigned char *a;
-	unsigned char i=0,m=0;
+	unsigned char i=0,n=0,m=0;
 	unsigned char nb_Timedata[22]={0};
 	uint8_t time_buf[8];
 	uint8_t time_buf_bcd[8];
@@ -179,13 +193,13 @@ char g_Device_NB_Init(void)
 	{
 		NB_Config("AT+CFUN=0\r\n",5,5);
 		OSTimeDly(100);
-		NB_Config("ATE0\r\n",5,5);
+		NB_Config("ATE1\r\n",5,5);
 		OSTimeDly(100);
 		NB_Config("AT+NNMI=2\r\n",5,5);
 		OSTimeDly(100);
 		NB_Config("AT+CGSN=1\r\n",5,5);  //IMEI
 		OSTimeDly(100);
-		NB_Config("AT+NCDP=180.101.147.115\r\n",5,5);
+		NB_Config("AT+NCDP=180.101.147.115\r\n",5,5);         //电信物联网中心平台
 		// NB_Config("AT+NCDP=221.229.214.202,5683\r\n",5,5); //CTWing
 		OSTimeDly(100);
 		NB_Config("AT+CFUN=1\r\n",100,5);
@@ -230,7 +244,11 @@ char g_Device_NB_Init(void)
 		NB_Config("AT+NCONFIG=AUTOCONNECT,TRUE\r\n",2,5); //打开自动连接
 		OSTimeDly(500);
 		AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
-		//ML*******//
+		//********ML同步时间-20191111************//
+		if(AppDataPointer->TerminalInfoData.AutomaticTimeStatus == AUTOMATIC_TIME_ENABLE)
+		{
+			AppDataPointer->TransMethodData.GPRSTime = 0;
+			AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
 		User_Printf("AT+CCLK?\r\n");
 		OSTimeDly(200);			//等待串口接收
         a=strstr(aRxBuff,"+CCLK:");
@@ -254,9 +272,11 @@ char g_Device_NB_Init(void)
 				time_buf_bcd[m]= HexToBCD(time_buf[m]);    //存“年月日时分秒”
 			}
 			OSBsp.Device.RTC.ConfigExtTime(time_buf_bcd,RealTime);
+				AppDataPointer->TransMethodData.GPRSTime = 1;
 			g_Printf_dbg("NB Automatic Time OK\r\n");
 		}
-		//ML*******//
+		}
+		//*****************同步时间END************//
 		return 1;
 	}
 	return 0;
@@ -333,7 +353,9 @@ void g_Device_NBSignal(void)
 {
 	unsigned char *a;
 	unsigned char i=0,n=0;
-	int dataTemp=0;
+	int32_t dataTemp=0;
+	int32_t dataTemp2=0;
+	static uint16_t complement=0;
 	static uint8_t Singal_Less=0;
 	Clear_Buffer(aRxBuff,&aRxNum);
 
@@ -357,6 +379,12 @@ void g_Device_NBSignal(void)
 		{
 			dataTemp=dataTemp*10 + Singal_data[n]-0x30;
 		}
+		/*CTwing发送数组*/
+		dataTemp2 = (int32_t)((float)dataTemp/10);
+		complement = 0XFFFF - dataTemp2 + 0X01;
+		Send_Buffer_CTwing_NBSignal[5] = complement/256;
+		Send_Buffer_CTwing_NBSignal[6] = complement%256;
+		/**********************************************/
 		dataTemp=0-dataTemp;
 		AppDataPointer->TransMethodData.RSRP = (float)dataTemp/10;
 		Send_Buffer[49] = (dataTemp & 0xFF00) >> 8;
@@ -393,7 +421,17 @@ void g_Device_NBSignal(void)
 			{
 				dataTemp=dataTemp*10 + SINR_data[n]-0x30;
 			}
+			/*CTwing发送数组*/
+			dataTemp2 = (int32_t)((float)dataTemp/10);
+			complement = 0XFFFF - dataTemp2 + 0X01;
+			Send_Buffer_CTwing_NBSignal[7] = complement/256;
+			Send_Buffer_CTwing_NBSignal[8] = complement%256;
+			/**********************************************/
+			complement = 0XFFFF - dataTemp + 0X01;
 			dataTemp=0-dataTemp;
+			AppDataPointer->TransMethodData.SINR = (float)dataTemp/10;
+			Send_Buffer[51] = (complement & 0xFF00) >> 8;
+			Send_Buffer[52] = complement & 0xFF;
 		}
 		else
 		{
@@ -401,10 +439,16 @@ void g_Device_NBSignal(void)
 			{
 				dataTemp=dataTemp*10 + SINR_data[n]-0x30;
 			}
-		}
+			/*CTwing发送数组*/
+			dataTemp2 = (int32_t)((float)dataTemp/10);
+			Send_Buffer_CTwing_NBSignal[7] = dataTemp2/256;
+			Send_Buffer_CTwing_NBSignal[8] = dataTemp2%256;
+			/**********************************************/
 		AppDataPointer->TransMethodData.SINR = (float)dataTemp/10;
 		Send_Buffer[51] = (dataTemp & 0xFF00) >> 8;
 		Send_Buffer[52] = dataTemp & 0xFF;
+		}
+	}
 		//get the PCI
 		i=0;
 		dataTemp = 0;
@@ -423,11 +467,62 @@ void g_Device_NBSignal(void)
 			{
 				dataTemp=dataTemp*10 + PCI_data[n]-0x30;
 			}
+		/*CTwing发送数组*/
+		Send_Buffer_CTwing_NBSignal[9] = dataTemp/256;
+		Send_Buffer_CTwing_NBSignal[10] = dataTemp%256;
+		/**********************************************/
 			AppDataPointer->TransMethodData.PCI = dataTemp;
 			Send_Buffer[53] = (dataTemp & 0xFF00) >> 8;
 			Send_Buffer[54] = dataTemp & 0xFF;
 		}
-
+	//get the ECL
+	i=0;
+	dataTemp = 0;
+	a=strstr(aRxBuff,"ECL:");
+	if(a!=NULL)
+	{
+		while(*(a+4)!='\r')
+		{
+			ECL_data[i]=*(a+4);
+			i++;
+			a++;
+		}
+		ECL_data[i]='\n';
+		dataTemp=0;
+		for(n=0;n<i;n++)
+		{
+			dataTemp=dataTemp*10 + ECL_data[n]-0x30;
+		}
+		/*CTwing发送数组*/
+		Send_Buffer_CTwing_NBSignal[11] = dataTemp;
+		/**********************************************/
+		AppDataPointer->TransMethodData.ECL = dataTemp;
+	}
+	//get the Cell ID
+	i=0;
+	dataTemp = 0;
+	a=strstr(aRxBuff,"Cell ID:");
+	if(a!=NULL)
+	{
+		while(*(a+8)!='\r')
+		{
+			CellID_data[i]=*(a+8);
+			i++;
+			a++;
+		}
+		CellID_data[i]='\n';
+		dataTemp=0;
+		for(n=0;n<i;n++)
+		{
+			dataTemp=dataTemp*10 + CellID_data[n]-0x30;
+		}
+		/*CTwing发送数组*/
+		Send_Buffer_CTwing_NBSignal[12] = (dataTemp & 0xFF000000) >> 24;
+		Send_Buffer_CTwing_NBSignal[13] = (dataTemp & 0x00FF0000) >> 16;
+		Send_Buffer_CTwing_NBSignal[14] = (dataTemp & 0x0000FF00) >> 8;
+		Send_Buffer_CTwing_NBSignal[15] = dataTemp & 0x000000FF;
+		/**********************************************/
+		AppDataPointer->TransMethodData.CELLID = dataTemp;
 	}
 }
 /*******************************************************************************
@@ -637,13 +732,9 @@ void ProcessPCP(unsigned char *p)
 			CRCFlag = 1;
 		else
 			CRCFlag = 0;
-	//	if(PackageNum < PackageLen-1)	//最后一包前，length应该等于PackageLen
-	//	{
-		// && (length == PackageSize)PackageNum < PackageLen 时包长度应该都时500字节、
 		// CRC校验通过、设备包正确则存储继续获取否则重新获取
 		if((CRCFlag == 1) && (ret == PackageNum))	
 		{
-
 			PackageNum ++;
 			for(m=0;m<length;m++)
 			{
@@ -654,15 +745,6 @@ void ProcessPCP(unsigned char *p)
 		{
 			g_Printf_info("CRCFlah= %d,ret= %d, PackageNum= %d\r\n",(uint32_t)CRCFlag,(uint32_t)ret,(uint32_t)PackageNum);
 		}
-		
-	//	}
-		
-		
-	
-		//g_SD_File_Write(codeFile,PCPData+11);
-		//写入SPI_Flash
-		
-//		User_Printf("AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n");
 		GetCode(PackageNum);
 	break;
 	case 0x016:			//上报下载情况
@@ -1022,7 +1104,6 @@ void  TransmitTaskStart (void *p_arg)
 						memset(response,0x0,128);
 						Hex2Str(Data_Backup,Send_Buffer,60,0);					
 						g_Printf_info("Hexdata:%s\r\n",Data_Backup);    //打印输出16进制发送数据
-						// Hex2Str(Data_Backup,Send_Buffer,34,0);
 					}
 					//发送数据
 					if(AppDataPointer->TransMethodData.NBNet == 1)
@@ -1035,6 +1116,10 @@ void  TransmitTaskStart (void *p_arg)
 						else					//正常上报数据
 						{
 							g_Device_NB_Send(Send_Buffer,60);
+							//上报CTwing
+							// g_Device_NB_Send(Send_Buffer_CTwing_NBSignal,16);
+							// g_Device_NB_Send(Send_Buffer_CTwing_NBSoildata,13);		
+							// g_Device_NB_Send(Send_Buffer_CTwing_NBWeatherdata,7);							
 						}
 						
 						OSTimeDly(2500);	//等待5s
@@ -1058,10 +1143,10 @@ void  TransmitTaskStart (void *p_arg)
 							else
 								AppDataPointer->TransMethodData.NBStatus = NB_Send_Over;
 
-							if(NB_Fota)		//NB_Fota中断时，重新获取
-							{
-								GetCode(PackageNum);
-							}
+							// if(NB_Fota)		//NB_Fota中断时，重新获取
+							// {
+							// 	GetCode(PackageNum);
+							// }
 						}
 						else
 						{
