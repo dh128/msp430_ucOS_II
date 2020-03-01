@@ -743,7 +743,7 @@ void ProcessPCP(unsigned char *p)
 		}
 		else
 		{
-			g_Printf_info("CRCFlah= %d,ret= %d, PackageNum= %d\r\n",(uint32_t)CRCFlag,(uint32_t)ret,(uint32_t)PackageNum);
+			g_Printf_info("CRCFlah= %d,packGet= %d, PackageNum= %d\r\n",(uint32_t)CRCFlag,(uint32_t)ret,(uint32_t)PackageNum);
 		}
 		GetCode(PackageNum);
 	break;
