@@ -740,6 +740,9 @@ void ProcessPCP(unsigned char *p)
 			{
 				SPI_Flash_Write_Data(PCPData[m+11],addr_write++);
 			}
+			aRxNum = 0;
+			User_Printf("AT+NMGR\r\n");		//防止出现重复缓存
+			OSTimeDly(100);
 		}
 		else
 		{
