@@ -29,10 +29,10 @@
 #include  <bsp.h>
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
-// const char *g_30000IoT_HOST = "30000iot.cn:9001";    
-// const char *g_30000IoT_PATH = "/api/Upload/data/";
-const char *g_30000IoT_HOST = "47.111.88.91:6096"; 
-const char *g_30000IoT_PATH = "/iot/data/receive";
+const char *g_30000IoT_HOST = "30000iot.cn:9001";
+const char *g_30000IoT_PATH = "/api/Upload/data/";
+//const char *g_30000IoT_HOST = "47.111.88.91:6096";
+//const char *g_30000IoT_PATH = "/iot/data/receive";
 
 //unsigned long readAddr = 0;     //SPI_Flash 读写地址
 //uint8_t buf0[16]={0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x37,0x36,0x35,0x34,0x33,0x32,0x0D,0x0A},buf1[256] = {0},buf2[1024] ={0};
@@ -822,71 +822,71 @@ void  TransmitTaskStart (void *p_arg)
                     if(code == 200){
                         g_Printf_info("response : %s \r\n",response);   //对response解析，可以执行配置或ota操作
 
-						cJSON *payload;
-						cJSON *pMsg = NULL;
-						cJSON *pVersion;
-						payload = cJSON_Parse(response);
-						// pVersion = cJSON_GetObjectItem(payload,"Version");
-						// if(pVersion->valueint != AppDataPointer->TerminalInfoData.Version){
-						pMsg = cJSON_GetObjectItem(payload,"msg");
-						if(pMsg != NULL){
-							// cJSON *pIP = NULL;
-							cJSON *pPort = NULL;
-							// cJSON *pUsername = NULL;
-							// cJSON *pPassword = NULL;
-							// cJSON *pImgpath = NULL;
-							// cJSON *pImgName = NULL;
-							// pIP = cJSON_GetObjectItem(payload,"ip");
-							// pPort = cJSON_GetObjectItem(payload,"port");
-							// pUsername = cJSON_GetObjectItem(payload,"username");
-							// pPassword = cJSON_GetObjectItem(payload,"password");
-							// pImgpath = cJSON_GetObjectItem(payload,"imgpath");
-							// pImgName = cJSON_GetObjectItem(payload,"imgname");
-
-							// if(pIP != NULL){
-							// 	strcpy(AppDataPointer->FotaInfor.ip,pIP->valuestring);
-							//  AppDataPointer->FotaInfor.port = pPort->valueint;
-							// 	strcpy(AppDataPointer->FotaInfor.username,pUsername->valuestring);
-							// 	strcpy(AppDataPointer->FotaInfor.password,pPassword->valuestring);
-							// 	strcpy(AppDataPointer->FotaInfor.imgpath,pImgpath->valuestring);
-							// 	strcpy(AppDataPointer->FotaInfor.imgname,pImgName->valuestring);
-
-							// 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Fota_Process;
-							// }
-
-							strcpy(AppDataPointer->FotaInfor.ip,"114.55.93.183");
-							AppDataPointer->FotaInfor.port = 21;
-							strcpy(AppDataPointer->FotaInfor.username,"sanwanwulianw");
-							strcpy(AppDataPointer->FotaInfor.password,"e1KTMWXeujEEGr8iQpk");
-							strcpy(AppDataPointer->FotaInfor.imgpath,"/sanwanwulianw/web/");
-							strcpy(AppDataPointer->FotaInfor.imgname,"dh_msp430_ucOS_II.txt");
-
-							// //擦除SPI
-							W25Q16_CS_HIGH();
-							OSTimeDly(100);
-							Base_3V3_ON;
-							// P4OUT |= BIT0;
-							W25Q16_Init();
-							readAddr = FOTA_ADDR_START;
-							for (i=0;i<6;i++)
-							{
-								SPI_Flash_Erase_Block(readAddr);
-								readAddr += 0x10000;
-							}
-							g_Printf_info("Erase SPI_Flash\r\n");
-							//擦除结束
-
-							AppDataPointer->TransMethodData.GPRSStatus = GPRS_Fota_Process;
-
-							g_Printf_info("FotaInfor.ip:%s\r\n",AppDataPointer->FotaInfor.ip);
-							g_Printf_info("FotaInfor.port:%d\r\n",AppDataPointer->FotaInfor.port);
-							g_Printf_info("FotaInfor.username:%s\r\n",AppDataPointer->FotaInfor.username);
-							g_Printf_info("FotaInfor.password:%s\r\n",AppDataPointer->FotaInfor.password);
-							g_Printf_info("FotaInfor.imgpath:%s\r\n",AppDataPointer->FotaInfor.imgpath);
-							g_Printf_info("FotaInfor.imgname:%s\r\n",AppDataPointer->FotaInfor.imgname);
-						}else{
+//						cJSON *payload;
+//						cJSON *pMsg = NULL;
+//						cJSON *pVersion;
+//						payload = cJSON_Parse(response);
+//						// pVersion = cJSON_GetObjectItem(payload,"Version");
+//						// if(pVersion->valueint != AppDataPointer->TerminalInfoData.Version){
+//						pMsg = cJSON_GetObjectItem(payload,"msg");
+//						if(pMsg != NULL){
+//							// cJSON *pIP = NULL;
+//							cJSON *pPort = NULL;
+//							// cJSON *pUsername = NULL;
+//							// cJSON *pPassword = NULL;
+//							// cJSON *pImgpath = NULL;
+//							// cJSON *pImgName = NULL;
+//							// pIP = cJSON_GetObjectItem(payload,"ip");
+//							// pPort = cJSON_GetObjectItem(payload,"port");
+//							// pUsername = cJSON_GetObjectItem(payload,"username");
+//							// pPassword = cJSON_GetObjectItem(payload,"password");
+//							// pImgpath = cJSON_GetObjectItem(payload,"imgpath");
+//							// pImgName = cJSON_GetObjectItem(payload,"imgname");
+//
+//							// if(pIP != NULL){
+//							// 	strcpy(AppDataPointer->FotaInfor.ip,pIP->valuestring);
+//							//  AppDataPointer->FotaInfor.port = pPort->valueint;
+//							// 	strcpy(AppDataPointer->FotaInfor.username,pUsername->valuestring);
+//							// 	strcpy(AppDataPointer->FotaInfor.password,pPassword->valuestring);
+//							// 	strcpy(AppDataPointer->FotaInfor.imgpath,pImgpath->valuestring);
+//							// 	strcpy(AppDataPointer->FotaInfor.imgname,pImgName->valuestring);
+//
+//							// 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Fota_Process;
+//							// }
+//
+//							strcpy(AppDataPointer->FotaInfor.ip,"114.55.93.183");
+//							AppDataPointer->FotaInfor.port = 21;
+//							strcpy(AppDataPointer->FotaInfor.username,"sanwanwulianw");
+//							strcpy(AppDataPointer->FotaInfor.password,"e1KTMWXeujEEGr8iQpk");
+//							strcpy(AppDataPointer->FotaInfor.imgpath,"/sanwanwulianw/web/");
+//							strcpy(AppDataPointer->FotaInfor.imgname,"dh_msp430_ucOS_II.txt");
+//
+//							// //擦除SPI
+//							W25Q16_CS_HIGH();
+//							OSTimeDly(100);
+//							Base_3V3_ON;
+//							// P4OUT |= BIT0;
+//							W25Q16_Init();
+//							readAddr = FOTA_ADDR_START;
+//							for (i=0;i<6;i++)
+//							{
+//								SPI_Flash_Erase_Block(readAddr);
+//								readAddr += 0x10000;
+//							}
+//							g_Printf_info("Erase SPI_Flash\r\n");
+//							//擦除结束
+//
+//							AppDataPointer->TransMethodData.GPRSStatus = GPRS_Fota_Process;
+//
+//							g_Printf_info("FotaInfor.ip:%s\r\n",AppDataPointer->FotaInfor.ip);
+//							g_Printf_info("FotaInfor.port:%d\r\n",AppDataPointer->FotaInfor.port);
+//							g_Printf_info("FotaInfor.username:%s\r\n",AppDataPointer->FotaInfor.username);
+//							g_Printf_info("FotaInfor.password:%s\r\n",AppDataPointer->FotaInfor.password);
+//							g_Printf_info("FotaInfor.imgpath:%s\r\n",AppDataPointer->FotaInfor.imgpath);
+//							g_Printf_info("FotaInfor.imgname:%s\r\n",AppDataPointer->FotaInfor.imgname);
+//						}else{
 							 AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;
-						}
+//						}
                     }else{    //这里可以做失败重发操作
 					    //AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;  //ML 20190828
                     	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Err;

@@ -60,6 +60,8 @@ Acquire relative time value based on system ticks.
 There are four threads in the app.c,which are scada task, transmission task , management task and IDLE task
 ### 2.1. static  void  ScadaTaskStart (void *p_arg)  ###
 
+2020-6-9
+黄振修改后代码提交
 
 
 

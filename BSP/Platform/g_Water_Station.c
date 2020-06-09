@@ -389,7 +389,7 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 							SensorData.Hex[2] = data[4];
 							SensorData.Hex[3] = data[3];
 							WQ_ValueTemp.ECValue = (uint16_t)(SensorData.Data*1000);	//更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
-							if((WQ_ValueTemp.ECValue <= 50) || (WQ_ValueTemp.ECValue >= 1000)) //输值根据实际水情而定，作为参考
+							if((WQ_ValueTemp.ECValue <= 10) || (WQ_ValueTemp.ECValue >= 1000)) //输值根据实际水情而定，作为参考
 							{
 									WQ_ValueTemp.ECValue = AppDataPointer->WaterData.ECValue;
 							}
@@ -506,7 +506,8 @@ static int SimulationSensorData(void)
     if(AppDataPointer->TerminalInfoData.SensorStatusSimulation != AppDataPointer->TerminalInfoData.SensorStatusSimulation_Old) {
 		infor_ChargeAddrBuff[24] = (uint8_t)(temp >> 8);
 		infor_ChargeAddrBuff[25] = (uint8_t)temp;
-		OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+		// OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+		OSBsp.Device.InnerFlash.innerFLASHWrite(infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 	}//为什么要写入？flash里的24、25代表什么意思？代表哪些传感器是模拟的？wj
     AppDataPointer->TerminalInfoData.SensorStatusSimulation_Old = AppDataPointer->TerminalInfoData.SensorStatusSimulation;
 
@@ -523,8 +524,8 @@ static int SimulationSensorData(void)
 			{
 				case 1:
 					/****************COD*************///16.1~25.1
-					SimulationSensorFloatCahe = AppDataPointer->WaterData.CODValue + rand()%9 - rand()%9;
-					if (SimulationSensorFloatCahe < 0.0)
+					SimulationSensorFloatCahe = 16.1 + (float)(rand()%9)  - (float)(rand()%9) ;
+					if ((SimulationSensorFloatCahe < 0.0)|| (SimulationSensorFloatCahe > 1000))
 					{
 						SimulationSensorFloatCahe = 16.1;
 					}
@@ -535,11 +536,11 @@ static int SimulationSensorData(void)
 					Send_Buffer[8] = (uint32_t)(SimulationSensorFloatCahe*10) % 256;		
 					break;
 				case 2:
-					/**************EC****************///321~391	
-					SimulationSensorIntCahe = (uint16_t)(AppDataPointer->WaterData.ECValue + rand()%70 - rand()%70);
-					if ((SimulationSensorIntCahe <= 0) || (SimulationSensorIntCahe>=1000))
+					/**************EC****************///321~341
+					SimulationSensorIntCahe = (uint16_t)(541 + rand()%20 - rand()%20);
+					if ((SimulationSensorIntCahe < 10) || (SimulationSensorIntCahe > 1000))
 					{
-						SimulationSensorIntCahe = 321;
+						SimulationSensorIntCahe = 441;
 					}
 					AppDataPointer->WaterData.ECValue = SimulationSensorIntCahe ;
 					hal_SetBit(SensorStatus_H, 2);             //传感器状态位置1
@@ -549,10 +550,10 @@ static int SimulationSensorData(void)
 					break;
 				case 3:
 					/**************DO****************///3.31~4.51
-					SimulationSensorFloatCahe = AppDataPointer->WaterData.DOValue + (float)(rand()%12)/10 - (float)(rand()%12)/10;
-					if (SimulationSensorFloatCahe < 0.0)
+					SimulationSensorFloatCahe = 5.41 + (float)(rand()%12)/10 - (float)(rand()%12)/10;
+					if ((SimulationSensorFloatCahe < 0.0)|| (SimulationSensorFloatCahe > 60.0))
 					{
-							SimulationSensorFloatCahe = 3.31;
+							SimulationSensorFloatCahe = 5.51;
 					}
 					AppDataPointer->WaterData.DOValue = SimulationSensorFloatCahe;
 					hal_SetBit(SensorStatus_H, 1);             //传感器状态位置1
@@ -562,8 +563,8 @@ static int SimulationSensorData(void)
 					break;
 				case 4:
 					/**************NH4***************///1.1~3.1
-					SimulationSensorFloatCahe = AppDataPointer->WaterData.NH4Value + rand()%2 - rand()%2;
-					if (SimulationSensorFloatCahe < 0.0)
+					SimulationSensorFloatCahe = 0.1 + (float)(rand()%2) - (float)(rand()%2) ;
+					if ((SimulationSensorFloatCahe < 0.0)|| (SimulationSensorFloatCahe > 10.0))
 					{
 						SimulationSensorFloatCahe = 1.1;
 					}
@@ -576,7 +577,11 @@ static int SimulationSensorData(void)
 				case 5:
 					/**************Temp**************///16.1~18.1
 					//*********ML********根据月份添加温度值模拟**********//
-					SimulationSensorFloatCahe = AppDataPointer->WaterData.WaterTemp + rand()%2 - rand()%2;
+					SimulationSensorFloatCahe = 28.01 + (float)(rand()%2) - (float)(rand()%2);
+					if ((SimulationSensorFloatCahe < 20.0)|| (SimulationSensorFloatCahe > 50.0))
+					{
+					 SimulationSensorFloatCahe = 26.01;
+					}
 					AppDataPointer->WaterData.WaterTemp = SimulationSensorFloatCahe;
 					hal_SetBit(SensorStatus_L, 7);             //传感器状态位置1
 					hal_SetBit(SensorSimulationStatus_L, 7);   //传感器模拟状态位置1	
@@ -585,7 +590,11 @@ static int SimulationSensorData(void)
 					break;
 				case 6:
 					/**************ORP**************///71~101
-					SimulationSensorIntCahe = AppDataPointer->WaterData.ORPValue + rand()%30 - rand()%30;
+					SimulationSensorIntCahe = (int16_t)(91 + rand()%30 - rand()%30);
+					if ((SimulationSensorIntCahe <0) || (SimulationSensorIntCahe > 1000))
+					{
+						SimulationSensorIntCahe = 101;
+					}
 					AppDataPointer->WaterData.ORPValue = SimulationSensorIntCahe;
 					hal_SetBit(SensorStatus_L, 6);             //传感器状态位置1
 					hal_SetBit(SensorSimulationStatus_L, 6);   //传感器模拟状态位置1	
@@ -599,10 +608,10 @@ static int SimulationSensorData(void)
 					break;
 				case 7:
 					/**************ZS**************///18.01~23.91
-					SimulationSensorFloatCahe = AppDataPointer->WaterData.ZSValue + (float)(rand()%59)/10 - (float)(rand()%59)/10;
-					if (SimulationSensorFloatCahe < 0.0)
+					SimulationSensorFloatCahe = 18.01 + (float)(rand()%59)/10 - (float)(rand()%59)/10;
+					if ((SimulationSensorFloatCahe < 0.0)|| (SimulationSensorFloatCahe > 800))
 					{
-						SimulationSensorFloatCahe = 18.01;
+						SimulationSensorFloatCahe = 20.01;
 					}
 					AppDataPointer->WaterData.ZSValue = SimulationSensorFloatCahe;
 					hal_SetBit(SensorStatus_L, 5);             //传感器状态位置1
@@ -612,8 +621,8 @@ static int SimulationSensorData(void)
 					break;
 				case 8:
 				    /**************PH**************///7.21~7.61
-					SimulationSensorFloatCahe = AppDataPointer->WaterData.PHValue + (float)(rand()%4)/10 - (float)(rand()%4)/10;
-					if (SimulationSensorFloatCahe < 0.0)
+					SimulationSensorFloatCahe = 7.01 + (float)(rand()%4)/10 - (float)(rand()%4)/10;
+					if ((SimulationSensorFloatCahe < 6) || (SimulationSensorFloatCahe > 10))
 					{
 						SimulationSensorFloatCahe = 7.21;
 					}
@@ -625,8 +634,8 @@ static int SimulationSensorData(void)
 					break;
 				case 9:
 					/**************CHL************/
-					SimulationSensorFloatCahe = AppDataPointer->WaterData.CHLValue + (float)(rand()%5)/10 - (float)(rand()%5)/10;
-					if (SimulationSensorFloatCahe < 0.0)
+					SimulationSensorFloatCahe = 6.51 + (float)(rand()%5)/10 - (float)(rand()%5)/10;
+					if ((SimulationSensorFloatCahe < 0.0)|| (SimulationSensorFloatCahe > 1000.0))
 					{
 						SimulationSensorFloatCahe = 6.51;
 					}
@@ -774,7 +783,7 @@ void FilteringSensor(void)   //wj20200215 这个只能保证传感器都能读�
 
 	//这里还需要写代码解决：如果传感器读取到了数值，但一直为0的情况；
 
-	if (FilteringNum < WQ_Q_Num)  //前3次不执行
+	if (FilteringNum > WQ_Q_Num)  //前3次不执行
 	{
 		if (AppDataPointer->WaterData.CODValue == 0.0)
 		{
@@ -845,7 +854,7 @@ void InqureSensor(void)
 	if(AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET) {
 		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_ALREADY;
 		AppDataPointer->TerminalInfoData.SensorStatus = SensorKind; 
-	    Teminal_Data_Init();   //数据初始化
+//	    Teminal_Data_Init();   //数据初始化
 	} else if ( (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY) 
 	         || (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK) ) {
 		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_OK;
@@ -904,18 +913,6 @@ void InqureSensor(void)
 					case 7:
 						sensorSN = 7;
 						// hal_ResetBit(SensorStatus_L, 5);
-//						if(ScadaZS_WS_Read == 0)  //这是为了读取2次，一次是温度，一次是浊度
-//						{
-//							OSBsp.Device.Usart3.WriteNData(ScadaZS_WS_TEMP,CMDLength);
-//							ScadaZS_WS_Read++;
-//							scadaIndex--;
-//							AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) >> 1;
-//						}
-//						else if(ScadaZS_WS_Read == 1)
-//						{
-//							OSBsp.Device.Usart3.WriteNData(ScadaZS_WS,CMDLength);
-//							ScadaZS_WS_Read = 0;
-//						}
 						OSBsp.Device.Usart3.WriteNData(ScadaZS_WS,CMDLength);
 						break;						
 					case 8:
@@ -985,7 +982,8 @@ void InqureSensor(void)
 			{
 				infor_ChargeAddrBuff[21] = SensorStatus_H;
 				infor_ChargeAddrBuff[22] = SensorStatus_L;
-				OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+				// OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+				OSBsp.Device.InnerFlash.innerFLASHWrite(infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 			}
 			AppDataPointer->TerminalInfoData.SensorFlashWriteStatusPrintf = SENSOR_STATUS_WRITEFLASH_PRINTF_ENABLE;
 		}
@@ -1166,8 +1164,8 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	g_Device_RTCstring_Creat(date,Uptime);
 	g_Printf_info("Uptime:%s\r\n",Uptime);
 	cJSON_AddStringToObject(pJsonRoot, "Uptime",Uptime);
-	cJSON_AddNumberToObject(pJsonRoot, "UnixTimeStamp",UnixTimeStamp);
-	cJSON_AddNumberToObject(pJsonRoot, "ReSiC",DataPointer->TerminalInfoData.ReviseSimulationCode);
+//	cJSON_AddNumberToObject(pJsonRoot, "UnixTimeStamp",UnixTimeStamp);
+//	cJSON_AddNumberToObject(pJsonRoot, "ReSiC",DataPointer->TerminalInfoData.ReviseSimulationCode);
 
     p = cJSON_Print(pJsonRoot);
     if(NULL == p)

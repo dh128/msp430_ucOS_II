@@ -55,12 +55,14 @@ uint8_t infoFLASH_read(uint8_t index,uint32_t add)
 *******************************************************************************/
 void infoFLASH_write(uint8_t *data_ptr,uint8_t *flashAddr,uint16_t count)
 {
+	__disable_interrupt();
 	FlashCtl_eraseSegment(flashAddr);
 
 	if(FlashCtl_performEraseCheck(flashAddr,count) == 0x01)
 	{
 		FlashCtl_write8(data_ptr,flashAddr,count);
 	}
+	__enable_interrupt();
 }
 /*******************************************************************************
 * 函数名      	: InforFlash_Write
@@ -124,6 +126,4 @@ void g_Device_InnerFlash_Init(void)
 
 //	OSBsp.Device.InnerFlash.innerFLASHWrite(&TerminalNum,(uint8_t *)infor_ChargeAddr,1);
 }
-
-
 

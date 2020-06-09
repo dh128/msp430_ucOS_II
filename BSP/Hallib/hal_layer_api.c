@@ -679,11 +679,13 @@ void Hal_EnterLowPower_Mode(void)
     static int m = 0;
     g_Printf_info("Enter Low Power!\r\n");
     hal_Delay_ms(100);
-    Teminal_Data_Init();  //状态清0
+//    Teminal_Data_Init();  //状态清0
+
 
 
 #if (PRODUCT_TYPE == Weather_Station)
     // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
     OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
 #else
@@ -696,6 +698,8 @@ void Hal_EnterLowPower_Mode(void)
     OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
     OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+//    OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
+//    OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
 
     AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
     AppDataPointer->TransMethodData.GPRSNet = 0;        //ML 20190829

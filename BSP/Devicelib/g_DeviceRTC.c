@@ -472,7 +472,7 @@ __interrupt void RTC_ISR(void)
 							OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
 						#endif
 
-						hal_Reboot();  //定时24h复位一次
+//						hal_Reboot();  //定时24h复位一次
 					}
 				}
 			} 

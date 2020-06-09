@@ -77,7 +77,7 @@ void  main (void)
     if(Hal_Platform_Init() == 0){            
         g_Printf_info("Hal_Platform_Init Success\r\n");
         LED_OFF;
-        hal_Delay_ms(1000);//ÑÓÊ±1s
+        hal_Delay_ms(1000);//å»¶æ—¶1s
 
     }
 
@@ -114,43 +114,43 @@ static  void  ScadaTaskStart (void *p_arg)
 
 	static uint8_t scada_idle_times = 0;
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.       */
-        if(Hal_getCurrent_work_Mode() == 0){     //Èç¹û²»ÔÚĞİÃßÆÚ
+        if(Hal_getCurrent_work_Mode() == 0){     //å¦‚æœä¸åœ¨ä¼‘çœ æœŸ
     
-            if(AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_OFF){  //Èç¹ûÉè±¸Ã»ÉÏµç10sÔ¤ÈÈ£¬µÚÒ»´Î»¹»á¶Á´«¸ĞÆ÷Êı¾İ
+            if(AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_OFF){  //å¦‚æœè®¾å¤‡æ²¡ä¸Šç”µ10sé¢„çƒ­ï¼Œç¬¬ä¸€æ¬¡è¿˜ä¼šè¯»ä¼ æ„Ÿå™¨æ•°æ®
                 OSTimeDly(30);
-                //  OSTimeDly(6000);  //½ÚÅÄ2ms  //TEST
+                //  OSTimeDly(6000);  //èŠ‚æ‹2ms  //TEST
                 g_Printf_info("SenSor_Power_On\r\n");
                 OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
                 OSBsp.Device.IOControl.PowerSet(Sensor_Power_On);
                 OSBsp.Device.IOControl.PowerSet(Max485_Power_On);
 
-                if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //1~3min²»½øÈëµÍ¹¦ºÄ£¬ÎåÔ¤ÈÈ
-                {//wj20200215 ÉÏ´«ÆµÂÊ´óÓÚNO_LOWPER_PERIOD min²»ÈÃÏµÍ³½øµÍ¹¦ºÄ²»¹Ø´«¸ĞÆ÷µçÔ´£¬Ò²¾Í²»ĞèÒªÔ¤ÈÈ£¬Õâ±ß¶ÔÓ¦È¡ÏûTransmitTaskStart¡¢RTC_ISRÀïÃæ½øµÍ¹¦ºÄ
-                    //¸ö±ğ´«¸ĞÆ÷ĞèÔ¤ÈÈ£¬ÈÎÎñ¹ÒÆğÊ±¼äÊÓÇé¿ö¶ø¶¨£¬Ä¬ÈÏ10s
-                        OSTimeDly(5000);  //½ÚÅÄ2ms=10s
+                if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //1~3minä¸è¿›å…¥ä½åŠŸè€—ï¼Œäº”é¢„çƒ­
+                {//wj20200215 ä¸Šä¼ é¢‘ç‡å¤§äºNO_LOWPER_PERIOD minä¸è®©ç³»ç»Ÿè¿›ä½åŠŸè€—ä¸å…³ä¼ æ„Ÿå™¨ç”µæºï¼Œä¹Ÿå°±ä¸éœ€è¦é¢„çƒ­ï¼Œè¿™è¾¹å¯¹åº”å–æ¶ˆTransmitTaskStartã€RTC_ISRé‡Œé¢è¿›ä½åŠŸè€—
+                    //ä¸ªåˆ«ä¼ æ„Ÿå™¨éœ€é¢„çƒ­ï¼Œä»»åŠ¡æŒ‚èµ·æ—¶é—´è§†æƒ…å†µè€Œå®šï¼Œé»˜è®¤10s
+                        OSTimeDly(5000);  //èŠ‚æ‹2ms=10s
                 }
 
-                if(App.Data.TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET) {//Èç¹ûÎ´¶ÁÈ¡flashÀïµÄ´«¸ĞÆ÷ÖÃÎ»
-                    InqureSensor();  //ÕâÀïÃæÖ»»áÖ´ĞĞ¼ì²éÄÄĞ©´«¸ĞÆ÷ÔÚÏß£¬²¢¼ÇÂ¼
+                if(App.Data.TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET) {//å¦‚æœæœªè¯»å–flashé‡Œçš„ä¼ æ„Ÿå™¨ç½®ä½
+                    InqureSensor();  //è¿™é‡Œé¢åªä¼šæ‰§è¡Œæ£€æŸ¥å“ªäº›ä¼ æ„Ÿå™¨åœ¨çº¿ï¼Œå¹¶è®°å½•
                 }
                 AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCANNING;
                 g_Printf_info("%s ... ...\n",__func__);
                 Hal_GetTimeOfDay(&before_Scada);
             }
-            else if(AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCANNING){ //Éè±¸ÉÏµçºóÖ´ĞĞ20sµÄ´«¸ĞÆ÷¶ÁÈ¡
+            else if(AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCANNING){ //è®¾å¤‡ä¸Šç”µåæ‰§è¡Œ20sçš„ä¼ æ„Ÿå™¨è¯»å–
                 g_Printf_info("Sensor Scanning... ...\r\n");
                 InqureSensor();
                 Hal_GetTimeOfDay(&after_Scada);
                 Scada_timeout_sec = after_Scada.tv_sec - before_Scada.tv_sec;
                 g_Printf_info("Scada_timeout_sec = %d\r\n",Scada_timeout_sec);
-                if(Scada_timeout_sec >= SCADATIME){//Èç¹ûÊı¾İÉÏ´«º¯ÊıÒ²ÔÚ¼¤»î×´Ì¬£¬ºÜÓĞ¿ÉÄÜÉÏ´«Ê±¼ä°ÑSCADATIMEÕ¼ÓÃ£¬µ¼ÖÂÌáÇ°½áÊø
+                if(Scada_timeout_sec >= SCADATIME){//å¦‚æœæ•°æ®ä¸Šä¼ å‡½æ•°ä¹Ÿåœ¨æ¿€æ´»çŠ¶æ€ï¼Œå¾ˆæœ‰å¯èƒ½ä¸Šä¼ æ—¶é—´æŠŠSCADATIMEå ç”¨ï¼Œå¯¼è‡´æå‰ç»“æŸ
                     //if(Scada_timeout_sec >= 20){
                     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCAN_OVER;
                     g_Printf_info("ScadaTask is over\n");
 
 // #if HAVE_SDCARD_SERVICE
 //
-//                         if (SD_Status == 0)  //Ö»ÊÇÒ»¸öÊ¾Àı
+//                         if (SD_Status == 0)  //åªæ˜¯ä¸€ä¸ªç¤ºä¾‹
 //                         {
 //                             OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
 //                                 OSTimeDly(100);//
@@ -165,16 +165,16 @@ static  void  ScadaTaskStart (void *p_arg)
                 // OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
                 }
             }
-            else if (AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER) //¿ÕÅÜ2min
+            else if (AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER) //ç©ºè·‘2min
             {
                 if(App.Data.TerminalInfoData.SendPeriod <= NO_LOWPER_PERIOD)
                 {
 #if(TRANSMIT_TYPE == GPRS_Mode)
-                    //×¢Òâ£¬Èç¹ûhttpinitÒÑ¾­Íê³É£¬ËµÃ÷Òª·¢ËÍÊı¾İÁË£¬¾Í²»ÖÃÎ»
+                    //æ³¨æ„ï¼Œå¦‚æœhttpinitå·²ç»å®Œæˆï¼Œè¯´æ˜è¦å‘é€æ•°æ®äº†ï¼Œå°±ä¸ç½®ä½
                     if(AppDataPointer->TransMethodData.GPRSStatus < GPRS_Http_Init_Done)
                     {
-                            //Ê¹scadaº¯ÊıÄÜ¹»Ò»Ö±ÔËĞĞ1s/´Î(0u, 0u, 0u, 500u)Ê±£¬ÆäËûÖµÀà±È
-                            AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;//ÈÃscadaº¯ÊıÔÙ´ÎÆô¶¯
+                            //ä½¿scadaå‡½æ•°èƒ½å¤Ÿä¸€ç›´è¿è¡Œ1s/æ¬¡(0u, 0u, 0u, 500u)æ—¶ï¼Œå…¶ä»–å€¼ç±»æ¯”
+                            AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;//è®©scadaå‡½æ•°å†æ¬¡å¯åŠ¨
                     }
 #endif
 
@@ -183,25 +183,25 @@ static  void  ScadaTaskStart (void *p_arg)
             }
             else  //DEVICE_STATUS_POWER_IDLE
             {
-                g_Printf_dbg("ScadaTask idle!\n");
+                g_Printf_info("ScadaTask idle!\n");
                 scada_idle_times++;
                 OSTimeDlyHMSM(0u, 0u, 2u, 0u);
-                if (scada_idle_times == 60)  //120+120s ¿ÕÅÜ4min
+                if (scada_idle_times == 60)  //120+120s ç©ºè·‘4min
                 {
                     g_Printf_dbg("DeviceStatus always idle,try reboot!\r\n");
                     scada_idle_times = 0;
 
-                    hal_Reboot();  //¸´Î» ÊÇ·ñĞèÒªÖ÷»ú¶¼¸´Î»£¿»òÕßÖ»ĞèÒª
+                    hal_Reboot();  //å¤ä½ æ˜¯å¦éœ€è¦ä¸»æœºéƒ½å¤ä½ï¼Ÿæˆ–è€…åªéœ€è¦
                 }
             }
 
-            OSTimeDlyHMSM(0u, 0u, 2u, 0u);    //·ÅÆú¿ØÖÆÈ¨£¬ÈÃÉÏ´«º¯ÊıÔËĞĞ
+            OSTimeDlyHMSM(0u, 0u, 2u, 0u);    //æ”¾å¼ƒæ§åˆ¶æƒï¼Œè®©ä¸Šä¼ å‡½æ•°è¿è¡Œ
 
         }
         else
         {
         	g_Printf_dbg("ScadaTaskStart ERR!\r\n");
-        	OSTimeDlyHMSM(0u, 0u, 0u, 100u);    //·ÅÆú¿ØÖÆÈ¨£¬ÈÃÉÏ´«º¯ÊıÔËĞĞ
+        	OSTimeDlyHMSM(0u, 0u, 0u, 100u);    //æ”¾å¼ƒæ§åˆ¶æƒï¼Œè®©ä¸Šä¼ å‡½æ•°è¿è¡Œ
         }
     }
 }

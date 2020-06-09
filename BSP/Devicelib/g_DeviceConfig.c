@@ -371,11 +371,15 @@ static void g_Device_WirelessUpload_Config(g_Device_Config_CMD uploadCmd)   //�
 static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 {
 	uint8_t Flash_Tmp[12];//flash操作中间变量
-	// uint8_t Send_Tmp[34];
-	uint32_t Send_Tmp[34];
-	uint8_t Send_Tmp_String[68];
+	uint8_t f_tmp[18];
+//	 uint8_t Send_Tmp[35];
+	//uint32_t Send_Tmp[34];
+//	uint8_t Send_Tmp_String[70];
 	int i;
+	__disable_interrupt();
 	if((RxNum==12)&& (RxBuff[0]==0x0D) && (RxBuff[RxNum-1]==0x0D)){
+		for(i=0;i<RxNum;i++)
+			g_Printf_info("0x%x ",RxBuff[i]);
 		hal_Delay_ms(10);
 		if(RxBuff[1] == 0xEF){	        //固件升级请求指令 存放于infor_BootAddr
 			g_Printf_info("Enter %s and System will goto bootloader\r\n",__func__);
@@ -390,18 +394,31 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 			return 0;	
 		}else if(RxBuff[1] == 0xF0){		//终端信息查询指令
 			g_Printf_info("Enter %s and Check device Info now\r\n",__func__);
-			GetADCValue();         //获取电池电量%
-			OSBsp.Device.InnerFlash.FlashRsvWrite(infor_ChargeAddrBuff, 32, infor_ChargeAddr, 0);//把终端信息写入FLASH
-			Send_Tmp[0] = 0xEE;
-			for(i=1;i<33;i++){
-				Send_Tmp[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i-1,infor_ChargeAddr);
+			//GetADCValue();         //获取电池电量%
+			// OSBsp.Device.InnerFlash.FlashRsvWrite(infor_ChargeAddrBuff, 32, infor_ChargeAddr, 0);//把终端信息写入FLASH
+			// Send_Tmp[0] = 0xFF;
+			// for(i=1;i<33;i++){
+			// 	Send_Tmp[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i-1,infor_ChargeAddr);
+			// }
+			// Send_Tmp[33] = 0xFF;
+			// //OSBsp.Device.Usart2.WriteNData(Send_Tmp, 17);
+			//  Hex2Str(Send_Tmp_String,Send_Tmp,34,0); //将16进制转化成字符串
+			//  OSTimeDly(50);
+			//  g_Printf_info("InfoData:%s\r\n",Send_Tmp_String);    //直接吐给上位机，上位机解析字符串
+			OSTimeDly(100); 
+			f_tmp[0] = 0xFF;
+			f_tmp[1] = OSBsp.Device.InnerFlash.innerFLASHRead(1,infor_BootAddr);
+			for(i = 0; i < 13; i ++)
+			{
+				f_tmp[i+2] = OSBsp.Device.InnerFlash.innerFLASHRead(i,infor_ChargeAddr);
 			}
-			Send_Tmp[33] = 0xEE;
-			// OSBsp.Device.Usart2.WriteNData(Send_Tmp, 34);
-			Hex2Str(Send_Tmp_String,Send_Tmp,34,0); //将16进制转化成字符串
-			g_Printf_info("InfoData:%s\r\n",Send_Tmp_String);    //直接吐给上位机，上位机解析字符串
+			f_tmp[15] = OSBsp.Device.InnerFlash.innerFLASHRead(20,infor_ChargeAddr);
+			f_tmp[16] = OSBsp.Device.InnerFlash.innerFLASHRead(23,infor_ChargeAddr);
+			f_tmp[17]=0xFF;
+			OSBsp.Device.Usart2.WriteNData(f_tmp,18);
 			return 0;
-		}else if(RxBuff[1] == 0xF5){	    //时钟同步
+		}
+		else if(RxBuff[1] == 0xF5){	    //时钟同步
 			uint8_t time_buf[8];
 			for(i = 1; i < 8; i++){
 				time_buf[i]=RxBuff[i+1];	//存“年月日时分秒周”
@@ -418,7 +435,11 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 				infor_ChargeAddrBuff[12] = RxBuff[5]; //上传周期（min）(低八位)
 				infor_ChargeAddrBuff[20] = RxBuff[6]; //FLASH修改标志位       01允许修改  FF禁止修改
 				infor_ChargeAddrBuff[23] = RxBuff[7]; //模拟数据标志位        01允许修改  FF禁止修改
-				OSBsp.Device.InnerFlash.FlashRsvWrite(infor_ChargeAddrBuff, 32, infor_ChargeAddr, 0);//把终端信息写入FLASH
+				OSBsp.Device.InnerFlash.FlashRsvWrite(&infor_ChargeAddrBuff[9], 4, infor_ChargeAddr, 9);//把终端信息写入FLASH
+				hal_Delay_ms(10);		//连续存储添加延时
+				OSBsp.Device.InnerFlash.FlashRsvWrite(&infor_ChargeAddrBuff[20], 1, infor_ChargeAddr, 20);
+				hal_Delay_ms(10);		//连续存储添加延时
+				OSBsp.Device.InnerFlash.FlashRsvWrite(&infor_ChargeAddrBuff[23], 1, infor_ChargeAddr, 23);
 				// App.Data.TerminalInfoData.SendPeriod = Hal_getTransmitPeriod();
 				App.Data.TerminalInfoData.SendPeriod = infor_ChargeAddrBuff[11]*256 + infor_ChargeAddrBuff[12];
 				Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
@@ -445,7 +466,7 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 				infor_ChargeAddrBuff[6] = RxBuff[8];//设备编号高八位
 				infor_ChargeAddrBuff[7] = RxBuff[9];//设备编号中八位
 				infor_ChargeAddrBuff[8] = RxBuff[10];//设备编号低八位
-				OSBsp.Device.InnerFlash.FlashRsvWrite(infor_ChargeAddrBuff, 32, infor_ChargeAddr, 0);//把终端信息写入FLASH
+				OSBsp.Device.InnerFlash.FlashRsvWrite(infor_ChargeAddrBuff, 9, infor_ChargeAddr, 0);//把终端信息写入FLASH
 				hal_Delay_ms(10);
 				if( OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_ChargeAddr) == RxBuff[2] && 
 					OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_ChargeAddr) == RxBuff[3] && 
@@ -479,7 +500,7 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 		g_Printf_info("Enter %s Set OK\r\n",__func__);
 		return 0;
 	}
-	
+	__enable_interrupt();
 	return -1;
 }
 
@@ -549,12 +570,12 @@ void ManagerTaskStart(void *p_arg)
 					else if(strcmp(cmdType,"Wireless") == 0){
 						hal_Delay_ms(50);	        //延时等待接收完成
 					}
-					// else if(strcmp(cmdType,"GPS_Info") == 0){
-					// 	g_Device_Config_CMD g_ConfigCMD;
-					// 	memset(&g_ConfigCMD,0x0,sizeof(g_Device_Config_CMD));
-					// 	g_ConfigCMD = g_Device_Usart_UserCmd_Copy(Usart1);
-					// 	g_Device_GPS_Config(g_ConfigCMD);
-					// }
+					else if(strcmp(cmdType,"GPS_Info") == 0){
+						g_Device_Config_CMD g_ConfigCMD;
+						memset(&g_ConfigCMD,0x0,sizeof(g_Device_Config_CMD));
+						g_ConfigCMD = g_Device_Usart_UserCmd_Copy(Usart1);
+						g_Device_GPS_Config(g_ConfigCMD);
+					}
 				}else if (ConfigMsg.what == G_CLIENT_CMD){
 					char *cmdType = (char *)ConfigMsg.content;
 					if(strcmp(cmdType,"ClientCMD") == 0){
