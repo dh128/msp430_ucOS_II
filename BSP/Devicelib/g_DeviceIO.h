@@ -93,8 +93,8 @@ typedef enum {
 //*****************插件电源**********************//
 #define Socket_5V_ON		  P6OUT |= BIT5     //插口5V电源         上电
 #define Socket_5V_OFF         P6OUT &=~BIT5     //插口5V电源         掉电
-#define Socket_3V3_ON		  P4OUT |= BIT1     //插口3.3V电源       上电
-#define Socket_3V3_OFF        P4OUT &=~BIT1     //插口3.3V电源       掉电
+#define Socket_3V3_ON		  P4OUT &=~BIT1     //插口3.3V电源       上电
+#define Socket_3V3_OFF        P4OUT |= BIT1     //插口3.3V电源       掉电
 #define Socket_485_SendEnable   P1OUT |= BIT6     //插口485芯片        发送使能 
 #define Socket_485_RevEnable    P1OUT &=~BIT6     //插口485芯片        接收使能 
 //*****************电池电量采集******************//

@@ -30,20 +30,20 @@
 
 #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
 
-static int g_has_response = 0;
-static char g_response[256];
+//static int g_has_response = 0;
+//static char g_response[256];
 
 //                                          [0]   [1]  [2]  [3]  [4]  [5]  [6]  [7]  [8]  [9] [10] [11] [12] [13] [14] [15]                                                                            
 uint32_t Send_Buffer_CTwing_NBSignal[16] = {0x02,0x00,0x02,0x00,0x0B,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};   //test
-//                                      |数据上报|平台服务ID| 数据长度|   RSRP  |   SNR   |   PCI   | ECL |     CELL ID     
+//                                      |数据上报|平台服务ID| 数据长度|   RSRP  |   SNR   |   PCI   | ECL |     CELL ID
 
 //                                            [0]   [1]  [2]  [3]  [4]  [5]  [6]  [7]  [8]  [9] [10] [11] [12]                                                                         
 uint32_t Send_Buffer_CTwing_NBSoildata[13] = {0x02,0x00,0x02,0x00,0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; 
-//                                        |数据上报|平台服务ID| 数据长度|     Soil_Temp     |   Soil_Humi       |                                   
+//                                        |数据上报|平台服务ID| 数据长度|     Soil_Temp     |   Soil_Humi       |
 
 //                                              [0]   [1]  [2]  [3]  [4]  [5]  [6]                                                                        
 uint32_t Send_Buffer_CTwing_NBWeatherdata[7] = {0x02,0x00,0x01,0x00,0x02,0x00,0x00}; 
-//                                         |数据上报|平台服务ID| 数据长度 |Temp|Humi|    
+//                                         |数据上报|平台服务ID| 数据长度 |Temp|Humi|
 
 //断点续传使用
 uint16_t BackupIndex = 0;
@@ -93,12 +93,12 @@ unsigned char NB_Config(unsigned char *c , unsigned char m, unsigned char t)
 {
 	unsigned char x,i=0;
 	i=0;
-	Clear_Buffer(aRxBuff,&aRxNum);
+	Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 	while (!Hal_CheckString(aRxBuff,"OK")  & (i < t))
 	{
-		Clear_Buffer(aRxBuff,&aRxNum);
-	 	User_Printf(c);
-	 	g_Printf_dbg(c);		//debug口同步打印
+		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
+	 	User_Printf((char *)c);
+	 	g_Printf_dbg((char *)c);		//debug口同步打印
 		for(x=0;x<m;x++)
 			OSTimeDly(20);
 
@@ -106,12 +106,12 @@ unsigned char NB_Config(unsigned char *c , unsigned char m, unsigned char t)
 	}
 	if(i>=t)
 	{
-		Clear_Buffer(aRxBuff,&aRxNum);
+		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 		return 0;
 	}
 	else 
 	{
-		Clear_Buffer(aRxBuff,&aRxNum);
+		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 		return 1;
 	}
 }
@@ -184,8 +184,8 @@ char g_Device_NB_Init(void)
 {
 	uint8_t ii = 0;
 	//ML
-	unsigned char *a;
-	unsigned char i=0,n=0,m=0;
+	char *a;
+	unsigned char i=0,m=0;
 	unsigned char nb_Timedata[22]={0};
 	uint8_t time_buf[8];
 	uint8_t time_buf_bcd[8];
@@ -193,7 +193,7 @@ char g_Device_NB_Init(void)
 	{
 		NB_Config("AT+CFUN=0\r\n",5,5);
 		OSTimeDly(100);
-		NB_Config("ATE1\r\n",5,5);
+		NB_Config("ATE0\r\n",5,5);
 		OSTimeDly(100);
 		NB_Config("AT+NNMI=2\r\n",5,5);
 		OSTimeDly(100);
@@ -210,7 +210,7 @@ char g_Device_NB_Init(void)
 		OSTimeDly(100);
 		NB_Config("AT+CGATT=1\r\n",5,5);
 		OSTimeDly(100);
-		Clear_Buffer(aRxBuff,&aRxNum);
+		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 		//等待入网
 		while ((aRxNum<35) & (ii < 60))
 		{
@@ -219,7 +219,7 @@ char g_Device_NB_Init(void)
 			// 	AppDataPointer->TransMethodData.NBStatus = NB_Registered;
 			// 	break;
 			// }
-			Clear_Buffer(aRxBuff,&aRxNum);
+			Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 			User_Printf("AT+CGPADDR\r\n");
 			g_Printf_dbg("AT+CGPADDR\r\n");
 			OSTimeDly(1000);
@@ -307,7 +307,7 @@ void g_Device_NB_Send(uint32_t *data ,uint8_t length)
 	static unsigned char ii = 0;
 	char buff[15];
 	AppDataPointer->TransMethodData.NBSendStatus = 0;
-	Clear_Buffer(aRxBuff,&aRxNum);
+	Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 	sprintf(buff,"AT+NMGS=%d,",length);
 	User_Printf(buff);
     // User_Printf("AT+NMGS=34,");
@@ -336,7 +336,7 @@ void g_Device_NB_Send_Str(char *data ,uint8_t length)
 //	static unsigned char ii = 0;
 	char buff[15];
 	AppDataPointer->TransMethodData.NBSendStatus = 0;
-	Clear_Buffer(aRxBuff,&aRxNum);
+	Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 	sprintf(buff,"AT+NMGS=%d,",length);
 	User_Printf(buff);
 	User_Printf(data);
@@ -351,13 +351,13 @@ void g_Device_NB_Send_Str(char *data ,uint8_t length)
 *******************************************************************************/
 void g_Device_NBSignal(void)
 {
-	unsigned char *a;
+	char *a;
 	unsigned char i=0,n=0;
 	int32_t dataTemp=0;
 	int32_t dataTemp2=0;
 	static uint16_t complement=0;
 	static uint8_t Singal_Less=0;
-	Clear_Buffer(aRxBuff,&aRxNum);
+	Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 
 	User_Printf("AT+NUESTATS\r\n");
 	OSTimeDly(200);			//等待串口接收
@@ -533,7 +533,7 @@ void g_Device_NBSignal(void)
 *******************************************************************************/
 void ProcessCommand()
 {
-	uint8_t *CommandBuff;
+	char *CommandBuff;
 	uint8_t CommandBuffData[50];
 	uint8_t CommandBuffNum;
 
@@ -827,7 +827,7 @@ void g_Device_NB_SendCheck(void)
 		// AppDataPointer->TransMethodData.NBStatus = NB_Send_Done;
 		AppDataPointer->TransMethodData.NBSendStatus = 1;
 		g_Printf_info("NB send data ok\r\n");
-		Clear_Buffer(aRxBuff,&aRxNum);
+		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 	}
 	// AppDataPointer->TransMethodData.NBStatus = NB_Idel;
 }
@@ -846,7 +846,7 @@ void g_Device_NB_GetReceive(void)
 	//Uart0_RxBuff_Num = 0;
 
 	// Clear_Buffer(aRxBuff,&aRxNum);
-	Clear_CMD_Buffer(aRxBuff,1050);
+	Clear_CMD_Buffer((uint8_t *)aRxBuff,1050);
 	aRxNum = 0;
 	// OSTimeDly(4000);		//等待4000ms		使用下面的循环判断延时，待测试
 	if(NB_Fota)				//进入Fota后每次获取PCP数据延时，避免数据下发不及时
@@ -898,7 +898,7 @@ void g_Device_NB_GetReceive(void)
 		//配置NB状态位Idle态
 		AppDataPointer->TransMethodData.NBStatus = NB_Idel;
 		g_Printf_info("No (correct) message downloaded!\r\n");
-		Clear_Buffer(aRxBuff,&aRxNum);
+		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 	}
 
 	
@@ -1051,6 +1051,8 @@ void GetStoreData(void)
 *******************************************************************************/
 void  TransmitTaskStart (void *p_arg)
 {
+	uint8_t i;
+	Hex2Float gpsTemp;
     (void)p_arg;   
     OSTimeDlyHMSM(0u, 0u, 0u, 100u);      
     g_Printf_info("%s ... ...\n",__func__);           
@@ -1102,6 +1104,15 @@ void  TransmitTaskStart (void *p_arg)
 						GetADCValue();
 						//检查信号质量
 						g_Device_NBSignal();
+						//组包定位数据
+						gpsTemp.Data = AppDataPointer->TransMethodData.GPSLat_Point;
+						for(i=0;i<4;i++){
+							Send_Buffer[46-i] = gpsTemp.Hex[i];
+						}
+						gpsTemp.Data = AppDataPointer->TransMethodData.GPSLng_Point;
+						for(i=0;i<4;i++){
+							Send_Buffer[42-i] = gpsTemp.Hex[i];
+						}
 						data = MakeJsonBodyData(AppDataPointer);		//组包json并存储SD卡
 						g_Printf_info("data:%s\r\n",data);
 						memset(response,0x0,128);

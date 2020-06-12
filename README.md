@@ -63,6 +63,11 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2020-6-9
 黄振修改后代码提交
 
+2020-6-11	dingh
+1、串口程序中添加bRxBuffer和bRxNum变量，接收GPS参数（GPS只接受$GNRMC数据），接收到“,A,”确认有效数据，则解析接收数据；
+2、修改GPS解析程序，解析单位为度，SD卡中存储字符串格式，NB上报四字节小端模式浮点数；
+3、进入低功耗断开GPS电源，修改串口TX IO,退出低功耗后打开GPS电源，初始化串口1。
+
 
 
 

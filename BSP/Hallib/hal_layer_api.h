@@ -23,7 +23,7 @@ typedef void                          (*message_free_cb)(void* content);
 typedef struct {
     char systemLowpower;
 }gHal_Device_Manager;
-extern gHal_Device_Manager gManager;
+//extern gHal_Device_Manager gManager;
 
 
 struct hal_message{

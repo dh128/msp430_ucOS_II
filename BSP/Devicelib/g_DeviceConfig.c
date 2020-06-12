@@ -29,7 +29,7 @@
 */
 #include  <bsp.h>
 
-unsigned char *Uart0_RxBuff;     //+++++++++++++//
+char *Uart0_RxBuff;     //+++++++++++++//
 unsigned int  Uart0_RxBuff_Num=0;
 unsigned char Uart0_RxBuff_data[1024];	
 unsigned char TimebuffNum=0;
@@ -281,91 +281,70 @@ static void g_Device_WirelessUpload_Config(g_Device_Config_CMD uploadCmd)   //�
 // #endif
 
 
-// #if (ACCESSORY_TYPR == GPS_Mode)
-// static void g_Device_GPS_Config(g_Device_Config_CMD uploadCmd)
-// {
-// 	uint8_t i=0,ii=0;
-//     char *a,*b,*c;
-// 	uint8_t GPSLng_data[20];      //longitude  //经度
-// 	uint8_t GPSLat_data[20];      //latitude   //纬度
-// 	static char GPSPowerOffNum = 0;
+#if (ACCESSORY_TYPR == GPS_Mode)
+static void g_Device_GPS_Config(g_Device_Config_CMD uploadCmd)
+{
+	uint8_t i=0,ii=0;
+	float latTemp,lngTemp;
+    char *a,*c;
+	uint8_t GPSLng_data[20];      //longitude  //经度
+	uint8_t GPSLat_data[20];      //latitude   //纬度
+	static char GPSPowerOffNum = 0;
 
-// 	if(uploadCmd.cmdLenth != 0)
-// 	{
-// 		a=strstr(uploadCmd.strcmd,",A,");         //判断接收到的数据是否有效
-//         //strstr(str1,str2) 函数用于判断字符串str2是否是str1的子串;如果是，则该函数返回str2在str1中首次出现的地址；否则，返回NULL。
-// 		if(a!=null){
-// 			b=strstr(uploadCmd.strcmd,"$GNGLL,");  //接收到的“纬度”数据有效
-// 			while(*(b+7) != ',')
-// 			{
-// 				GPSLat_data[i] = *(b+7);        //3200.6362
-// 				i++;
-// 				b++;
-// 			}
-// 			c=strstr(uploadCmd.strcmd,",N,");      //接收到的“经度”数据有效
-// 			while(*(c+3) != ',')
-// 			{
-// 				GPSLng_data[ii] = *(c+3);       //11846.8892
-// 				ii++;
-// 				c++;
-// 			}
-// 			//********清0上组GPS定位信息*********//
-// 			AppDataPointer->TransMethodData.GPSLat_Point = 0; //纬度
-// 			AppDataPointer->TransMethodData.GPSLng_Point = 0; //经度
-//		//将GPS得到的“WGS-84数据”转换“GCJ-02”
-//		//公式：abcde.fghi————abc+(de/60)+(fghi/600000)
-// 		    //*****纬度    3200.6362,N*****//
-//		AppDataPointer->TransMethodData.GPSLat_Point = (float)(GPSLat_data[0]-0x30)*10 + (float)(GPSLat_data[1]-0x30)*1
-//				                                     + ( (float)(GPSLat_data[2]-0x30)*10 + (float)(GPSLat_data[3]-0x30)*1 )/60
-//				                                     + ( (float)(GPSLat_data[5]-0x30)*1000 + (float)(GPSLat_data[6]-0x30)*100 + (float)(GPSLat_data[7]-0x30)*10 + (float)(GPSLat_data[8]-0x30)*1 )/600000 ;
-// 			//*****经度   11846.8892,E*****//
-//		AppDataPointer->TransMethodData.GPSLng_Point = (float)(GPSLng_data[0]-0x30)*100 + (float)(GPSLng_data[1]-0x30)*10 + (float)(GPSLng_data[2]-0x30)*1
-//	                                                 + ( (float)(GPSLng_data[3]-0x30)*10 + (float)(GPSLng_data[4]-0x30)*1 )/60
-//	                                                 + ( (float)(GPSLng_data[6]-0x30)*1000 + (float)(GPSLng_data[7]-0x30)*100 + (float)(GPSLng_data[8]-0x30)*10 + (float)(GPSLng_data[9]-0x30)*1 )/600000 ;
-
-// 		    OSBsp.Device.Usart2.WriteString("GPS positioning ok\r\n"); //串口打印定位成功信息
-// 			////关闭GPS_3V3 电源
-// 			GPSPowerOffNum++;
-// 			if(GPSPowerOffNum>=3)       //设置GPS定位15s一次，成功定位3次后停止
-//		{
-// 				GPSPowerOffNum = 0;
-// 				OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
-// 	//				Flag_GPSPositionOK = 1;
-// 			}
-// 		}else{
-// 		    OSBsp.Device.Usart2.WriteString("GPS positioning failed!\r\n"); //串口打印定位失败信息
-// 			////关闭GPS_3V3 电源
+	if(uploadCmd.cmdLenth != 0)
+	{
+		a=strstr(uploadCmd.strcmd,",A,");         //判断接收到的数据是否有效
+        //strstr(str1,str2) 函数用于判断字符串str2是否是str1的子串;如果是，则该函数返回str2在str1中首次出现的地址；否则，返回NULL。
+		if(a!=null){
+			// b=strstr(uploadCmd.strcmd,"$GNGLL,");  //接收到的“纬度”数据有效
+			while(*(a+3) != ',')
+			{
+				GPSLat_data[i] = *(a+3);        //3200.6362
+				i++;
+				a++;
+			}
+			c=strstr(uploadCmd.strcmd,",N,");      //接收到的“经度”数据有效
+			while(*(c+3) != ',')
+			{
+				GPSLng_data[ii] = *(c+3);       //11846.8892
+				ii++;
+				c++;
+			}
+			//********清0上组GPS定位信息*********//
+			AppDataPointer->TransMethodData.GPSLat_Point = 0; //纬度
+			AppDataPointer->TransMethodData.GPSLng_Point = 0; //经度
+		//将GPS得到的“WGS-84数据”转换“GCJ-02”
+		//公式：abcde.fghi————abc+(de/60)+(fghi/600000)
+		    //*****纬度    3200.6362,N*****//
+		latTemp = atof(GPSLat_data);
+		lngTemp = atof(GPSLng_data);
+		AppDataPointer->TransMethodData.GPSLat_Point = (int)(latTemp/100) + (latTemp/100.0 - (int)(latTemp/100)) *100.0 / 60.0;
+    	AppDataPointer->TransMethodData.GPSLng_Point = (int)(lngTemp/100) + (lngTemp/100.0 - (int)(lngTemp/100)) *100.0 / 60.0;
+		g_Printf_dbg("lat:%lf,lng:%lf\r\n",AppDataPointer->TransMethodData.GPSLat_Point,AppDataPointer->TransMethodData.GPSLng_Point);
+		g_Printf_dbg("GPS positioning ok\r\n"); //串口打印定位成功信息
+			////关闭GPS_3V3 电源
+		GPSPowerOffNum++;
+		if(GPSPowerOffNum>=3)       //设置GPS定位15s一次，成功定位3次后停止
+		{
+			GPSPowerOffNum = 0;
+			OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
+//			Flag_GPSPositionOK = 1;
+		}
+		}else{
+		    g_Printf_dbg("GPS positioning failed!\r\n"); //串口打印定位失败信息
+			////关闭GPS_3V3 电源
 // 			GPSPowerOffNum++;
 // 			if(GPSPowerOffNum>=8)       //GPS定位15s一次，成功失败10次后停止
 // 			{
 // 				GPSPowerOffNum = 0;
 // 				OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
-// 	//				Flag_GPSPositionOK = 0;
+// //				Flag_GPSPositionOK = 0;
 // 			}
-//		}
+		}
 
-// 	//		//将GPS得到的“WGS-84数据”转换“GCJ-02”
-// 	//		//公式：abcde.fghi————abc+(de/60)+(fghi/600000)
-// 	//
-// 	//	    //纬度    3200.6362,N
-// 	//		AppDataPointer->TransMethodData.GPSLat_Point = (float)(GPSLat_data[0]-0x30)*10 + (float)(GPSLat_data[1]-0x30)*1
-// 	//				                                     + ( (float)(GPSLat_data[2]-0x30)*10 + (float)(GPSLat_data[3]-0x30)*1 )/60
-// 	//				                                     + ( (float)(GPSLat_data[5]-0x30)*1000 + (float)(GPSLat_data[6]-0x30)*100 + (float)(GPSLat_data[7]-0x30)*10 + (float)(GPSLat_data[8]-0x30)*1 )/600000 ;
-// 	//		//经度     11846.8892,E
-// 	//		AppDataPointer->TransMethodData.GPSLng_Point = (float)(GPSLng_data[0]-0x30)*100 + (float)(GPSLng_data[1]-0x30)*10 + (float)(GPSLng_data[2]-0x30)*1
-// 	//	                                                 + ( (float)(GPSLng_data[3]-0x30)*10 + (float)(GPSLng_data[4]-0x30)*1 )/60
-// 	//	                                                 + ( (float)(GPSLng_data[6]-0x30)*1000 + (float)(GPSLng_data[7]-0x30)*100 + (float)(GPSLng_data[8]-0x30)*10 + (float)(GPSLng_data[9]-0x30)*1 )/600000 ;
-
-// 	//		bRxNum=0; //TEST专用
-// 	//		iii++;
-// 	//		if(iii>=3)
-// 	//		{
-// 	//			GPS_3V_OFF;   //关闭GPS_3V3 电源
-// 	//		}
-
-// 	}
-// }
-// #endif
+	}
+}
+#endif
 
 
 static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
@@ -537,7 +516,7 @@ void ManagerTaskStart(void *p_arg)
 {
 	(void)p_arg;    
 	OSTimeDlyHMSM(0u, 0u, 0u, 150u);
-	static int index = 0;
+//	static int index = 0;
 	g_ConfigQueue = Hal_QueueCreate(QConfiMsgTb,QConfigMsgTb_Size);    
 	g_Printf_info("%s ... ...\n",__func__);     
 	Hal_ThreadCreate(UartRecTaskStart,
@@ -551,10 +530,10 @@ void ManagerTaskStart(void *p_arg)
 			int ret = Hal_QueueRecv(g_ConfigQueue,&ConfigMsg,0);
 			if(ret == 0) {
 				// hal_Delay_ms(50);	        //延时等待接收完成
-				#ifdef dh
-				g_Printf_info("Recv message type %d\r\n",ConfigMsg.what);
-				g_Printf_info("Recv message content %s\r\n",(char *)ConfigMsg.content);
-				#endif // DEBUG
+				
+				g_Printf_dbg("Recv message type %d\r\n",ConfigMsg.what);
+				g_Printf_dbg("Recv message content %s\r\n",(char *)ConfigMsg.content);
+				
 				
 				if (ConfigMsg.what == G_WIRELESS_UPLAOD){
 					char *cmdType = (char *)ConfigMsg.content;
@@ -571,6 +550,7 @@ void ManagerTaskStart(void *p_arg)
 						hal_Delay_ms(50);	        //延时等待接收完成
 					}
 					else if(strcmp(cmdType,"GPS_Info") == 0){
+						// g_Printf_info("Recv message type %d\r\n",ConfigMsg.what);
 						g_Device_Config_CMD g_ConfigCMD;
 						memset(&g_ConfigCMD,0x0,sizeof(g_Device_Config_CMD));
 						g_ConfigCMD = g_Device_Usart_UserCmd_Copy(Usart1);
@@ -590,7 +570,7 @@ void ManagerTaskStart(void *p_arg)
 			OSTimeDly(100);
 			// GetADCValue();
         }
-else
+		else
         {
         	g_Printf_dbg("ManagerTaskStart ERR!\r\n");
         	OSTimeDlyHMSM(0u, 0u, 0u, 300u);
@@ -608,6 +588,8 @@ int g_Device_Config_QueuePost(uint32_t type,void *state)
 	msg.freecb = null;
 	msg.content = state;	
 	
+	g_Printf_dbg("Send message type %d\r\n",msg.what);
+	// g_Printf_dbg("Recv message content %s\r\n",(char *)msg.content);
 	if (Hal_QueueSend(g_ConfigQueue,&msg, 10) < 0){
 		g_Printf_dbg("%s message failed!\r\n",__func__);
 		return -1;

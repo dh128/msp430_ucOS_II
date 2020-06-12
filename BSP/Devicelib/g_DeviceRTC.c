@@ -29,7 +29,7 @@
 static uint32_t g_MinuteTick = 0;
 static uint32_t g_MinuteTimeTick = 0;
 static uint32_t g_HourTimeTick = 0;
-static uint32_t g_DayTimeTick = 0;
+//static uint32_t g_DayTimeTick = 0;
 
 RtcStruct Rtctime;
 

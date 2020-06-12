@@ -39,11 +39,12 @@ uint8_t Rcv_TimeData[50];
 // uint8_t TimebuffNum = 0;
 // uint8_t TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16杩涘埗鐨勬椂闂碆uffer  2018骞�鏈�5鍙�20鏃�0鍒�0绉�鏄熸湡4
 
-
 char aRxBuff[1050];		//UART0 receive data buff
 uint16_t aRxNum=0;		        //UART0 receive data num
 
-g_Device_Config_CMD bRxBuff;
+uint8_t bRxBuff[bRxLength];
+uint16_t bRxNum;
+// g_Device_Config_CMD bRxBuff;
 // g_Device_Config_CMD cRxBuff;
 uint8_t cRxBuff[cRxLength];
 uint8_t cRxNum = 0;
@@ -407,22 +408,19 @@ g_Device_Config_CMD g_Device_Usart_UserCmd_Copy(G_UART_PORT Port)
 	if(Port == Usart2){
 		dst.cmdLenth = cRxNum;
 		cRxNum = 0;
-		#ifdef dh
-		g_Printf_info("%s len:%d data:",__func__,dst.cmdLenth);
-		#endif // DEBUG
 		for(m=0;m<dst.cmdLenth;m++){
 			dst.hexcmd[m] = cRxBuff[m];
-			#ifdef dh
-			g_Printf_info("%02x ",dst.hexcmd[m]);
-			#endif
 		}
-		#ifdef dh
-		g_Printf_info("\r\n");
-		#endif
 		memset(cRxBuff,0x0,cRxLength);
 	}else if(Port == Usart1){
-		dst = bRxBuff;
-		memset(&bRxBuff,0x0,sizeof(g_Device_Config_CMD));
+		dst.cmdLenth = bRxNum;
+		bRxNum = 0;
+		for(m=0;m<dst.cmdLenth;m++){
+			dst.strcmd[m] = bRxBuff[m];
+		}
+		memset(bRxBuff,0x0,bRxLength);
+		// dst = bRxBuff;
+		// memset(&bRxBuff,0x0,sizeof(g_Device_Config_CMD));
 	}
 
 	return dst;
@@ -440,6 +438,13 @@ void UartRecTaskStart(void *p_arg)
 			OSTimeDly(25);
 			if(cRxNum == RecLen){
 				g_Device_Config_QueuePost(G_CLIENT_CMD,(void *)"ClientCMD");
+				RecLen = 0;
+			}
+		}else if(bRxNum > 60){		//长度大于60认定位有效GPS信息
+			RecLen = bRxNum;
+			OSTimeDly(25);
+			if(bRxNum == RecLen){
+				g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");
 				RecLen = 0;
 			}
 		}
@@ -518,32 +523,59 @@ __interrupt void USCI_A1_ISR(void)
 	        __bic_SR_register_on_exit(LPM0_bits);	
 			while(!(UCA1IFG&UCTXIFG));            // USCI_A1 TX buffer ready?
 			{
+				
 #if (ACCESSORY_TYPR == GPS_Mode)
-				if(UCA1RXBUF == '$'){
-					memset(&bRxBuff,0x0,sizeof(g_Device_Config_CMD));
-				}
-				bRxBuff.strcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
-				if( (bRxBuff.strcmd[0] == '$')&&(bRxBuff.strcmd[3] == 'G')&&
-						(bRxBuff.strcmd[4] == 'L')&&(bRxBuff.strcmd[5] == 'L') )
+				if(UCA1RXBUF == '$')
 				{
-					if(UCA1RXBUF == '\n')
-					{
-						OSIntEnter();
-						g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");	
-						OSIntExit();
+					bRxNum = 0;
+				}
+				bRxBuff[bRxNum++] = UCA1RXBUF;
+				if(bRxNum >= bRxLength){
+					bRxNum  = 0;
+				}
+				if(UCA1RXBUF == '\n')
+				{
+					if(bRxNum < 60){
+						bRxNum = 0;		//小于60的长度认定为无效数据清空buffer,接口任务中同样需要判断长度
 					}
+					OSBsp.Device.Usart2.WriteNData(bRxBuff,bRxNum);
+					// OSIntEnter();
+					// g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");	
+					// OSIntExit();
+					//保存数据
+					// for(GPSRxNum=0;GPSRxNum<bRxNum;GPSRxNum++)
+					// {
+					// 	GPSLngLat_data[GPSRxNum] = bRxBuff[GPSRxNum];
+					// }
+					// //
+					// bRxNum = 0;
+					// Uart_1_Flag=1;
 				}
+				// if(UCA1RXBUF == '$'){
+				// 	memset(&bRxBuff,0x0,sizeof(g_Device_Config_CMD));
+				// }
+				// bRxBuff.strcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
+				// if( (bRxBuff.strcmd[0] == '$')&&(bRxBuff.strcmd[3] == 'G')&&
+				// 		(bRxBuff.strcmd[4] == 'L')&&(bRxBuff.strcmd[5] == 'L') )
+				// {
+				// 	if(UCA1RXBUF == '\n')
+				// 	{
+				// 		OSIntEnter();
+				// 		g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");	
+				// 		OSIntExit();
+				// 	}
+				// }
 #else 	
-				if(bRxBuff.cmdLenth<bRxLength){
-					bRxBuff.hexcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
-				  	if(bRxBuff.cmdLenth == 1){
-					  OSIntEnter();
-					  g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"SerialBus");	
-					  OSIntExit();
-				 	}		
-				}else{
-				  	bRxBuff.cmdLenth = 0;
-				}
+				// if(bRxBuff.cmdLenth<bRxLength){
+				// 	bRxBuff.hexcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
+				//   	if(bRxBuff.cmdLenth == 1){
+				// 	  OSIntEnter();
+				// 	  g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"SerialBus");	
+				// 	  OSIntExit();
+				//  	}		
+				// }else{
+				//   	bRxBuff.cmdLenth = 0;
+				// }
 #endif
 			}
 			break;

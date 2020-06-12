@@ -1026,6 +1026,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 {
 	uint32_t TempCahe = 0;
 	int32_t TempIntCahe = 0;
+	uint8_t gpsBuffer[15];
 
     mallco_dev.init();
 
@@ -1140,6 +1141,14 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	cJSON_AddNumberToObject(pJsonRoot, "SINR",DataPointer->TransMethodData.SINR);
 	cJSON_AddNumberToObject(pJsonRoot, "PCI",DataPointer->TransMethodData.PCI);
 #endif
+
+#if (ACCESSORY_TYPR == GPS_Mode)
+	sprintf((char *)gpsBuffer,(const char *)"%lf",DataPointer->TransMethodData.GPSLat_Point);
+	cJSON_AddStringToObject(pJsonRoot, (const char *)"latitude",(const char *)gpsBuffer);
+	sprintf((char *)gpsBuffer,(const char *)"%lf",DataPointer->TransMethodData.GPSLng_Point);
+	cJSON_AddStringToObject(pJsonRoot, (const char *)"longitude",(const char *)gpsBuffer);
+#endif
+
 	cJSON_AddNumberToObject(pJsonRoot, "SendPeriod",DataPointer->TerminalInfoData.SendPeriod);
 	cJSON_AddNumberToObject(pJsonRoot, "Quanity",DataPointer->TerminalInfoData.PowerQuantity);
 	cJSON_AddNumberToObject(pJsonRoot, "Version",DataPointer->TerminalInfoData.Version);

@@ -714,6 +714,15 @@ void Hal_EnterLowPower_Mode(void)
     // AppDataPointer->TransMethodData.LoRaNet = 0;
 	hal_Delay_ms(1000);
 
+#if (ACCESSORY_TYPR == GPS_Mode)
+    //turn off the power
+    OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);     
+    //change IO status
+    P4SEL &=~BIT4;
+    P4OUT &=~BIT4;
+	P4DIR |= BIT4;
+#endif
+
     gManager.systemLowpower = 1;
     LED_OFF;
     WDTCTL = WDTPW + WDTHOLD;             //CloseWatchDog
@@ -737,7 +746,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     #if (PRODUCT_TYPE == Weather_Station)       
         AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;
     #endif
-        AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
+    AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
         
 #if (TRANSMIT_TYPE == GPRS_Mode)
     AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
@@ -784,6 +793,10 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
         #endif
 
     }
+#if (ACCESSORY_TYPR == GPS_Mode)
+    OSBsp.Device.IOControl.PowerSet(GPS_Power_On);
+    g_Device_Usart1_Init(9600);
+#endif
 }
 
 char Hal_getCurrent_work_Mode(void)
