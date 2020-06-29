@@ -119,7 +119,7 @@ void  main (void)
 
 void  WtdTaskStart (void *p_arg)
 {
-//	char buffer[50]={0};
+	char buffer[50]={0};
     CPU_INT08U err;
     uint16_t res = 0;
     while(1)

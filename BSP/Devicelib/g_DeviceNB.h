@@ -28,8 +28,7 @@ enum NB_STATUS {
 	NB_Send_Error,
 	NB_Get_PCP,
 	NB_Check_Receive,
-	NB_Idel,
-	NB_Wait_Idle
+	NB_Idel
 };
 
 unsigned char NB_Config(unsigned char *c , unsigned char m, unsigned char t);

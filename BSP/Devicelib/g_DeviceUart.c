@@ -627,12 +627,7 @@ __interrupt void USCI_A3_ISR(void)
 	{
 		case 0:break;                             // Vector 0 - no interrupt
 		case 2:                                   // Vector 2 - RXIFG
-		   if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
-				__bic_SR_register_on_exit(LPM0_bits);
-				WDTCTL  = WDT_MDLY_32;
-				SFRIE1 |= 1;  
-				Hal_ExitLowPower_Mode(Uart_Int);
-			}
+		    __bic_SR_register_on_exit(LPM0_bits);	//閫�嚭浣庡姛鑰�
 			while(!(UCA3IFG&UCTXIFG));            // USCI_A3 TX buffer ready?
 			{
 				TA1R=0;

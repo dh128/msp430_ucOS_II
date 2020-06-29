@@ -750,9 +750,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     hal_Delay_ms(100);
     g_Printf_info("Exit Low Power!\r\n");
     gManager.systemLowpower = 0;
-
-    // if(src == Rtc_Int){
-//  OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
+    // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
     // OSBsp.Device.IOControl.PowerSet(Sensor_Power_On);
     // OSBsp.Device.IOControl.PowerSet(Max485_Power_On);
 
@@ -764,33 +762,33 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
         
 #if (TRANSMIT_TYPE == GPRS_Mode)
-        AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
+    AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 #endif
 #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-        AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+    AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
 #endif
 #if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
-        if(AppDataPointer->TransMethodData.LoRaNet)
-            AppDataPointer->TransMethodData.LoRaStatus = LoRa_Join_Over;
-        else    //进低功耗前入网失败，出低功耗后继续入网
-        {
-            AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
-        }
-#endif
-#if (TRANSMIT_TYPE == LoRa_M100C_Mode)
     if(AppDataPointer->TransMethodData.LoRaNet)
-    {
-        AppDataPointer->TransMethodData.LoRaNet = 0;
-        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Init_Done;    
-        #if (PRODUCT_TYPE == Weather_Station)              
-        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
-        #endif            
-    }
+        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Join_Over;
     else    //进低功耗前入网失败，出低功耗后继续入网
     {
         AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
     }
 #endif
+    #if (TRANSMIT_TYPE == LoRa_M100C_Mode)
+        if(AppDataPointer->TransMethodData.LoRaNet)
+        {
+            AppDataPointer->TransMethodData.LoRaNet = 0;
+            AppDataPointer->TransMethodData.LoRaStatus = LoRa_Init_Done;    
+            #if (PRODUCT_TYPE == Weather_Station)              
+            AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
+            #endif            
+        }
+        else    //进低功耗前入网失败，出低功耗后继续入网
+        {
+            AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
+        }
+    #endif
     }
     else if(int_Src == Uart_Int){
         AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_IDLE;
