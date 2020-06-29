@@ -243,6 +243,18 @@ void Hal_Free(void *ptr)
     g_Printf_dbg("malloc free ok\r\n");    
 }
 
+OS_FLAG_GRP *Hal_FlagCreate(uint8_t *name, OS_FLAGS  flag)
+{
+    OS_FLAG_GRP *grp;
+    CPU_INT08U err;
+    grp = OSFlagCreate(flag, &err);
+    if (err != OS_ERR_NONE){
+        g_Printf_info("%s failed\n",__func__);
+	}
+    OSFlagNameSet (grp, name,&err);
+    return grp;
+}
+
 int Hal_ThreadCreate(void (*func)(void *p_arg), void *funcname,OS_STK *TaskStk, int priority)
 {
     CPU_INT08U err;
@@ -416,7 +428,7 @@ int Hal_Platform_Init(void)
     Terminal_Para_Init();   //读取flash存储的参数数据，并且开始设置设备参数
 
     
-    gMutex = Hal_MutexCreate(LOWEST_TASK_PRIO);
+    gMutex = Hal_MutexCreate(LOWEST_TASK_PRIO-2);       //串口中创建的互斥信号量为LOWEST_TASK_PRIO-1，不可以大于LOWEST_TASK_PRIO；
     if (gMutex == null) {
         g_Printf_dbg("%s mutex create Failed\r\n",__func__);
         return -1;
@@ -725,8 +737,9 @@ void Hal_EnterLowPower_Mode(void)
 
     gManager.systemLowpower = 1;
     LED_OFF;
-    WDTCTL = WDTPW + WDTHOLD;             //CloseWatchDog
-    SFRIE1 &= 0;
+    // WDTCTL = WDTPW + WDTHOLD;             //CloseWatchDog
+    // SFRIE1 &= 0;
+    TBCTL &=~  MC_1;     //stop timerB
     for(m=0;m<1000;m++);
     __bis_SR_register(LPM0_bits + GIE);   //进入低功耗
 }

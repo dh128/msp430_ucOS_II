@@ -29,6 +29,8 @@
 #include  <bsp.h>
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
+//const char *g_30000IoT_HOST = "118.190.136.20:8080";
+//const char *g_30000IoT_PATH = "/envm/Sensordata HTTP/1.1";
 const char *g_30000IoT_HOST = "30000iot.cn:9001";
 const char *g_30000IoT_PATH = "/api/Upload/data/";
 //const char *g_30000IoT_HOST = "47.111.88.91:6096";
@@ -219,7 +221,7 @@ void g_Device_GPRS_Init(void)
 				// if(gprs_over_tick > 3)
 				if(gprs_over_tick > 15)
 				{
-					AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Err;  //重新进入此程序
+					//AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Err;  //重新进入此程序
 					gprs_tick = 10;  //>7即可
 				}
 
@@ -760,6 +762,7 @@ void  TransmitTaskStart (void *p_arg)
     g_Printf_info("%s ... ...\n",__func__);      
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.       */
         if(Hal_getCurrent_work_Mode() == 0){
+			TaskRefreshWTD(EventWtFlag , WTD_BIT_TRANSMIT);
             if(AppDataPointer->TransMethodData.GPRSStatus == GPRS_Power_off){
 				OSTimeDly(1000); 
                 OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);

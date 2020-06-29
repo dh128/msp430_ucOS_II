@@ -1015,7 +1015,7 @@ void InqureSensor(void)
 	}
 }
 
-
+extern uint16_t REGRST;
 /*******************************************************************************
 * 函数名		: *MakeJsonBodyData
 * 描述	    	: 组建json包
@@ -1044,6 +1044,10 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
     cJSON_AddNumberToObject(pJsonRoot, "SN",DataPointer->TerminalInfoData.SerialNumber);
     cJSON_AddNumberToObject(pJsonRoot, "DeviceID",DataPointer->TerminalInfoData.DeviceID);
     cJSON_AddNumberToObject(pJsonRoot, "SeqNum",DataPointer->TransMethodData.SeqNumber);
+	if(REGRST != 0 ){
+		cJSON_AddNumberToObject(pJsonRoot, "reboot",REGRST);
+		REGRST = 0;
+	}
 
     pSubJson = NULL;
     pSubJson = cJSON_CreateObject();
@@ -1054,13 +1058,13 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
       return NULL;
     }
 
-	if(hal_GetBit(SensorStatus_H, 3)) {
+	// if(hal_GetBit(SensorStatus_H, 3)) {
 		cJSON_AddNumberToObject(pSubJson, "COD",DataPointer->WaterData.CODValue);
 
 		TempCahe = (uint32_t)(DataPointer->WaterData.CODValue*10);
 		Send_Buffer[7] = TempCahe >> 8;
 		Send_Buffer[8] = TempCahe - (TempCahe>>8)<<8 ;
-	}
+	// }
 	if(hal_GetBit(SensorStatus_H, 2)) {
 		cJSON_AddNumberToObject(pSubJson, "Cond",DataPointer->WaterData.ECValue);
 

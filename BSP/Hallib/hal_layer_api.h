@@ -86,6 +86,7 @@ void *Hal_Malloc(int size);
 void *Hal_Calloc(int count, int size);
 void Hal_Free(void *ptr);
 
+OS_FLAG_GRP *Hal_FlagCreate(uint8_t *name, OS_FLAGS  flag);
 int Hal_ThreadCreate(void (*func)(void *p_arg), void *funcname,OS_STK *TaskStk, int priority);
 int Hal_ThreadDestory(int priority);
 Queue_t Hal_QueueCreate(void **start,int size);
