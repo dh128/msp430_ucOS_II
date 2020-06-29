@@ -68,9 +68,28 @@ const uint8_t CrcLowBlock[256] = {
 0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42, 0x43, 0x83, 0x41, 0x81, 0x80, 0x40
 };
 
-typedef struct {
-    char systemLowpower;
-}gHal_Device_Manager;
+/*
+	* CCITT标准CRC16(1021)余数表 CRC16-CCITT ISO HDLC, ITU X.25, x16+x12+x5+1 多项式
+	* 高位在先时生成多项式 Gm=0x11021 低位在先时生成多项式，Gm=0x8408 本例采用高位在先
+	*/
+const uint32_t crc16_ccitt_table[] = { 0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7, 0x8108, 0x9129, 0xa14a,
+0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef, 0x1231, 0x0210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6, 0x9339, 0x8318, 0xb37b,
+0xa35a, 0xd3bd, 0xc39c, 0xf3ff, 0xe3de, 0x2462, 0x3443, 0x0420, 0x1401, 0x64e6, 0x74c7, 0x44a4, 0x5485, 0xa56a, 0xb54b, 0x8528,
+0x9509, 0xe5ee, 0xf5cf, 0xc5ac, 0xd58d, 0x3653, 0x2672, 0x1611, 0x0630, 0x76d7, 0x66f6, 0x5695, 0x46b4, 0xb75b, 0xa77a, 0x9719,
+0x8738, 0xf7df, 0xe7fe, 0xd79d, 0xc7bc, 0x48c4, 0x58e5, 0x6886, 0x78a7, 0x0840, 0x1861, 0x2802, 0x3823, 0xc9cc, 0xd9ed, 0xe98e,
+0xf9af, 0x8948, 0x9969, 0xa90a, 0xb92b, 0x5af5, 0x4ad4, 0x7ab7, 0x6a96, 0x1a71, 0x0a50, 0x3a33, 0x2a12, 0xdbfd, 0xcbdc, 0xfbbf,
+0xeb9e, 0x9b79, 0x8b58, 0xbb3b, 0xab1a, 0x6ca6, 0x7c87, 0x4ce4, 0x5cc5, 0x2c22, 0x3c03, 0x0c60, 0x1c41, 0xedae, 0xfd8f, 0xcdec,
+0xddcd, 0xad2a, 0xbd0b, 0x8d68, 0x9d49, 0x7e97, 0x6eb6, 0x5ed5, 0x4ef4, 0x3e13, 0x2e32, 0x1e51, 0x0e70, 0xff9f, 0xefbe, 0xdfdd,
+0xcffc, 0xbf1b, 0xaf3a, 0x9f59, 0x8f78, 0x9188, 0x81a9, 0xb1ca, 0xa1eb, 0xd10c, 0xc12d, 0xf14e, 0xe16f, 0x1080, 0x00a1, 0x30c2,
+0x20e3, 0x5004, 0x4025, 0x7046, 0x6067, 0x83b9, 0x9398, 0xa3fb, 0xb3da, 0xc33d, 0xd31c, 0xe37f, 0xf35e, 0x02b1, 0x1290, 0x22f3,
+0x32d2, 0x4235, 0x5214, 0x6277, 0x7256, 0xb5ea, 0xa5cb, 0x95a8, 0x8589, 0xf56e, 0xe54f, 0xd52c, 0xc50d, 0x34e2, 0x24c3, 0x14a0,
+0x0481, 0x7466, 0x6447, 0x5424, 0x4405, 0xa7db, 0xb7fa, 0x8799, 0x97b8, 0xe75f, 0xf77e, 0xc71d, 0xd73c, 0x26d3, 0x36f2, 0x0691,
+0x16b0, 0x6657, 0x7676, 0x4615, 0x5634, 0xd94c, 0xc96d, 0xf90e, 0xe92f, 0x99c8, 0x89e9, 0xb98a, 0xa9ab, 0x5844, 0x4865, 0x7806,
+0x6827, 0x18c0, 0x08e1, 0x3882, 0x28a3, 0xcb7d, 0xdb5c, 0xeb3f, 0xfb1e, 0x8bf9, 0x9bd8, 0xabbb, 0xbb9a, 0x4a75, 0x5a54, 0x6a37,
+0x7a16, 0x0af1, 0x1ad0, 0x2ab3, 0x3a92, 0xfd2e, 0xed0f, 0xdd6c, 0xcd4d, 0xbdaa, 0xad8b, 0x9de8, 0x8dc9, 0x7c26, 0x6c07, 0x5c64,
+0x4c45, 0x3ca2, 0x2c83, 0x1ce0, 0x0cc1, 0xef1f, 0xff3e, 0xcf5d, 0xdf7c, 0xaf9b, 0xbfba, 0x8fd9, 0x9ff8, 0x6e17, 0x7e36, 0x4e55,
+0x5e74, 0x2e93, 0x3eb2, 0x0ed1, 0x1ef0 };
+
 
 static gHal_Device_Manager gManager;
 static Mutex_t gMutex = null;
@@ -181,6 +200,24 @@ uint16_t Crc16(uint8_t *bufferpoint,int16_t sum)
     return(Result);
 }
 
+uint16_t CRC16CCITT(uint32_t *message, int l)
+{
+	uint32_t crc_reg = 0;
+	int i = 0;
+	for ( i = 0; i < l; i++) {
+		crc_reg = (crc_reg >> 8) ^ crc16_ccitt_table[(crc_reg ^ message[i]) & 0xff];
+	}
+	return crc_reg;
+}
+uint16_t CRC16CCITT_Byte(uint8_t *message, int l)
+{
+	uint16_t crc_reg = 0;
+	int i = 0;
+	for ( i = 0; i < l; i++) {
+		crc_reg = (crc_reg >> 8) ^ crc16_ccitt_table[(crc_reg ^ message[i]) & 0xff];
+	}
+	return crc_reg;
+}
 char Hal_CheckString(char *dst ,char *src)
 {
     if(strstr((const char *)dst,(const char *)src) != null)
@@ -204,6 +241,18 @@ void Hal_Free(void *ptr)
     if (ptr != NULL)
         free(ptr);
     g_Printf_dbg("malloc free ok\r\n");    
+}
+
+OS_FLAG_GRP *Hal_FlagCreate(uint8_t *name, OS_FLAGS  flag)
+{
+    OS_FLAG_GRP *grp;
+    CPU_INT08U err;
+    grp = OSFlagCreate(flag, &err);
+    if (err != OS_ERR_NONE){
+        g_Printf_info("%s failed\n",__func__);
+	}
+    OSFlagNameSet (grp, name,&err);
+    return grp;
 }
 
 int Hal_ThreadCreate(void (*func)(void *p_arg), void *funcname,OS_STK *TaskStk, int priority)
@@ -375,10 +424,11 @@ void Hal_GetTimeOfDay(struct hal_timeval* tv)
 
 int Hal_Platform_Init(void)
 {
-    ScadaData_base_Init();
-    Terminal_Para_Init();
+    ScadaData_base_Init();  //设置传输方式
+    Terminal_Para_Init();   //读取flash存储的参数数据，并且开始设置设备参数
 
-    gMutex = Hal_MutexCreate(LOWEST_TASK_PRIO);
+    
+    gMutex = Hal_MutexCreate(LOWEST_TASK_PRIO-2);       //串口中创建的互斥信号量为LOWEST_TASK_PRIO-1，不可以大于LOWEST_TASK_PRIO；
     if (gMutex == null) {
         g_Printf_dbg("%s mutex create Failed\r\n",__func__);
         return -1;
@@ -404,8 +454,11 @@ int Hal_getProductName(char *proName)
 #elif (PRODUCT_TYPE == WRain_Station) 
 	strncpy(proName, "WRainData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Wether_Station) 
-	strncpy(proName, "WetherData", PRODUCT_NAMES_LEN-1);
+#elif (PRODUCT_TYPE == Weather_Station) 
+	strncpy(proName, "WeatherData", PRODUCT_NAMES_LEN-1);
+	return 0;
+#elif (PRODUCT_TYPE == Water_Station)
+	strncpy(proName, "WaterData", PRODUCT_NAMES_LEN-1);
 	return 0;
 #elif (PRODUCT_TYPE == Soil_Station) 
 	strncpy(proName, "SoilData", PRODUCT_NAMES_LEN-1);
@@ -434,8 +487,8 @@ int Hal_getProductName(char *proName)
 #elif (PRODUCT_TYPE == NoxiousGas_Station) 
 	strncpy(proName, "NoxiousGasData", PRODUCT_NAMES_LEN-1);
 	return 0;	
-#elif (PRODUCT_TYPE == WetherSoil_Station) 
-	strncpy(proName, "WetherSoilData", PRODUCT_NAMES_LEN-1);
+#elif (PRODUCT_TYPE == WeatherSoil_Station) 
+	strncpy(proName, "WeatherSoilData", PRODUCT_NAMES_LEN-1);
 	return 0;
 #elif (PRODUCT_TYPE == Planting_Station) 
 	strncpy(proName, "PlantingData", PRODUCT_NAMES_LEN-1);
@@ -500,7 +553,7 @@ uint32_t Hal_getDeviceID(void)
 uint32_t Hal_getFirmwareVersion(void)
 {
     uint32_t temp =0;
-    temp = OSBsp.Device.InnerFlash.innerFLASHRead(14,infor_BootAddr);
+    temp = OSBsp.Device.InnerFlash.innerFLASHRead(1,infor_BootAddr);
     g_Printf_info("%s %d\r\n",__func__,temp);
     return temp;
 }
@@ -638,48 +691,78 @@ void Hal_EnterLowPower_Mode(void)
     static int m = 0;
     g_Printf_info("Enter Low Power!\r\n");
     hal_Delay_ms(100);
-#if (TRANSMIT_TYPE == GPRS_Mode)
-    // OSBsp.Device.IOControl.PowerSet(Max485_Power_Off);
+//    Teminal_Data_Init();  //状态清0
+
+
+
+#if (PRODUCT_TYPE == Weather_Station)
+    // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
+    OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
+#else
     OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
-    // OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
-    // OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
+#endif
+
+#if (TRANSMIT_TYPE == GPRS_Mode)
     OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
     OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+//    OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
+//    OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
+
+    AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
+    AppDataPointer->TransMethodData.GPRSNet = 0;        //ML 20190829
+    AppDataPointer->TransMethodData.GPRSAttached = 0;
+	AppDataPointer->TransMethodData.GPRSATStatus = 0;
 #endif
-#if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == LoRa_F8L10D_Mode )
-    // OSBsp.Device.IOControl.PowerSet(Max485_Power_Off);
-    OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
-    // OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
-    // OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);
+#if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
     OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
     // OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);	
 #endif
-   
-    AppDataPointer->TransMethodData.GPRSNet = 0;        //ML 20190829
-    AppDataPointer->TransMethodData.GPRSAttached = 0;
+    // AppDataPointer->TransMethodData.LoRaNet = 0;
+	hal_Delay_ms(1000);
+
+#if (ACCESSORY_TYPR == GPS_Mode)
+    //turn off the power
+    OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);     
+    //change IO status
+    P4SEL &=~BIT4;
+    P4OUT &=~BIT4;
+	P4DIR |= BIT4;
+#endif
 
     gManager.systemLowpower = 1;
     LED_OFF;
-    WDTCTL = WDTPW + WDTHOLD;             //CloseWatchDog
-    SFRIE1 &= 0;
+    // WDTCTL = WDTPW + WDTHOLD;             //CloseWatchDog
+    // SFRIE1 &= 0;
+    TBCTL &=~  MC_1;     //stop timerB
     for(m=0;m<1000;m++);
     __bis_SR_register(LPM0_bits + GIE);   //进入低功耗
 }
 
-void Hal_ExitLowPower_Mode(Int_Src src)
+// void Hal_ExitLowPower_Mode(void)
+void Hal_ExitLowPower_Mode(uint8_t int_Src)
 {
     hal_Delay_ms(100);
     g_Printf_info("Exit Low Power!\r\n");
-    // __bic_SR_register_on_exit(LPM0_bits);	//退出低功耗
     gManager.systemLowpower = 0;
 
-    if(src == Rtc_Int){
+    // if(src == Rtc_Int){
 //  OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
     // OSBsp.Device.IOControl.PowerSet(Sensor_Power_On);
     // OSBsp.Device.IOControl.PowerSet(Max485_Power_On);
-        AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
+
+    if(int_Src == Rtc_Int)
+    {
+    #if (PRODUCT_TYPE == Weather_Station)       
+        AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;
+    #endif
+    AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
+        
 #if (TRANSMIT_TYPE == GPRS_Mode)
         AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 #endif
@@ -694,11 +777,41 @@ void Hal_ExitLowPower_Mode(Int_Src src)
             AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
         }
 #endif
-    }else if(src == Uart_Int){
-        AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_IDLE;
-        AppDataPointer->TransMethodData.NBStatus = NB_Wait_Idle;
+#if (TRANSMIT_TYPE == LoRa_M100C_Mode)
+    if(AppDataPointer->TransMethodData.LoRaNet)
+    {
+        AppDataPointer->TransMethodData.LoRaNet = 0;
+        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Init_Done;    
+        #if (PRODUCT_TYPE == Weather_Station)              
+        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
+        #endif            
     }
-    
+    else    //进低功耗前入网失败，出低功耗后继续入网
+    {
+        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
+    }
+#endif
+    }
+    else if(int_Src == Uart_Int){
+        AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_IDLE;
+        #if (TRANSMIT_TYPE == GPRS_Mode)
+        AppDataPointer->TransMethodData.GPRSStatus = GPRS_Wait_Idle;
+        #endif
+        #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+        AppDataPointer->TransMethodData.NBStatus = NB_Idel;
+        #endif
+        #if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
+        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Wait_Idle;
+        #endif
+        #if (TRANSMIT_TYPE == LoRa_M100C_Mode)
+        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Wait_Idle;
+        #endif
+
+    }
+#if (ACCESSORY_TYPR == GPS_Mode)
+    OSBsp.Device.IOControl.PowerSet(GPS_Power_On);
+    g_Device_Usart1_Init(9600);
+#endif
 }
 
 char Hal_getCurrent_work_Mode(void)

@@ -28,6 +28,7 @@ enum GPRS_STATUS {
 	GPRS_Mqtt_Init_Done,
 	GPRS_Http_Preinit,
 	GPRS_Http_Init_Done,
+	GPRS_Init_Failed,
 	GPRS_Waitfor_OK,
 	GPRS_Waitfor_Download,
 	GPRS_Waitfor_Token,
@@ -43,7 +44,9 @@ enum GPRS_STATUS {
 	GPRS_Waitfor_GetIP,
 	GPRS_Get_HTTPACT,
 	GPRS_Http_Post_Done,
-	GPRS_Fota_Process
+	GPRS_Fota_Process,
+	GPRS_Wait_Idle,
+	GPRS_Http_Err
 };
 
 

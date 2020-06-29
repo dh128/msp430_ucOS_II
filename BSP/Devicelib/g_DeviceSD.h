@@ -4,6 +4,12 @@
 #define SD_CS_High()	P7OUT |= BIT5		//SD_cs put high
 #define SD_CS_Low()		P7OUT &=~BIT5		//SD_cs put low Enable
 
+#define SD_DEBUG_NEXTLINE  0
+#define SD_DEBUG_UPTIME    1
+#define SD_DEBUG_INIT_OK   2
+#define SD_DEBUG_INIT_ERR  3
+#define SD_DEBUG_SCAN_OK   4
+
 
 //SD传输数据结束后是否释放总线宏定义  
 #define NO_RELEASE      0
@@ -49,8 +55,10 @@
 
 extern unsigned long cardSize;  //SD卡容量
 extern unsigned char status;    //状态
+extern uint8_t SD_Status;
 
-void g_Device_SDCard_Check(void);
+void SD_Storage_DebugLog(uint8_t index);
+uint8_t g_Device_SDCard_Check(void);
 void SDsizeDisplay(unsigned long Capacity);
 //函数申明区 
 uint8_t SD_GetResponse(uint8_t Response);

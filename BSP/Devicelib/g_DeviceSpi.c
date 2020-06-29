@@ -28,10 +28,10 @@
 
 
 /*******************************************************************************
-* ������	: g_Device_SendByte_SPI2
-* ����		: SPI2�����ֽں���
-* �������  : chr
-* ���ز���  : ��
+* ??????	: g_Device_SendByte_SPI2
+* ????		: SPI2??????????
+* ???????  : chr
+* ???????  : ??
 *******************************************************************************/
 void g_Device_SendByte_SPI2(uint8_t chr)
 {
@@ -55,10 +55,10 @@ void g_Device_SendNByte_SPI2(uint8_t *data,uint8_t len)
 	}
 }
 /*******************************************************************************
-* ������	: g_Device_SPI2_ReadWriteByte ����SD��
-* ����		: SPI��д����
-* �������  : TxData
-* ���ز���  : RXBUF1
+* ??????	: g_Device_SPI2_ReadWriteByte ????SD??
+* ????		: SPI??��????
+* ???????  : TxData
+* ???????  : RXBUF1
 *******************************************************************************/
 uint8_t g_Device_SPI2_ReadWriteByte(uint8_t TxData)
 {
@@ -73,10 +73,10 @@ uint8_t g_Device_SPI2_ReadWriteByte(uint8_t TxData)
 }
 
 /*******************************************************************************
-* ������	: g_Device_SendByte_SPI3
-* ����		: SPI3�����ֽں���
-* �������  : chr
-* ���ز���  : ��
+* ??????	: g_Device_SendByte_SPI3
+* ????		: SPI3??????????
+* ???????  : chr
+* ???????  : ??
 *******************************************************************************/
 void g_Device_SendByte_SPI3(uint8_t chr)
 {
@@ -84,10 +84,10 @@ void g_Device_SendByte_SPI3(uint8_t chr)
 	while(!(UCB3IFG & UCTXIFG));
 }
 /*******************************************************************************
-* ������	: SPI_B2_Init
-* ����:    SPI_B2��ʼ��
-* �������  : ��
-* ���ز���  : ��
+* ??????	: SPI_B2_Init
+* ????:    SPI_B2?????
+* ???????  : ??
+* ???????  : ??
 *******************************************************************************/
 void g_Device_SPI2_Init(void)
 {
@@ -124,22 +124,22 @@ void g_Device_SendNByte_SPI3(uint8_t *data,uint8_t len)
 }
 
 /*******************************************************************************
-* ������	: g_Device_SPI3_Init
-* ����		: SPI3��ʼ��
-* �������  : ��
-* ���ز���  : ��
+* ??????	: g_Device_SPI3_Init
+* ????		: SPI3?????
+* ???????  : ??
+* ???????  : ??
 *******************************************************************************/
 void g_Device_SPI3_Init(void)
 {
 	P2SEL |= BIT2+BIT3+BIT4;						// Set P2.2-5 as SPI peripheral
 	UCB3CTL1 |= UCSWRST;               				// Enable SW reset
-	UCB3CTL0 |= UCMSB+UCMST+UCSYNC+UCCKPL;			//3��SPIģʽ����UCxSTE=1ʱ�ӻ�ʹ��
-													//8λ����SPI���������״̬Ϊ�ߵ�ƽ����λ��ǰ
-	UCB3CTL1 |= UCSSEL_2;                     		// ѡ��ο�ʱ��ΪSCMLK=16MHz
-	UCB3BR0 = 2;									//2��Ƶ
+	UCB3CTL0 |= UCMSB+UCMST+UCSYNC+UCCKPL;			//3??SPI??????UCxSTE=1???????
+													//8��????SPI?????????????????????��???
+	UCB3CTL1 |= UCSSEL_2;                     		// ???��?????SCMLK=16MHz
+	UCB3BR0 = 2;									//2???
 	UCB3BR1 = 0;
-	UCB3CTL1 &= ~UCSWRST;							//��ɼĴ�������
-	UCB3IE |= UCRXIE;								//ʹ���ж�
+	UCB3CTL1 &= ~UCSWRST;							//???????????
+	UCB3IE |= UCRXIE;								//????��?
 
 	OSBsp.Device.Spi3.WriteData = g_Device_SendByte_SPI3;
 	OSBsp.Device.Spi3.WriteNData = g_Device_SendNByte_SPI3;
@@ -147,7 +147,7 @@ void g_Device_SPI3_Init(void)
 
 
 
-//------USCI_B2�жϷ��������-------------------------------------------------+
+//------USCI_B2?��?????????-------------------------------------------------+
 #pragma vector=USCI_B2_VECTOR
 __interrupt void USCI_B2_ISR(void)
 {
@@ -163,7 +163,7 @@ __interrupt void USCI_B2_ISR(void)
   default: break;
   }
 }
-//------USCI_B3�жϷ��������-------------------------------------------------+
+//------USCI_B3?��?????????-------------------------------------------------+
 #pragma vector=USCI_B3_VECTOR
 __interrupt void USCI_B3_ISR(void)
 {

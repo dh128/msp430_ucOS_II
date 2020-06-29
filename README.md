@@ -60,7 +60,19 @@ Acquire relative time value based on system ticks.
 There are four threads in the app.c,which are scada task, transmission task , management task and IDLE task
 ### 2.1. static  void  ScadaTaskStart (void *p_arg)  ###
 
+2020-6-9
+黄振修改后代码提交
 
+2020-6-11	dingh
+1、串口程序中添加bRxBuffer和bRxNum变量，接收GPS参数（GPS只接受$GNRMC数据），接收到“,A,”确认有效数据，则解析接收数据；
+2、修改GPS解析程序，解析单位为度，SD卡中存储字符串格式，NB上报四字节小端模式浮点数；
+3、进入低功耗断开GPS电源，修改串口TX IO,退出低功耗后打开GPS电源，初始化串口1;
+4、修复NB程序中部分形参格式警告。
+2020-6-23
+1、修改系统时钟为TimerB0定时器，节拍依旧为2ms一次；
+2、修改gMutex信号优先级，之前等级==15创建失败；
+3、启用软件看门狗1小时8分16秒，并添加看门狗任务，用户任务中优先级最高，接收其他任务的喂狗标志组之后喂狗，否则等待；
+4、组包Json数据时，添加复位变量组包功能，当复位变量不为0时，添加reboot字段。
 
 
 

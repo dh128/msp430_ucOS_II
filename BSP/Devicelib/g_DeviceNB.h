@@ -13,6 +13,10 @@ extern uint16_t StartFile;
 extern uint8_t FullFlag;
 extern char RespFile[10];
 
+extern uint32_t Send_Buffer_CTwing_NBSignal[16];
+extern uint32_t Send_Buffer_CTwing_NBSoildata[13];
+extern uint32_t Send_Buffer_CTwing_NBWeatherdata[7]; 
+
 enum NB_STATUS {
 	NB_Power_off = 0,
 	NB_Power_on = 1,
@@ -20,9 +24,9 @@ enum NB_STATUS {
 	NB_Init_Done,
 	NB_Get_IP,
 	NB_Registered,
-	NB_Send_Done,
+	NB_Send_Over,
 	NB_Send_Error,
-	NB_Get_Receive,
+	NB_Get_PCP,
 	NB_Check_Receive,
 	NB_Idel,
 	NB_Wait_Idle

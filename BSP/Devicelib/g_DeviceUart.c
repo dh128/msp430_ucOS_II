@@ -39,11 +39,12 @@ uint8_t Rcv_TimeData[50];
 // uint8_t TimebuffNum = 0;
 // uint8_t TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16杩涘埗鐨勬椂闂碆uffer  2018骞�鏈�5鍙�20鏃�0鍒�0绉�鏄熸湡4
 
+char aRxBuff[1050];		//UART0 receive data buff
+uint16_t aRxNum=0;		        //UART0 receive data num
 
-char aRxBuff[aRxLength];		//UART0 receive data buff
-uint8_t aRxNum=0;		        //UART0 receive data num
-
-g_Device_Config_CMD bRxBuff;
+uint8_t bRxBuff[bRxLength];
+uint16_t bRxNum;
+// g_Device_Config_CMD bRxBuff;
 // g_Device_Config_CMD cRxBuff;
 uint8_t cRxBuff[cRxLength];
 uint8_t cRxNum = 0;
@@ -58,9 +59,9 @@ static Mutex_t gUartMutex = null;
 * Input para     : *Cmd,Len
 * Output para    : None
 *******************************************************************************/
-void Clear_CMD_Buffer(uint8_t *data,uint8_t Len)
+void Clear_CMD_Buffer(uint8_t *data,uint16_t Len)
 {
-	uint8_t m;
+	uint16_t m;
 	for(m=0;m<Len;m++)
 	{
 		data[m] = 0x00;
@@ -72,9 +73,9 @@ void Clear_CMD_Buffer(uint8_t *data,uint8_t Len)
 * Input para     : *Cmd,*Len
 * Output para    : None
 *******************************************************************************/
-void Clear_Buffer(unsigned char *Cmd,unsigned char *Len)
+void Clear_Buffer(unsigned char *Cmd,unsigned int *Len)
 {
-	unsigned char m;
+	unsigned int m;
 	for(m=0;m<*Len;m++)
 	{
 		Cmd[m] = 0x00;
@@ -407,17 +408,19 @@ g_Device_Config_CMD g_Device_Usart_UserCmd_Copy(G_UART_PORT Port)
 	if(Port == Usart2){
 		dst.cmdLenth = cRxNum;
 		cRxNum = 0;
-		g_Printf_info("%s len:%d data:",__func__,dst.cmdLenth);
 		for(m=0;m<dst.cmdLenth;m++){
 			dst.hexcmd[m] = cRxBuff[m];
-			g_Printf_info("%02x ",dst.hexcmd[m]);
 		}
-		g_Printf_info("\r\n");
-		
 		memset(cRxBuff,0x0,cRxLength);
 	}else if(Port == Usart1){
-		dst = bRxBuff;
-		memset(&bRxBuff,0x0,sizeof(g_Device_Config_CMD));
+		dst.cmdLenth = bRxNum;
+		bRxNum = 0;
+		for(m=0;m<dst.cmdLenth;m++){
+			dst.strcmd[m] = bRxBuff[m];
+		}
+		memset(bRxBuff,0x0,bRxLength);
+		// dst = bRxBuff;
+		// memset(&bRxBuff,0x0,sizeof(g_Device_Config_CMD));
 	}
 
 	return dst;
@@ -437,7 +440,16 @@ void UartRecTaskStart(void *p_arg)
 				g_Device_Config_QueuePost(G_CLIENT_CMD,(void *)"ClientCMD");
 				RecLen = 0;
 			}
+		}else if(bRxNum > 60){		//长度大于60认定位有效GPS信息
+			RecLen = bRxNum;
+			OSTimeDly(25);
+			if(bRxNum == RecLen){
+				g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");
+				RecLen = 0;
+			}
 		}
+	TaskRefreshWTD(EventWtFlag , WTD_BIT_UARTREC);
+	OSTimeDly(1000);
 	}
 }
 
@@ -453,13 +465,13 @@ __interrupt void USCI_A0_ISR(void)
 	{
 		case 0:break;                             // Vector 0 - no interrupt
 		case 2:                                   // Vector 2 - RXIFG
-		     __bic_SR_register_on_exit(LPM0_bits);//退出低功耗  ML20191022*********************************
+		    //  __bic_SR_register_on_exit(LPM0_bits);//退出低功耗  ML20191022*********************************
 			while(!(UCA0IFG&UCTXIFG));            // USCI_A3 TX buffer ready?
 			{
 				OSBsp.Device.Usart2.WriteData(UCA0RXBUF);  //GLZ测试屏蔽+++++++++++++++++++++++++++++++++++
 				aRxBuff[aRxNum++] = UCA0RXBUF;
 #if(TRANSMIT_TYPE == NBIoT_BC95_Mode)
-				if(aRxNum >= aRxLength){
+				if(aRxNum >= 1050){
 					aRxNum = 0;
 				}
 				// if((aRxBuff[aRxNum-2] == 0x0D)&&(aRxBuff[aRxNum-1] == 0x0A)){
@@ -481,14 +493,17 @@ __interrupt void USCI_A0_ISR(void)
 					}	
 #endif	//(TRANSMIT_TYPE == LoRa_F8L10D_Mode)
 #if(TRANSMIT_TYPE == GPRS_Mode)
-				if((aRxBuff[aRxNum-2] == 0x0D)&&(aRxBuff[aRxNum-1] == 0x0A)){
+				if(g_ftp_allow_storage != 0){
+					download_data_1[data1_len++] = UCA0RXBUF;
+					if(data1_len > 1535){
+						data1_len = 0;
+					}
+				}else if((aRxBuff[aRxNum-2] == 0x0D)&&(aRxBuff[aRxNum-1] == 0x0A)){
 					aRxNum = 0;
 					g_Device_check_Response(aRxBuff);
 					memset(aRxBuff,0x0,256);
 				}
-				if(g_ftp_allow_storage != 0){
-					download_data_1[data1_len++] = UCA0RXBUF;
-				}
+				
 #endif	//(TRANSMIT_TYPE == GPRS_Mode)
 				
 			}//while
@@ -510,32 +525,59 @@ __interrupt void USCI_A1_ISR(void)
 	        __bic_SR_register_on_exit(LPM0_bits);	
 			while(!(UCA1IFG&UCTXIFG));            // USCI_A1 TX buffer ready?
 			{
+				
 #if (ACCESSORY_TYPR == GPS_Mode)
-				if(UCA1RXBUF == '$'){
-					memset(&bRxBuff,0x0,sizeof(g_Device_Config_CMD));
-				}
-				bRxBuff.strcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
-				if( (bRxBuff.strcmd[0] == '$')&&(bRxBuff.strcmd[3] == 'G')&&
-						(bRxBuff.strcmd[4] == 'L')&&(bRxBuff.strcmd[5] == 'L') )
+				if(UCA1RXBUF == '$')
 				{
-					if(UCA1RXBUF == '\n')
-					{
-						OSIntEnter();
-						g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");	
-						OSIntExit();
+					bRxNum = 0;
+				}
+				bRxBuff[bRxNum++] = UCA1RXBUF;
+				if(bRxNum >= bRxLength){
+					bRxNum  = 0;
+				}
+				if(UCA1RXBUF == '\n')
+				{
+					if(bRxNum < 60){
+						bRxNum = 0;		//小于60的长度认定为无效数据清空buffer,接口任务中同样需要判断长度
 					}
+					OSBsp.Device.Usart2.WriteNData(bRxBuff,bRxNum);
+					// OSIntEnter();
+					// g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");	
+					// OSIntExit();
+					//保存数据
+					// for(GPSRxNum=0;GPSRxNum<bRxNum;GPSRxNum++)
+					// {
+					// 	GPSLngLat_data[GPSRxNum] = bRxBuff[GPSRxNum];
+					// }
+					// //
+					// bRxNum = 0;
+					// Uart_1_Flag=1;
 				}
+				// if(UCA1RXBUF == '$'){
+				// 	memset(&bRxBuff,0x0,sizeof(g_Device_Config_CMD));
+				// }
+				// bRxBuff.strcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
+				// if( (bRxBuff.strcmd[0] == '$')&&(bRxBuff.strcmd[3] == 'G')&&
+				// 		(bRxBuff.strcmd[4] == 'L')&&(bRxBuff.strcmd[5] == 'L') )
+				// {
+				// 	if(UCA1RXBUF == '\n')
+				// 	{
+				// 		OSIntEnter();
+				// 		g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");	
+				// 		OSIntExit();
+				// 	}
+				// }
 #else 	
-				if(bRxBuff.cmdLenth<bRxLength){
-					bRxBuff.hexcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
-				  	if(bRxBuff.cmdLenth == 1){
-					  OSIntEnter();
-					  g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"SerialBus");	
-					  OSIntExit();
-				 	}		
-				}else{
-				  	bRxBuff.cmdLenth = 0;
-				}
+				// if(bRxBuff.cmdLenth<bRxLength){
+				// 	bRxBuff.hexcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
+				//   	if(bRxBuff.cmdLenth == 1){
+				// 	  OSIntEnter();
+				// 	  g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"SerialBus");	
+				// 	  OSIntExit();
+				//  	}		
+				// }else{
+				//   	bRxBuff.cmdLenth = 0;
+				// }
 #endif
 			}
 			break;
@@ -551,7 +593,14 @@ __interrupt void USCI_A2_ISR(void)
 	{
 		case 0:break;                             // Vector 0 - no interrupt
 		case 2:                                   // Vector 2 - RXIFG
+		   if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
 			__bic_SR_register_on_exit(LPM0_bits);	
+				// WDTCTL  = WDT_MDLY_32;
+				// SFRIE1 |= 1;  
+				TBCTL |= MC_1;     //start timerB
+				Hal_ExitLowPower_Mode(Uart_Int);
+			}
+
 			while(!(UCA2IFG&UCTXIFG));            // USCI_A1 TX buffer ready?
 			{
 				if(cRxNum < cRxLength){

@@ -45,19 +45,21 @@
 #endif
 
 /*------------------------ Nothing Below This Line --------------------------*/
-#define SCADATIME					60
+#define SCADATIME					30
 // 定义是否具备GPS功能
 #define HAVE_GPS_SERVICE
 // 定义是否具备蓝牙功能
 #define HAVE_BT_SERVICE
 // 定义是否具备log存储功能
 #define HAVE_LOG_STORE_SERVICE
+// 定义是否具备SD存储功能
+#define HAVE_SDCARD_SERVICE 			           	1
 //*****************终端类型*********************//
 #define Air_Station           		0x01	 //空气监测仪
 #define Voc_Station           		0x02	 //VOC监测仪
 #define Dust_Station	      		0x03	 //扬尘噪音监测仪
 #define WRain_Station	      		0x04	 //水雨情监测仪
-#define Wether_Station        		0x05	 //气象监测仪
+#define Weather_Station        		0x05	 //气象监测仪
 #define Water_Station	      		0x06	 //水质水况监测仪
 #define Soil_Station          		0x07	 //土壤墒情监测仪
 #define Agriculture_Station   		0x08	 //农业监测仪
@@ -68,7 +70,7 @@
 #define IntegratedPitWell     		0x14	 //一体化窨井液位监测仪
 #define InputmodeWell         		0x15	 //投入式窨井液位监测仪
 #define NoxiousGas_Station    		0x18	 //有害气体监测仪
-#define WetherSoil_Station    		0x19	 //气象土壤监测仪
+#define WeatherSoil_Station    		0x19	 //气象土壤监测仪
 #define Planting_Station      		0x20	 //农作物种植环境监测仪
 #define LevelFlowrate_Station 		0x21	 //雷达水位流速监测仪
 #define TankMonitor_Station   		0x0A	 //TankMonitor监测仪
@@ -79,6 +81,10 @@
 
 
 #define PRODUCT_TYPE                Water_Station
+// #define PRODUCT_TYPE                Weather_Station
+// #define PRODUCT_TYPE                Soil_Station
+//#define PRODUCT_TYPE 	            Voc_Station
+//#define PRODUCT_TYPE	             Flowmeter_Station
 
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
@@ -88,9 +94,11 @@
 #define LoRa_S78S_Mode		  		0x05
 #define LoRa_OM402_Mode		  		0x06
 #define GPRS_AIR202_Mode      		0x07
+#define LoRa_M100C_Mode      		0x08
 
-//  #define TRANSMIT_TYPE 			    GPRS_Mode
-#define TRANSMIT_TYPE 			    NBIoT_BC95_Mode
+#define TRANSMIT_TYPE 			    GPRS_Mode
+//#define TRANSMIT_TYPE 			    NBIoT_BC95_Mode
+// #define TRANSMIT_TYPE 			    LoRa_M100C_Mode
 //#define TRANSMIT_TYPE 			    LoRa_F8L10D_Mode
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
@@ -106,8 +114,17 @@
 #define GPS_Mode		      		0x01     //GPS配件
 #define RS485_Mode		      		0x02     //485配件
 #define RS232_Mode		      		0x03     //232配件
+#define Display_Mode		        0x04     //显示屏配件
 #define None_Mode	          		0xFF     //无配件
+
+// #define ACCESSORY_TYPR              Display_Mode
 #define ACCESSORY_TYPR              GPS_Mode
+
+#if (ACCESSORY_TYPR == Display_Mode)
+	//这俩预定义只能选一个
+	#define Display_LED
+	// #define Display_ePaper
+#endif
 
 
 

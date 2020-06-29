@@ -29,7 +29,7 @@
 static uint32_t g_MinuteTick = 0;
 static uint32_t g_MinuteTimeTick = 0;
 static uint32_t g_HourTimeTick = 0;
-static uint32_t g_DayTimeTick = 0;
+//static uint32_t g_DayTimeTick = 0;
 
 RtcStruct Rtctime;
 
@@ -126,12 +126,12 @@ static uint8_t DS1302_read_byte(uint8_t addr)
 //***********************************************************************
 void DS1302_write_time(uint8_t *data,uint8_t dataType)
 {
-	DS1302_write_byte(DS1302_control_add,0x00);		//???????� 
+	DS1302_write_byte(DS1302_control_add,0x00);		//???????�
 	DS1302_write_byte(DS1302_sec_add,0x80);	        //??? 
 	//DS1302_write_byte(DS1302_charger_add,0xa9);		//?????? 
 	switch(dataType){
 		case RealTime:{
-			DS1302_write_byte(DS1302_year_add,data[1]);	//?� 
+			DS1302_write_byte(DS1302_year_add,data[1]);	//?�
 			DS1302_write_byte(DS1302_month_add,data[2]);	//?�
 			DS1302_write_byte(DS1302_day_add,data[3]);	//?�
 			DS1302_write_byte(DS1302_hr_add,data[4]);		//?�
@@ -184,7 +184,7 @@ void DS1302_read_time(uint8_t *data,uint8_t dataType)
 }
 
 //***********************************************************************
-//               DS302???????�
+//               DS302初始化
 //***********************************************************************
 void g_Device_ExtRTC_Init(void) 
 {
@@ -289,25 +289,25 @@ void Read_info_RTC(uint8_t *time)
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
-static uint8_t month_day[12]={31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; //平年 
-static uint8_t Leap_month_day[12]={31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; //闰年 
+static uint8_t month_day[12]={31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; //平年
+static uint8_t Leap_month_day[12]={31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; //闰年
 const uint16_t dayPerYear[4] = {365, 365, 365, 366};
 uint32_t UnixTimeStamp=0;
 
 
 
 
-// 判断是否是闰年 
-// year: 需要判断的年 
+// 判断是否是闰年
+// year: 需要判断的年
 // return：1：闰年
-//	  	   0: 平年 
+//	  	   0: 平年
 uint8_t isLeapYear(uint16_t year)
 {
 	uint8_t res=0;
 	
-	if(year%4 == 0) // 能够被4整除 
+	if(year%4 == 0) // 能够被4整除
 	{
-		if((year%100 == 0) && (year%400 != 0))	//能够被100整除，但是不能够被400整除 
+		if((year%100 == 0) && (year%400 != 0))	//能够被100整除，但是不能够被400整除
 		{
 			res = 0;
 		}
@@ -320,56 +320,56 @@ uint8_t isLeapYear(uint16_t year)
 }
 
 // 将Unix时间戳转换为北京时间
-// unixTime: 需要判断的Unix时间戳 
+// unixTime: 需要判断的Unix时间戳
 // *tempBeijing:返回的北京时间
 // return：none
 // note：没对输入参数正确性做判断
 void covUnixTimeStp2Beijing(uint32_t unixTime, RtcStruct *tempBeijing)
 {
-    uint32_t totleDaynum=0, totleSecNum=0;
-    uint16_t remainDayofYear, tempDay=0;
-    uint8_t *pr, tempYear=0;
-    
- 
-    totleDaynum = unixTime/(24*60*60); //总天数(注意加括号)
-    totleSecNum = unixTime%(24*60*60); //当天剩余的秒速
- 
-    memset(tempBeijing, 0x00, sizeof(RtcStruct));
-    //1.计算哪一年
-    tempBeijing->Year = 1970 + (totleDaynum/FOURYEARDAY)*4;
-    remainDayofYear = totleDaynum%FOURYEARDAY+1;
-    while(remainDayofYear >= dayPerYear[tempYear]){
-        remainDayofYear -= dayPerYear[tempYear];
-        tempBeijing->Year++;
-        tempYear++;
-    }
-    
-    //2.计算哪一月的哪一天
-    pr = isLeapYear(tempBeijing->Year)?Leap_month_day:month_day;
-    while(remainDayofYear > *(pr+tempBeijing->Month))
-    {
-		remainDayofYear -= *(pr+tempBeijing->Month);
-        tempBeijing->Month++;
-    }
-    tempBeijing->Month++; //month
-    tempBeijing->Day = remainDayofYear; //day
-  
-    //3.计算当天时间
-    tempBeijing->Hour = totleSecNum/3600;
-    tempBeijing->Minute = (totleSecNum%3600)/60; //error：变量搞错
-    tempBeijing->Second = (totleSecNum%3600)%60;
- 
-    //4.时区调整
-    tempBeijing->Hour +=TIMEZONE; 
-    if(tempBeijing->Hour>23){
-        tempBeijing->Hour -= 24;
-        tempBeijing->Day++;
-    }
+//    uint32_t totleDaynum=0, totleSecNum=0;
+//    uint16_t remainDayofYear, tempDay=0;
+//    uint8_t *pr, tempYear=0;
+//
+//
+//    totleDaynum = unixTime/(24*60*60); //总天数(注意加括号)
+//    totleSecNum = unixTime%(24*60*60); //当天剩余的秒速
+//
+//    memset(tempBeijing, 0x00, sizeof(RtcStruct));
+//    //1.计算哪一年
+//    tempBeijing->Year = 1970 + (totleDaynum/FOURYEARDAY)*4;
+//    remainDayofYear = totleDaynum%FOURYEARDAY+1;
+//    while(remainDayofYear >= dayPerYear[tempYear]){
+//        remainDayofYear -= dayPerYear[tempYear];
+//        tempBeijing->Year++;
+//        tempYear++;
+//    }
+//
+//    //2.计算哪一月的哪一天
+//    pr = isLeapYear(tempBeijing->Year)?Leap_month_day:month_day;
+//    while(remainDayofYear > *(pr+tempBeijing->Month))
+//    {
+//		remainDayofYear -= *(pr+tempBeijing->Month);
+//        tempBeijing->Month++;
+//    }
+//    tempBeijing->Month++; //month
+//    tempBeijing->Day = remainDayofYear; //day
+//
+//    //3.计算当天时间
+//    tempBeijing->Hour = totleSecNum/3600;
+//    tempBeijing->Minute = (totleSecNum%3600)/60; //error：变量搞错
+//    tempBeijing->Second = (totleSecNum%3600)%60;
+//
+//    //4.时区调整
+//    tempBeijing->Hour +=TIMEZONE;
+//    if(tempBeijing->Hour>23){
+//        tempBeijing->Hour -= 24;
+//        tempBeijing->Day++;
+//    }
 }
  
-// 将北京时间转换为Unix时间戳 
-// year: 需要判断的年 
-// return：Unix时间戳（从1970/1/1 00:00:00 到现在的秒数) 
+// 将北京时间转换为Unix时间戳
+// year: 需要判断的年
+// return：Unix时间戳（从1970/1/1 00:00:00 到现在的秒数)
 // note：没对输入参数正确性做判断
 uint32_t covBeijing2UnixTimeStp(RtcStruct *beijingTime)
 {
@@ -377,7 +377,7 @@ uint32_t covBeijing2UnixTimeStp(RtcStruct *beijingTime)
 	uint16_t tempYear=1970, tempMonth=0;
  
  
-	//1.年的天数 
+	//1.年的天数
 	while(tempYear < beijingTime->Year) 
 	{
 		if(isLeapYear(tempYear)){
@@ -428,26 +428,52 @@ __interrupt void RTC_ISR(void)
 
         case RTC_RTCTEVIFG:		//分钟
 			{
-				g_MinuteTick ++;
-				g_Printf_dbg("g_MinuteTick wakeup %d times\r\n",g_MinuteTick);
-				if(g_MinuteTick == App.Data.TerminalInfoData.SendPeriod){
-					g_MinuteTick = 0;
-					if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
-						__bic_SR_register_on_exit(LPM0_bits);
-						WDTCTL  = WDT_MDLY_32;
-						SFRIE1 |= 1;  
-						Hal_ExitLowPower_Mode(Rtc_Int);
-					}		
+				if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //上传频率大于5min才具备低功耗模式
+				{
+					g_MinuteTick ++;
+					g_Printf_dbg("g_MinuteTick wakeup %d times\r\n",g_MinuteTick);	
+					//强行进低功耗会影响FOTA接收dh202029
+					// if(g_MinuteTick == (App.Data.TerminalInfoData.SendPeriod-1)){       //ML 20191121强行进低功耗
+					// 	if(Hal_getCurrent_work_Mode() == 0){          //当前为未进入低功耗状态
+					// 		Hal_EnterLowPower_Mode();
+					// 	}
+					// }
+					if(g_MinuteTick == App.Data.TerminalInfoData.SendPeriod){
+						g_MinuteTick = 0;
+						if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
+							__bic_SR_register_on_exit(LPM0_bits);
+							// WDTCTL  = WDT_MDLY_32;
+							// SFRIE1 |= 1;  
+							TBCTL |= MC_1;     //start timerB
+								// Hal_ExitLowPower_Mode();
+								Hal_ExitLowPower_Mode(Rtc_Int);
+						}		
+					}
 				}
+
 				g_MinuteTimeTick ++;
 				if(g_MinuteTimeTick == 60)
 				{
 					g_MinuteTimeTick = 0;
 					g_HourTimeTick ++;
-					if(g_HourTimeTick == 24)
+					if(g_HourTimeTick == 24)//TEST
 					{
 						g_HourTimeTick = 0;
 						App.Data.TransMethodData.SeqNumber = 0;
+						App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
+						//复位前把模块电源控制都关闭
+						#if (TRANSMIT_TYPE == GPRS_Mode)
+							OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+							OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+							OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+						#endif
+						#if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
+							OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+							// OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+							OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+						#endif
+
+//						hal_Reboot();  //定时24h复位一次
 					}
 				}
 			} 

@@ -102,14 +102,31 @@ static void Power(ControlPower type)
 			Sensor_5V_1_ON;         //传感器电源接口1_5V  上电
 			Sensor_5V_2_ON;         //传感器电源接口2_5V  上电
 			break;
+		case Sensor_Power1_On:
+            Sensor_12V_1_ON;	    //传感器电源接口1_12V 上电
+			Sensor_5V_1_ON;         //传感器电源接口1_5V  上电
+			break;
+		case Sensor_Power2_On:
+			Sensor_12V_2_ON;        //传感器电源接口2_12V 上电
+			Sensor_5V_2_ON;         //传感器电源接口2_5V  上电
+			break;			
 		case Sensor_Power_Off:
 			Sensor_12V_1_OFF;       //传感器电源接口1_12V 掉电
 			Sensor_12V_2_OFF;       //传感器电源接口2_12V 掉电
 			Sensor_5V_1_OFF;        //传感器电源接口1_5V  掉电
 			Sensor_5V_2_OFF;        //传感器电源接口2_5V  掉电
 			break;
+		case Sensor_Power1_Off:
+			Sensor_12V_1_OFF;       //传感器电源接口1_12V 掉电
+			Sensor_5V_1_OFF;        //传感器电源接口1_5V  掉电
+			break;
+		case Sensor_Power2_Off:
+			Sensor_12V_2_OFF;       //传感器电源接口2_12V 掉电
+			Sensor_5V_2_OFF;        //传感器电源接口2_5V  掉电
+			break;					
 		case AIR202_Power_On:
 			Transmit_5V_OFF;	    //通信模块5V电源    掉电
+			Transmit_HighPower;
 			hal_Delay_sec(2);
 			g_Printf_info("%s AIR202 On\r\n",__func__);
 			Transmit_5V_ON;         //通信模块5V电源    上电
@@ -141,6 +158,12 @@ static void Power(ControlPower type)
 			break;
 		case GPS_Power_Off:
 			Socket_3V3_OFF;	        //GPS模块3V3电源    掉电
+			break;
+		case Base3V3_Power_On:
+			Base_3V3_ON;	        //Base 3V3电源      上电
+			break;
+		case Base3V3_Power_Off:
+			Base_3V3_OFF;	        //Base 3V3电源      掉电
 			break;
 		case SDCard_Power_On:
 			Base_3V3_ON;	        //SD卡3V3电源       上电
@@ -215,7 +238,7 @@ void g_Device_IO_Init(void)
 
 	OSBsp.Device.IOControl.PowerSet = Power;
 
-	P2REN |= BIT2;
+	// P2REN |= BIT2;
 	// OSBsp.Device.IOControl.ResetWirelesModule = ResetWirelesModule;
 }
 
