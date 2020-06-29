@@ -131,9 +131,9 @@ void  WtdTaskStart (void *p_arg)
             g_Printf_dbg("EventWtFlag = %x\r\n",res);
             g_Printf_dbg("feed dog\r\n");
         }else{
-        	sprintf(buffer, "EventWtFlag = %x\r\n",res);
+//        	sprintf(buffer, "EventWtFlag = %x\r\n",res);
 //            g_Printf_dbg("EventWtFlag = %x\r\n",res);
-        	g_Printf_dbg(buffer);
+        	g_Printf_dbg("Event wait timeout\r\n");
         }
         OSTimeDly(1000);
     }
