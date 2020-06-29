@@ -47,18 +47,20 @@
 *                                                VARIABLES
 *********************************************************************************************************
 */
-
+static OS_STK WtdTaskStartStk[DEFAULT_TASK_STK_SIZE];
 static OS_STK ScadaTaskStartStk[DEFAULT_TASK_STK_SIZE];
 static OS_STK TransmitTaskStartStk[TRANSMIT_TASK_STK_SIZE];
 static OS_STK ManagerTaskStartStk[DEFAULT_TASK_STK_SIZE];
 
+uint16_t REGRST;
+char rebootBuffer[20]={0};
 /*
 *********************************************************************************************************
 *                                            FUNCTION PROTOTYPES
 *********************************************************************************************************
 */
 static  void  ScadaTaskStart(void *p_arg);
-
+static  void  WtdTaskStart(void *p_arg);
 /*
 *********************************************************************************************************
 *                                                main()
@@ -71,15 +73,30 @@ static  void  ScadaTaskStart(void *p_arg);
 */
 void  main (void)
 {
-
+   REGRST = SYSRSTIV;
+    // if(REGRST == 0x16){ //判断复位来源，看门复位需要软件复位一次，否则OS故障
+    //    softReset();
+    // }
     OSInit();                                /* Initialize "uC/OS-II, The Real-Time Kernel"          */
     OSBsp.Init();                            /* Initialize BSP functions                             */
+    sprintf(rebootBuffer, "\r\nReboot cause %d\r\n",REGRST);
+//            g_Printf_dbg("EventWtFlag = %x\r\n",res);
+    g_Printf_dbg(rebootBuffer);
+//    g_Printf_dbg("Reboot cause %d",REGRST);
     if(Hal_Platform_Init() == 0){            
         g_Printf_info("Hal_Platform_Init Success\r\n");
         LED_OFF;
         hal_Delay_ms(1000);//延时1s
 
     }
+    EventWtFlag = Hal_FlagCreate("wtd_event", WTD_BIT_NONE);
+    if(EventWtFlag == NULL){
+        g_Printf_info("Create watchdog evnet flag error\r\n");
+    }
+    Hal_ThreadCreate(WtdTaskStart,
+                    (void *)"WtdTaskStart",
+                    &WtdTaskStartStk[DEFAULT_TASK_STK_SIZE-1u],
+                    WTD_TASK_PRIO);
 
     Hal_ThreadCreate(ScadaTaskStart,
                     (void *)"ScadaTaskStart",
@@ -100,8 +117,27 @@ void  main (void)
     OSStart();                               /* Start multitasking (i.e. give control to uC/OS-II)   */
 }
 
-
-
+void  WtdTaskStart (void *p_arg)
+{
+	char buffer[50]={0};
+    CPU_INT08U err;
+    uint16_t res = 0;
+    while(1)
+    {
+        res = OSFlagPend(EventWtFlag, WTD_BIT_ALL, OS_FLAG_WAIT_SET_ALL|OS_FLAG_CONSUME, 1000, &err);
+        if(err == OS_ERR_NONE){     //获取到全部标志组
+            //喂狗
+        	InitWatchDog();
+            g_Printf_dbg("EventWtFlag = %x\r\n",res);
+            g_Printf_dbg("feed dog\r\n");
+        }else{
+        	sprintf(buffer, "EventWtFlag = %x\r\n",res);
+//            g_Printf_dbg("EventWtFlag = %x\r\n",res);
+        	g_Printf_dbg(buffer);
+        }
+        OSTimeDly(1000);
+    }
+}
 static  void  ScadaTaskStart (void *p_arg)
 {
     (void)p_arg;
@@ -115,7 +151,7 @@ static  void  ScadaTaskStart (void *p_arg)
 	static uint8_t scada_idle_times = 0;
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.       */
         if(Hal_getCurrent_work_Mode() == 0){     //如果不在休眠期
-    
+          TaskRefreshWTD(EventWtFlag , WTD_BIT_SCADA);
             if(AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_OFF){  //如果设备没上电10s预热，第一次还会读传感器数据
                 OSTimeDly(30);
                 //  OSTimeDly(6000);  //节拍2ms  //TEST

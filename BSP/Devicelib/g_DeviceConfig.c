@@ -525,9 +525,10 @@ void ManagerTaskStart(void *p_arg)
 				UART_REC_TASK_TASK_PRIO);
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.*/
         if(Hal_getCurrent_work_Mode() == 0){    //非低功耗状态
+			TaskRefreshWTD(EventWtFlag , WTD_BIT_MANAGER);
 			struct hal_message ConfigMsg;
 			memset(&ConfigMsg,0x0,sizeof(struct hal_message));  //清空结构体数组变量
-			int ret = Hal_QueueRecv(g_ConfigQueue,&ConfigMsg,0);
+			int ret = Hal_QueueRecv(g_ConfigQueue,&ConfigMsg,1000);
 			if(ret == 0) {
 				// hal_Delay_ms(50);	        //延时等待接收完成
 				

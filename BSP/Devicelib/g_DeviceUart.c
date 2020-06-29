@@ -448,6 +448,8 @@ void UartRecTaskStart(void *p_arg)
 				RecLen = 0;
 			}
 		}
+	TaskRefreshWTD(EventWtFlag , WTD_BIT_UARTREC);
+	OSTimeDly(1000);
 	}
 }
 
@@ -593,8 +595,9 @@ __interrupt void USCI_A2_ISR(void)
 		case 2:                                   // Vector 2 - RXIFG
 		   if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
 			__bic_SR_register_on_exit(LPM0_bits);	
-				WDTCTL  = WDT_MDLY_32;
-				SFRIE1 |= 1;  
+				// WDTCTL  = WDT_MDLY_32;
+				// SFRIE1 |= 1;  
+				TBCTL |= MC_1;     //start timerB
 				Hal_ExitLowPower_Mode(Uart_Int);
 			}
 

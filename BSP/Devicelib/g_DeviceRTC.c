@@ -442,8 +442,9 @@ __interrupt void RTC_ISR(void)
 						g_MinuteTick = 0;
 						if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
 							__bic_SR_register_on_exit(LPM0_bits);
-							WDTCTL  = WDT_MDLY_32;
-							SFRIE1 |= 1;  
+							// WDTCTL  = WDT_MDLY_32;
+							// SFRIE1 |= 1;  
+							TBCTL |= MC_1;     //start timerB
 								// Hal_ExitLowPower_Mode();
 								Hal_ExitLowPower_Mode(Rtc_Int);
 						}		
