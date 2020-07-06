@@ -98,6 +98,8 @@ extern OS_FLAG_GRP *EventWtFlag;        //喂狗时间标志组
 #define     WTD_BIT_MANAGER         (1<<2)      //Manager任务喂狗位
 #define     WTD_BIT_UARTREC         (1<<3)      //UartRec任务喂狗位
 #define     WTD_BIT_ALL             (WTD_BIT_SCADA|WTD_BIT_TRANSMIT|WTD_BIT_MANAGER|WTD_BIT_UARTREC)      //喂狗所有标志位
+
+extern uint16_t REGRST;
 /*
 *********************************************************************************************************
 *                                            GLOBAL VARIABLES

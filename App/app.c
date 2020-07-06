@@ -52,7 +52,7 @@ static OS_STK ScadaTaskStartStk[DEFAULT_TASK_STK_SIZE];
 static OS_STK TransmitTaskStartStk[TRANSMIT_TASK_STK_SIZE];
 static OS_STK ManagerTaskStartStk[DEFAULT_TASK_STK_SIZE];
 
-uint16_t REGRST;
+
 char rebootBuffer[20]={0};
 /*
 *********************************************************************************************************
@@ -74,9 +74,6 @@ static  void  WtdTaskStart(void *p_arg);
 void  main (void)
 {
    REGRST = SYSRSTIV;
-    // if(REGRST == 0x16){ //判断复位来源，看门复位需要软件复位一次，否则OS故障
-    //    softReset();
-    // }
     OSInit();                                /* Initialize "uC/OS-II, The Real-Time Kernel"          */
     OSBsp.Init();                            /* Initialize BSP functions                             */
     sprintf(rebootBuffer, "\r\nReboot cause %d\r\n",REGRST);

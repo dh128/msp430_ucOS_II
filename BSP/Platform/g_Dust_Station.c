@@ -77,7 +77,7 @@ static uint8_t SensorSimulationStatus_L;
 *******************************************************************************/
 static int AnalyzeComand(uint8_t *data,uint8_t Len)
 {
-	if(Len != 0)
+	if(Len > 2)
 	{
 		uint16_t CalcuResult = 0;
 		uint8_t CRC_Result[2];
@@ -481,6 +481,10 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
     cJSON_AddNumberToObject(pJsonRoot, "SN",DataPointer->TerminalInfoData.SerialNumber);
     cJSON_AddNumberToObject(pJsonRoot, "DeviceID",DataPointer->TerminalInfoData.DeviceID);
     cJSON_AddNumberToObject(pJsonRoot, "SeqNum",DataPointer->TransMethodData.SeqNumber);
+	if(REGRST != 0 ){
+		cJSON_AddNumberToObject(pJsonRoot, "reboot",REGRST);
+		REGRST = 0;
+	}
 
     pSubJson = NULL;
     pSubJson = cJSON_CreateObject();

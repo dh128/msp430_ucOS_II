@@ -113,7 +113,7 @@ Hex2Float SensorData;
 *******************************************************************************/
 static int AnalyzeComand(uint8_t *data,uint8_t Len)
 {
-	if(Len != 0)
+	if(Len > 2)
 	{
 		uint16_t CalcuResult = 0;
 		uint8_t CRC_Result[2];
@@ -1015,7 +1015,7 @@ void InqureSensor(void)
 	}
 }
 
-extern uint16_t REGRST;
+
 /*******************************************************************************
 * 函数名		: *MakeJsonBodyData
 * 描述	    	: 组建json包
@@ -1058,13 +1058,13 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
       return NULL;
     }
 
-	// if(hal_GetBit(SensorStatus_H, 3)) {
+	if(hal_GetBit(SensorStatus_H, 3)) {
 		cJSON_AddNumberToObject(pSubJson, "COD",DataPointer->WaterData.CODValue);
 
 		TempCahe = (uint32_t)(DataPointer->WaterData.CODValue*10);
 		Send_Buffer[7] = TempCahe >> 8;
 		Send_Buffer[8] = TempCahe - (TempCahe>>8)<<8 ;
-	// }
+	}
 	if(hal_GetBit(SensorStatus_H, 2)) {
 		cJSON_AddNumberToObject(pSubJson, "Cond",DataPointer->WaterData.ECValue);
 
@@ -1195,11 +1195,11 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 #if HAVE_SDCARD_SERVICE
 	if (SD_Status == 0)  //只是一个示例
 	{
-	OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
-	OSTimeDly(500);
-	g_SD_FileName_Creat("0:/",date,filestore);
-	g_SD_File_Write(filestore,p);
-	g_SD_File_Write(filestore,"\r\n");     //数据换行
+		OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
+		OSTimeDly(500);
+		g_SD_FileName_Creat("0:/",date,filestore);
+		g_SD_File_Write(filestore,p);
+		g_SD_File_Write(filestore,"\r\n");     //数据换行
 	}
 #endif  
 	// OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);  //++++++++++++++++++++++++

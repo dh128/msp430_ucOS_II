@@ -51,6 +51,7 @@
 *********************************************************************************************************
 */
 OS_FLAG_GRP *EventWtFlag;        //喂狗时间标志组
+uint16_t REGRST;
 /*
 *********************************************************************************************************
 *                                               PROTOTYPES
@@ -197,7 +198,7 @@ void TaskRefreshWTD(OS_FLAG_GRP *GrpouFlag, OS_FLAGS flag)
     if(err != OS_ERR_NONE){
         g_Printf_dbg("%s %x failed\n",__func__,flag);
     }else{
-        g_Printf_dbg("%s event Flags = %x\n",__func__,res);
+        // g_Printf_dbg("%s event Flags = %x\n",__func__,res);
     }
 
 }

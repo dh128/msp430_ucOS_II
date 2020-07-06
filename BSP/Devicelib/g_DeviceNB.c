@@ -1058,6 +1058,7 @@ void  TransmitTaskStart (void *p_arg)
     g_Printf_info("%s ... ...\n",__func__);           
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.*/
         if(Hal_getCurrent_work_Mode() == 0){
+			TaskRefreshWTD(EventWtFlag , WTD_BIT_TRANSMIT);
             if(AppDataPointer->TransMethodData.NBStatus == NB_Power_off)
 			{
 				//NB-IoT 第一次开机时对NB上电操作，后续进入低功耗不关电
@@ -1087,7 +1088,7 @@ void  TransmitTaskStart (void *p_arg)
 					g_Printf_info("Scan over,data uploading\r\n");
 					if(ResendData == 0)		//正常上报数据,需要累加SeqNum,采集电压，本地存储
 					{
-						char *data = Hal_Malloc(512*sizeof(char *));
+						char *data;
 						char response[128];
 						//SeqNumber ++
 						if(App.Data.TerminalInfoData.DeviceFirstRunStatus == DEVICE_STATUS_FIRSTRUN_BEGIN) {

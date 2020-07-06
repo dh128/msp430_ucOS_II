@@ -111,10 +111,10 @@ void g_Device_GPRS_Init(void)
 			   &&(AppDataPointer->TerminalInfoData.AutomaticTimeStatus == AUTOMATIC_TIME_ENABLE)){
 				AppDataPointer->TransMethodData.GPRSTime = 0;
 				AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
-				memset(aRxBuff,0x0,256);
-				g_Printf_dbg("AT+AMGSMLOC\r\n");
-				User_Printf("AT+AMGSMLOC\r\n");  //获取基站定位和日期
-				OSTimeDly(2000);//2ms
+				// memset(aRxBuff,0x0,256);
+				// g_Printf_dbg("AT+AMGSMLOC\r\n");
+				// User_Printf("AT+AMGSMLOC\r\n");  //获取基站定位和日期
+				// OSTimeDly(2000);//2ms
 		}
 		else if((AppDataPointer->TransMethodData.GPRSNet == 1)&&
 				(AppDataPointer->TransMethodData.GPRSAttached == 1)){

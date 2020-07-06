@@ -374,6 +374,7 @@ uint8_t g_Device_SD_Init(void)
             //发卡初始化指令CMD55+ACMD41
     		do
     		{
+                retry++;
     			r1 = SD_SendCommand(CMD55, 0, 0);
     			if(r1!=0x01)return r1;	   
     			r1 = SD_SendCommand(ACMD41, 0x40000000, 0);
