@@ -86,6 +86,7 @@ typedef struct
 	uint16_t SensorStatusSimulation;    //传感器数据模拟状态
 	uint16_t SensorStatusSimulation_Old; //传感器数据上一组模拟状态
 
+
 	char DeviceStatus;
 	char ProductKey[32];
 	char DeviceName[32];
@@ -164,6 +165,7 @@ typedef struct
 
 typedef struct
 {
+	char  RainGaugeScadaStatus;
 	float RainGauge;             //雨量                  0~4.0     mm/min
 	uint16_t LVValue;            //液位
 }WRainPlatform;       //水雨情监测平台

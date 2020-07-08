@@ -695,7 +695,7 @@ void Hal_EnterLowPower_Mode(void)
 
 
 
-#if (PRODUCT_TYPE == Weather_Station)
+#if (PRODUCT_TYPE == Weather_Station ||PRODUCT_TYPE == WRain_Station)
     // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
     OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
@@ -756,8 +756,11 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
 
     if(int_Src == Rtc_Int)
     {
-    #if (PRODUCT_TYPE == Weather_Station)       
-        AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;
+    #if (PRODUCT_TYPE == Weather_Station)      
+       AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     
+    #endif
+        #if (PRODUCT_TYPE == WRain_Station)      
+        AppDataPointer->WRainData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;       
     #endif
     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
         

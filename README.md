@@ -79,6 +79,10 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 3、添加SD驱动中retry参数++，避免SD操作卡死；
 4、json组包添加reboot字段。
 
+2020-7-8	huangzh
+1、添加水雨情设备类型；
+2、修改气象设备模拟数据光照赋值bug。
+
 
 
 
