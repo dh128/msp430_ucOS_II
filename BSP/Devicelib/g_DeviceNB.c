@@ -1052,6 +1052,7 @@ void GetStoreData(void)
 void  TransmitTaskStart (void *p_arg)
 {
 	uint8_t i;
+	uint8_t initRetry = 0;
 	Hex2Float gpsTemp;
     (void)p_arg;   
     OSTimeDlyHMSM(0u, 0u, 0u, 100u);      
@@ -1063,7 +1064,7 @@ void  TransmitTaskStart (void *p_arg)
 			{
 				//NB-IoT 第一次开机时对NB上电操作，后续进入低功耗不关电
 				g_Printf_dbg("Turn on NB power\r\n");
-				g_Printf_info("\r\n\r\nNB-IoT Fota Test version 3\r\n\r\n");	//测试打印
+				// g_Printf_info("\r\n\r\nNB-IoT Fota Test version 3\r\n\r\n");	//测试打印
 				OSTimeDly(500);
                 OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);		//打开NB电源
 				//reset脚电平
@@ -1173,19 +1174,29 @@ void  TransmitTaskStart (void *p_arg)
 					{
 						//存储数据等待下次补传
 						WriteStoreData();
-						AppDataPointer->TransMethodData.NBStatus = NB_Send_Over;
+						AppDataPointer->TransMethodData.NBStatus = NB_Init_Error;
+					}
+					if(AppDataPointer->TransMethodData.NBStatus == NB_Send_Over)		//不在线直接进Idle
+					{
+						g_Device_NB_GetReceive();
+					}
+					if((AppDataPointer->TransMethodData.NBStatus == NB_Idel) || (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error))	//发送完成或入网失败，进入低功耗
+					{
+						// OSBsp.Device.IOControl.PowerSet(AIR202_Power_On);
+						Hal_EnterLowPower_Mode();
 					}      
                 }    
             }
-			else if(AppDataPointer->TransMethodData.NBStatus == NB_Send_Over)		//不在线直接进Idle
-			{
-				g_Device_NB_GetReceive();
-			}
-			else if(AppDataPointer->TransMethodData.NBStatus == NB_Idel)
-			{
-                // OSBsp.Device.IOControl.PowerSet(AIR202_Power_On);
-                Hal_EnterLowPower_Mode();
-            }
+			// else if(AppDataPointer->TransMethodData.NBStatus == NB_Init_Error){
+			// 	if(initRetry < 3){
+			// 		initRetry++;
+			// 		AppDataPointer->TransMethodData.NBStatus == NB_Power_on;	//软件重启模组2次，重新入网
+			// 	}else{
+			// 		initRetry = 0;
+			// 		Hal_EnterLowPower_Mode();				//重启入网失败则进入低功耗
+			// 	}
+				
+			// }
             OSTimeDlyHMSM(0u, 0u, 0u, 200u);  
         }
     }

@@ -22,6 +22,7 @@ enum NB_STATUS {
 	NB_Power_on = 1,
 	NB_Boot,
 	NB_Init_Done,
+	NB_Init_Error,
 	NB_Get_IP,
 	NB_Registered,
 	NB_Send_Over,

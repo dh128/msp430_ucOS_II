@@ -83,6 +83,10 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、添加水雨情设备类型；
 2、修改气象设备模拟数据光照赋值bug。
 
+2020-7-9	dingh
+1、修改NB进入低功耗位置，低功耗下串口可以唤醒配置；
+2、添加入网失败进入低功耗；
+
 
 
 

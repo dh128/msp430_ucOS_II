@@ -768,7 +768,11 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 #endif
 #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-    AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+    if(AppDataPointer->TransMethodData.NBStatus == NB_Init_Error){
+        AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
+    }else{
+        AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+    }
 #endif
 #if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
     if(AppDataPointer->TransMethodData.LoRaNet)

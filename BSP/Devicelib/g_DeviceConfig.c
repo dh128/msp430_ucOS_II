@@ -515,6 +515,7 @@ static void g_Device_Board_Config(g_Device_Config_CMD ClientCmd)
 void ManagerTaskStart(void *p_arg)
 {
 	(void)p_arg;    
+	OS_CPU_SR  cpu_sr = 0u;
 	OSTimeDlyHMSM(0u, 0u, 0u, 150u);
 //	static int index = 0;
 	g_ConfigQueue = Hal_QueueCreate(QConfiMsgTb,QConfigMsgTb_Size);    
@@ -531,10 +532,10 @@ void ManagerTaskStart(void *p_arg)
 			int ret = Hal_QueueRecv(g_ConfigQueue,&ConfigMsg,1000);
 			if(ret == 0) {
 				// hal_Delay_ms(50);	        //延时等待接收完成
-				
+				OS_ENTER_CRITICAL();
 				g_Printf_dbg("Recv message type %d\r\n",ConfigMsg.what);
 				g_Printf_dbg("Recv message content %s\r\n",(char *)ConfigMsg.content);
-				
+				OS_EXIT_CRITICAL();
 				
 				if (ConfigMsg.what == G_WIRELESS_UPLAOD){
 					char *cmdType = (char *)ConfigMsg.content;
