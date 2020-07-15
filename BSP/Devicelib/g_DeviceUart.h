@@ -15,7 +15,7 @@ extern uint8_t Uart_0_Flag;
 
 #define aRxLength 1050		//UART0 buff length,最大255，否则aRxNum溢出
 #define bRxLength 200		//UART1 buff length
-#define cRxLength 100		//UART2 buff length
+#define cRxLength 200		//UART2 buff length
 #define dRxLength 50		//UART3 buff length
 
 typedef enum {

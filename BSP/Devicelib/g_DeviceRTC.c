@@ -250,8 +250,8 @@ void g_Device_InnerRTC_Init(void)
     RTCHOUR = 0x00;        //初始时间：2000年0月0日00:00:00
     RTCMIN  = 0x00;
     RTCSEC  = 0x00;
-    RTCDAY  = 0x00;
-    RTCMON  = 0x00;
+    RTCDAY  = 0x01;
+    RTCMON  = 0x01;
     RTCYEAR = 0x2000;
     RTCCTL01 &= ~RTCHOLD;//启动实时时钟
 
@@ -280,12 +280,12 @@ void Write_info_RTC(uint8_t *time)
 //读系统自带的RTC函数
 void Read_info_RTC(uint8_t *time)
 {
-    time[0] = (uint8_t)RTCYEAR;
-    time[1] = RTCMON;
-    time[2] = RTCDAY;
-    time[3] = RTCHOUR;
-    time[4] = RTCMIN;
-    time[5] = RTCSEC;
+    time[1] = (uint8_t)RTCYEAR;
+    time[2] = RTCMON;
+    time[3] = RTCDAY;
+    time[4] = RTCHOUR;
+    time[5] = RTCMIN;
+    time[6] = RTCSEC;
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
@@ -389,18 +389,22 @@ uint32_t covBeijing2UnixTimeStp(RtcStruct *beijingTime)
 		tempYear++;
 	}
 	//2.月的天数
- 	while(tempMonth < (beijingTime->Month-1)) 
- 	{
-        if(isLeapYear(beijingTime->Year)){ //闰年
-            daynum += Leap_month_day[tempMonth];
-        }
-        else{
-		    daynum += month_day[tempMonth];
-        }
-		tempMonth++;
+	if(beijingTime->Month > 1){
+	 	while(tempMonth < (beijingTime->Month-1))
+	 	{
+	        if(isLeapYear(beijingTime->Year)){ //闰年
+	            daynum += Leap_month_day[tempMonth];
+	        }
+	        else{
+			    daynum += month_day[tempMonth];
+	        }
+			tempMonth++;
+		}
 	}
     //3.天数
-	daynum += (beijingTime->Day)-1;
+	if(beijingTime->Day > 1){
+		daynum += (beijingTime->Day)-1;
+	}
  
     //4.时分秒
     secDayNum = daynum*24*60*60; //s    

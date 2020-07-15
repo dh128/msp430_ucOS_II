@@ -87,6 +87,14 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、修改NB进入低功耗位置，低功耗下串口可以唤醒配置；
 2、添加入网失败进入低功耗；
 
+2020-7-10	dingh
+1、修改NB发送数据，使用g_Device_NB_Send_Str函数；
+2、添加MCU内部RTC同步时钟功能，避免外部始终异常；
+3、修改UNIX时间戳函数，避免数值异常（如hour = 0）时异常；
+4、修改传感器解析组包错误。
+2020-7-15
+1、g_Device_Config_QueuePost 测试发现连续发送串口消息会卡死，函数添加延时后正常
+2、消息content定义为全局变量。
 
 
 

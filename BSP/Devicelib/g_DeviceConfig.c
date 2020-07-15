@@ -36,9 +36,9 @@ unsigned char TimebuffNum=0;
 unsigned char TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16杩涘埗鐨勬椂闂碆uffer  2018骞�3鏈�15鍙� 20鏃�50鍒�00绉� 鏄熸湡4
 
 static OS_STK   UartRecTaskStartStk[MINIMUM_TASK_STK_SIZE];
-static Queue_t  g_ConfigQueue;
+Queue_t  g_ConfigQueue;
 void *QConfiMsgTb[QConfigMsgTb_Size];
-
+struct hal_message ConfigMsg;
 
 
 static void g_Device_WirelessUpload_Config(g_Device_Config_CMD uploadCmd)   //通信模块无线指令下发配置(串口1)
@@ -527,16 +527,14 @@ void ManagerTaskStart(void *p_arg)
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.*/
         if(Hal_getCurrent_work_Mode() == 0){    //非低功耗状态
 			TaskRefreshWTD(EventWtFlag , WTD_BIT_MANAGER);
-			struct hal_message ConfigMsg;
+			
 			memset(&ConfigMsg,0x0,sizeof(struct hal_message));  //清空结构体数组变量
 			int ret = Hal_QueueRecv(g_ConfigQueue,&ConfigMsg,1000);
 			if(ret == 0) {
-				// hal_Delay_ms(50);	        //延时等待接收完成
 				OS_ENTER_CRITICAL();
 				g_Printf_dbg("Recv message type %d\r\n",ConfigMsg.what);
 				g_Printf_dbg("Recv message content %s\r\n",(char *)ConfigMsg.content);
 				OS_EXIT_CRITICAL();
-				
 				if (ConfigMsg.what == G_WIRELESS_UPLAOD){
 					char *cmdType = (char *)ConfigMsg.content;
 					if(strcmp(cmdType,"SerialBus") == 0){
@@ -590,13 +588,14 @@ int g_Device_Config_QueuePost(uint32_t type,void *state)
 	msg.freecb = null;
 	msg.content = state;	
 	
-	g_Printf_dbg("Send message type %d\r\n",msg.what);
-	// g_Printf_dbg("Recv message content %s\r\n",(char *)msg.content);
+	// g_Printf_dbg("Send message type %d\r\n",msg.what);
+	// g_Printf_dbg("Send message content %s\r\n",(char *)msg.content);
+	// OSTimeDly(50);
 	if (Hal_QueueSend(g_ConfigQueue,&msg, 10) < 0){
 		g_Printf_dbg("%s message failed!\r\n",__func__);
 		return -1;
 	}
-
+	OSTimeDly(100);		//添加延时，避免连续发送出错
 	return 0;
 }
 

@@ -36,6 +36,8 @@ const uint8_t USCIModulation[16] = {0x00,0x10,0x20,0x30,0x40,0x50,0x60,0x70,0x80
 uint8_t *Rcv_TimePoint;     //+++++++++++++//
 uint8_t Rcv_TimeNum = 0;
 uint8_t Rcv_TimeData[50];
+void *client = (void *)"ClientCMD";
+void *gps = (void *)"GPS_Info";
 // uint8_t TimebuffNum = 0;
 // uint8_t TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16杩涘埗鐨勬椂闂碆uffer  2018骞�鏈�5鍙�20鏃�0鍒�0绉�鏄熸湡4
 
@@ -428,6 +430,7 @@ g_Device_Config_CMD g_Device_Usart_UserCmd_Copy(G_UART_PORT Port)
 
 void UartRecTaskStart(void *p_arg)
 {
+	uint8_t num = 0;
 	(void)p_arg;    
 	OSTimeDlyHMSM(0u, 0u, 0u, 200u);
 	static int RecLen = 0;
@@ -437,19 +440,23 @@ void UartRecTaskStart(void *p_arg)
 			RecLen = cRxNum;
 			OSTimeDly(25);
 			if(cRxNum == RecLen){
-				g_Device_Config_QueuePost(G_CLIENT_CMD,(void *)"ClientCMD");
+				g_Device_Config_QueuePost(G_CLIENT_CMD, client);
 				RecLen = 0;
 			}
 		}else if(bRxNum > 60){		//长度大于60认定位有效GPS信息
 			RecLen = bRxNum;
 			OSTimeDly(25);
 			if(bRxNum == RecLen){
-				g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");
+				g_Device_Config_QueuePost(G_WIRELESS_UPLAOD, gps);
 				RecLen = 0;
 			}
 		}
-	TaskRefreshWTD(EventWtFlag , WTD_BIT_UARTREC);
-	OSTimeDly(1000);
+		OSTimeDly(100);
+		num++;
+		if(num == 5){	//10秒刷新一次看门狗
+			num =0;
+			TaskRefreshWTD(EventWtFlag , WTD_BIT_UARTREC);
+		}
 	}
 }
 

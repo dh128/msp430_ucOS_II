@@ -239,6 +239,8 @@ char g_Device_NB_Init(void)
 			AppDataPointer->TransMethodData.NBNet = 1;
 		}
 		OSTimeDly(100);
+		NB_Config("AT+CMEE=1\r\n",5,5);   //CMEE
+		OSTimeDly(100);
 		NB_Config("AT+CSQ\r\n",5,5);   //CSQ
 		OSTimeDly(500);
 		NB_Config("AT+NCONFIG=AUTOCONNECT,TRUE\r\n",2,5); //打开自动连接
@@ -272,6 +274,7 @@ char g_Device_NB_Init(void)
 				time_buf_bcd[m]= HexToBCD(time_buf[m]);    //存“年月日时分秒”
 			}
 			OSBsp.Device.RTC.ConfigExtTime(time_buf_bcd,RealTime);
+			Write_info_RTC(time_buf_bcd);
 				AppDataPointer->TransMethodData.GPRSTime = 1;
 			g_Printf_dbg("NB Automatic Time OK\r\n");
 		}
@@ -1131,7 +1134,8 @@ void  TransmitTaskStart (void *p_arg)
 						}
 						else					//正常上报数据
 						{
-							g_Device_NB_Send(Send_Buffer,60);
+//							g_Device_NB_Send(Send_Buffer,60);
+							g_Device_NB_Send_Str(Data_Backup,60);
 							//上报CTwing
 							// g_Device_NB_Send(Send_Buffer_CTwing_NBSignal,16);
 							// g_Device_NB_Send(Send_Buffer_CTwing_NBSoildata,13);		
