@@ -733,6 +733,13 @@ void Hal_EnterLowPower_Mode(void)
     P4SEL &=~BIT4;
     P4OUT &=~BIT4;
 	P4DIR |= BIT4;
+    //关闭串口2，Debug口
+    P7SEL &= 0xFC;
+    P7OUT = 0x00;
+    P7DIR |= 0x03;
+    // P7SEL &=~BIT0;
+    // P7OUT &=~BIT0;
+	// P7DIR |= BIT0;
 #endif
 
     gManager.systemLowpower = 1;
@@ -748,6 +755,7 @@ void Hal_EnterLowPower_Mode(void)
 void Hal_ExitLowPower_Mode(uint8_t int_Src)
 {
     hal_Delay_ms(100);
+    P7SEL |= BIT0+BIT1;
     g_Printf_info("Exit Low Power!\r\n");
     gManager.systemLowpower = 0;
     // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);

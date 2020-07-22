@@ -100,6 +100,10 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、美化g_Water_Station.c文件；
 2、添加水雨情采集前清楚模拟参数；
 3、更改NB入网方式鉴定。
+2020-7-22	dingh
+1、进入低功耗后关闭串口2，避免串口唤醒；
+2、删除Scada_Idle态4min后重启；
+3、添加Scada_Idle 态和Scan_Over态持续时间4min钟后进入低功耗；
 
 
 

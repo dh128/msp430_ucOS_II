@@ -146,6 +146,7 @@ static  void  ScadaTaskStart (void *p_arg)
 	int32_t	Scada_timeout_sec;
 
 	static uint8_t scada_idle_times = 0;
+    static uint8_t scada_over_times = 0;
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.       */
         if(Hal_getCurrent_work_Mode() == 0){     //如果不在休眠期
           TaskRefreshWTD(EventWtFlag , WTD_BIT_SCADA);
@@ -200,6 +201,15 @@ static  void  ScadaTaskStart (void *p_arg)
             }
             else if (AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER) //空跑2min
             {
+                scada_over_times ++;
+                OSTimeDlyHMSM(0u, 0u, 2u, 0u);
+                if (scada_over_times == 60)  //120+120s 空跑4min
+                {
+                    g_Printf_dbg("DeviceStatus always scan_over, enter low_power!\r\n");
+                    scada_over_times = 0;
+                    Hal_EnterLowPower_Mode();
+                    // hal_Reboot();  //复位 是否需要主机都复位？或者只需要
+                }
                 if(App.Data.TerminalInfoData.SendPeriod <= NO_LOWPER_PERIOD)
                 {
 #if(TRANSMIT_TYPE == GPRS_Mode)
@@ -223,8 +233,8 @@ static  void  ScadaTaskStart (void *p_arg)
                 {
                     g_Printf_dbg("DeviceStatus always idle,try reboot!\r\n");
                     scada_idle_times = 0;
-
-                    hal_Reboot();  //复位 是否需要主机都复位？或者只需要
+                    Hal_EnterLowPower_Mode();
+                    // hal_Reboot();  //复位 是否需要主机都复位？或者只需要
                 }
             }
 
