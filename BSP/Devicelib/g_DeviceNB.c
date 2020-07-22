@@ -214,15 +214,15 @@ char g_Device_NB_Init(void)
 		//等待入网
 		while ((aRxNum<35) & (ii < 60))
 		{
-			// if(String_Chk(aRxBuff,"+QLWEVTIND:0") == 1 && String_Chk(aRxBuff,"+QLWEVTIND:3") ==1)
-			// {
-			// 	AppDataPointer->TransMethodData.NBStatus = NB_Registered;
-			// 	break;
-			// }
 			Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 			User_Printf("AT+CGPADDR\r\n");
 			g_Printf_dbg("AT+CGPADDR\r\n");
 			OSTimeDly(1000);
+			if(Hal_CheckString(aRxBuff,"+CGPADDR:0,") || Hal_CheckString(aRxBuff,"+CGPADDR:1,") || Hal_CheckString(aRxBuff,"+QLWEVTIND:3"))
+			{
+				// AppDataPointer->TransMethodData.NBStatus = NB_Registered;
+				break;
+			}
 		//		System.Device.Usart2.WriteString(dRxBuff);
 			ii++;
 

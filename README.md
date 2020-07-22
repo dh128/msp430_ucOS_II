@@ -96,7 +96,10 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、g_Device_Config_QueuePost 测试发现连续发送串口消息会卡死，函数添加延时后正常
 2、消息content定义为全局变量。
 
-
+2020-7-22	黄增修改内容提交
+1、美化g_Water_Station.c文件；
+2、添加水雨情采集前清楚模拟参数；
+3、更改NB入网方式鉴定。
 
 
 

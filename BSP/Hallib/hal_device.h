@@ -80,12 +80,12 @@
 #define Custom_Station	      		0x55	 //定制需求监测站
 
 
-#define PRODUCT_TYPE                Water_Station
+// #define PRODUCT_TYPE                Water_Station
 //  #define PRODUCT_TYPE                Weather_Station
 // #define PRODUCT_TYPE                Soil_Station
 //#define PRODUCT_TYPE 	            Voc_Station
 //#define PRODUCT_TYPE	             Flowmeter_Station
-// #define PRODUCT_TYPE	             WRain_Station
+#define PRODUCT_TYPE	             WRain_Station
 
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
