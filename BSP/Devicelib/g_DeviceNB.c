@@ -182,6 +182,7 @@ void g_Device_NB_Restart(void)
 *******************************************************************************/
 char g_Device_NB_Init(void)
 {
+	RtcStruct BjTime;
 	uint8_t ii = 0;
 	//ML
 	char *a;
@@ -263,13 +264,21 @@ char g_Device_NB_Init(void)
 				a++;
 			}	
 			nb_Timedata[i]='\n';	
-			
-			time_buf[1]=(nb_Timedata[0]-0x30)*10+(nb_Timedata[1]-0x30)*1;	       //年
-			time_buf[2]=(nb_Timedata[3]-0x30)*10+(nb_Timedata[4]-0x30)*1;	       //月
-			time_buf[3]=(nb_Timedata[6]-0x30)*10+(nb_Timedata[7]-0x30)*1;	       //日
-			time_buf[4]=(nb_Timedata[9]-0x30)*10+(nb_Timedata[10]-0x30)*1+8;	   //时+时区
-			time_buf[5]=(nb_Timedata[12]-0x30)*10+(nb_Timedata[13]-0x30)*1;	       //分
-			time_buf[6]=(nb_Timedata[15]-0x30)*10+(nb_Timedata[16]-0x30)*1;	       //秒
+			Rtctime.Year = 2000+(nb_Timedata[0] - 0x30) * 10 + (nb_Timedata[1] - 0x30) * 1;	       //年
+			Rtctime.Month = (nb_Timedata[3] - 0x30) * 10 + (nb_Timedata[4] - 0x30) * 1;	       //月
+			Rtctime.Day = (nb_Timedata[6] - 0x30) * 10 + (nb_Timedata[7] - 0x30) * 1;	       //日
+			Rtctime.Hour = (nb_Timedata[9] - 0x30) * 10 + (nb_Timedata[10] - 0x30) * 1;			//时
+			Rtctime.Minute = (nb_Timedata[12] - 0x30) * 10 + (nb_Timedata[13] - 0x30) * 1;	       //分
+			Rtctime.Second = (nb_Timedata[15] - 0x30) * 10 + (nb_Timedata[16] - 0x30) * 1;	       //秒
+			UnixTimeStamp = covBeijing2UnixTimeStp(&Rtctime);		//get UTC
+			UnixTimeStamp += 28800;									//UTC + 8hours
+			covUnixTimeStp2Beijing(UnixTimeStamp, &BjTime);			//get Beijing time
+			time_buf[1]= BjTime.Year - 2000;	   //年
+			time_buf[2]= BjTime.Month;	       //月
+			time_buf[3]= BjTime.Day;	       //日
+			time_buf[4]= BjTime.Hour;	   	   //时
+			time_buf[5]= BjTime.Minute;	       //分
+			time_buf[6]= BjTime.Second;	       //秒
 			for(m=1;m<7;m++) {
 				time_buf_bcd[m]= HexToBCD(time_buf[m]);    //存“年月日时分秒”
 			}

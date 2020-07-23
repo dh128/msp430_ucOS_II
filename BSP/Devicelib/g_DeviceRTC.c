@@ -326,45 +326,45 @@ uint8_t isLeapYear(uint16_t year)
 // note：没对输入参数正确性做判断
 void covUnixTimeStp2Beijing(uint32_t unixTime, RtcStruct *tempBeijing)
 {
-//    uint32_t totleDaynum=0, totleSecNum=0;
-//    uint16_t remainDayofYear, tempDay=0;
-//    uint8_t *pr, tempYear=0;
-//
-//
-//    totleDaynum = unixTime/(24*60*60); //总天数(注意加括号)
-//    totleSecNum = unixTime%(24*60*60); //当天剩余的秒速
-//
-//    memset(tempBeijing, 0x00, sizeof(RtcStruct));
-//    //1.计算哪一年
-//    tempBeijing->Year = 1970 + (totleDaynum/FOURYEARDAY)*4;
-//    remainDayofYear = totleDaynum%FOURYEARDAY+1;
-//    while(remainDayofYear >= dayPerYear[tempYear]){
-//        remainDayofYear -= dayPerYear[tempYear];
-//        tempBeijing->Year++;
-//        tempYear++;
-//    }
-//
-//    //2.计算哪一月的哪一天
-//    pr = isLeapYear(tempBeijing->Year)?Leap_month_day:month_day;
-//    while(remainDayofYear > *(pr+tempBeijing->Month))
-//    {
-//		remainDayofYear -= *(pr+tempBeijing->Month);
-//        tempBeijing->Month++;
-//    }
-//    tempBeijing->Month++; //month
-//    tempBeijing->Day = remainDayofYear; //day
-//
-//    //3.计算当天时间
-//    tempBeijing->Hour = totleSecNum/3600;
-//    tempBeijing->Minute = (totleSecNum%3600)/60; //error：变量搞错
-//    tempBeijing->Second = (totleSecNum%3600)%60;
-//
-//    //4.时区调整
-//    tempBeijing->Hour +=TIMEZONE;
-//    if(tempBeijing->Hour>23){
-//        tempBeijing->Hour -= 24;
-//        tempBeijing->Day++;
-//    }
+   uint32_t totleDaynum=0, totleSecNum=0;
+   uint16_t remainDayofYear;
+   uint8_t *pr, tempYear=0;
+
+
+   totleDaynum = unixTime/(86400); //总天数(注意加括号)
+   totleSecNum = unixTime%(86400); //当天剩余的秒速
+
+   memset(tempBeijing, 0x00, sizeof(RtcStruct));
+   //1.计算哪一年
+   tempBeijing->Year = 1970 + (totleDaynum/FOURYEARDAY)*4;
+   remainDayofYear = totleDaynum%FOURYEARDAY+1;
+   while(remainDayofYear >= dayPerYear[tempYear]){
+       remainDayofYear -= dayPerYear[tempYear];
+       tempBeijing->Year++;
+       tempYear++;
+   }
+
+   //2.计算哪一月的哪一天
+   pr = isLeapYear(tempBeijing->Year)?Leap_month_day:month_day;
+   while(remainDayofYear > *(pr+tempBeijing->Month))
+   {
+		remainDayofYear -= *(pr+tempBeijing->Month);
+       tempBeijing->Month++;
+   }
+   tempBeijing->Month++; //month
+   tempBeijing->Day = remainDayofYear; //day
+
+   //3.计算当天时间
+   tempBeijing->Hour = totleSecNum/3600;
+   tempBeijing->Minute = (totleSecNum%3600)/60; //error：变量搞错
+   tempBeijing->Second = (totleSecNum%3600)%60;
+
+   //4.时区调整
+   tempBeijing->Hour +=TIMEZONE;
+   if(tempBeijing->Hour>23){
+       tempBeijing->Hour -= 24;
+       tempBeijing->Day++;
+   }
 }
  
 // 将北京时间转换为Unix时间戳

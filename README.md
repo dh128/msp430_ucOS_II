@@ -105,5 +105,8 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2、删除Scada_Idle态4min后重启；
 3、添加Scada_Idle 态和Scan_Over态持续时间4min钟后进入低功耗；
 
+2020-7-23	dingh
+1、修改NB时钟同步，转UTC再转北京时间，避免出现大于24时情况。
+
 
 

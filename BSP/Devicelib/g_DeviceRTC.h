@@ -64,6 +64,7 @@ typedef struct
 	uint32_t Year;
 }RtcStruct;
 
+extern RtcStruct Rtctime;
 extern uint32_t UnixTimeStamp;
 uint8_t isLeapYear(uint16_t year);
 void covUnixTimeStp2Beijing(uint32_t unixTime, RtcStruct *tempBeijing);
