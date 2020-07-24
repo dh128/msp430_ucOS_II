@@ -107,6 +107,15 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 
 2020-7-23	dingh
 1、修改NB时钟同步，转UTC再转北京时间，避免出现大于24时情况。
+2020-7-24	dingh
+1、修复水雨情设备读取Flash存储SensorStatue错误，删除if(hal_GetBit(SensorStatus_L, 6));
+2、设备初始化后SPI Flash的CS管脚置高，SD卡读写后CS置高；
+3、删除RTC中断log输出；
+4、添加NB发送数据组包reboot原因。
 
+5、删除RTC中断判断是否处于低功耗，到时间直接执行退出低功耗，修改该任务状态出重启运行态。
+6、添加NB发送数据失败和初始化失败情况，增加NB入网失败清除频点操作，断电进入低功耗，退出低功耗后重新上电；
+7、修复不添加纪录传感器采集缺失BUG；
+8、去掉NB入网判断中的数据包长度；
 
 

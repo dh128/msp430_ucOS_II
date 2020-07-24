@@ -258,17 +258,12 @@ void InqureSensor(void)
 	} else if ( (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY) 
 	         || (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK) ) {
 		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_OK;
-		AppDataPointer->TerminalInfoData.SensorStatus = Hal_getSensorFlashStatus(); 
+		AppDataPointer->TerminalInfoData.SensorFlashStatus = Hal_getSensorFlashStatus(); 
 		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; 
 	}
 	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {	
 		SensorStatus_H = 0;
-		if(hal_GetBit(SensorStatus_L, 6)) 
-		{
-            SensorStatus_L = 0b01000000;
-		}else {
-			SensorStatus_L = 0;
-		}
+		SensorStatus_L = 0;
 		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)  //SensorNum = 12
 		{
 			// sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0001;
@@ -380,6 +375,11 @@ void InqureSensor(void)
 			{
 				infor_ChargeAddrBuff[21] = SensorStatus_H;
 				infor_ChargeAddrBuff[22] = SensorStatus_L;
+				// OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+				OSBsp.Device.InnerFlash.innerFLASHWrite(infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+			}else{
+				infor_ChargeAddrBuff[21] = SensorKind/256;
+				infor_ChargeAddrBuff[22] = SensorKind%256;
 				// OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 				OSBsp.Device.InnerFlash.innerFLASHWrite(infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 			}

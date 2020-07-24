@@ -51,7 +51,7 @@ uint16_t StartFile = 1;
 uint8_t FullFlag = 0;
 char RespFile[10];
 // char Data_Backup[70];
-char Data_Backup[120];
+char Data_Backup[122];
 uint8_t ResendData = 0;
 uint8_t cacheBuf[7];
 
@@ -213,7 +213,7 @@ char g_Device_NB_Init(void)
 		OSTimeDly(100);
 		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 		//等待入网
-		while ((aRxNum<35) & (ii < 60))
+		while (ii < 60)
 		{
 			Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 			User_Printf("AT+CGPADDR\r\n");
@@ -228,10 +228,12 @@ char g_Device_NB_Init(void)
 			ii++;
 
 		}
-		if(ii > 60)
+		if(ii >= 60)
 		{
 			// AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
 			g_Printf_dbg("GET IP Failed!\r\n");
+			User_Printf("AT+NCSEARFCN\r\n");		//入网失败清除频点
+			g_Printf_dbg("AT+NCSEARFCN\r\n");
 		}
 		else
 		{
@@ -252,41 +254,41 @@ char g_Device_NB_Init(void)
 		{
 			AppDataPointer->TransMethodData.GPRSTime = 0;
 			AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
-		User_Printf("AT+CCLK?\r\n");
-		OSTimeDly(200);			//等待串口接收
-        a=strstr(aRxBuff,"+CCLK:");
-	    if(a!=NULL)
-		{
-			while(*(a+6)!='\r')
+			User_Printf("AT+CCLK?\r\n");
+			OSTimeDly(200);			//等待串口接收
+			a=strstr(aRxBuff,"+CCLK:");
+			if(a!=NULL)
 			{
-				nb_Timedata[i]=*(a+6);
-				i++;
-				a++;
-			}	
-			nb_Timedata[i]='\n';	
-			Rtctime.Year = 2000+(nb_Timedata[0] - 0x30) * 10 + (nb_Timedata[1] - 0x30) * 1;	       //年
-			Rtctime.Month = (nb_Timedata[3] - 0x30) * 10 + (nb_Timedata[4] - 0x30) * 1;	       //月
-			Rtctime.Day = (nb_Timedata[6] - 0x30) * 10 + (nb_Timedata[7] - 0x30) * 1;	       //日
-			Rtctime.Hour = (nb_Timedata[9] - 0x30) * 10 + (nb_Timedata[10] - 0x30) * 1;			//时
-			Rtctime.Minute = (nb_Timedata[12] - 0x30) * 10 + (nb_Timedata[13] - 0x30) * 1;	       //分
-			Rtctime.Second = (nb_Timedata[15] - 0x30) * 10 + (nb_Timedata[16] - 0x30) * 1;	       //秒
-			UnixTimeStamp = covBeijing2UnixTimeStp(&Rtctime);		//get UTC
-			UnixTimeStamp += 28800;									//UTC + 8hours
-			covUnixTimeStp2Beijing(UnixTimeStamp, &BjTime);			//get Beijing time
-			time_buf[1]= BjTime.Year - 2000;	   //年
-			time_buf[2]= BjTime.Month;	       //月
-			time_buf[3]= BjTime.Day;	       //日
-			time_buf[4]= BjTime.Hour;	   	   //时
-			time_buf[5]= BjTime.Minute;	       //分
-			time_buf[6]= BjTime.Second;	       //秒
-			for(m=1;m<7;m++) {
-				time_buf_bcd[m]= HexToBCD(time_buf[m]);    //存“年月日时分秒”
+				while(*(a+6)!='\r')
+				{
+					nb_Timedata[i]=*(a+6);
+					i++;
+					a++;
+				}	
+				nb_Timedata[i]='\n';	
+				Rtctime.Year = 2000+(nb_Timedata[0] - 0x30) * 10 + (nb_Timedata[1] - 0x30) * 1;	       //年
+				Rtctime.Month = (nb_Timedata[3] - 0x30) * 10 + (nb_Timedata[4] - 0x30) * 1;	       //月
+				Rtctime.Day = (nb_Timedata[6] - 0x30) * 10 + (nb_Timedata[7] - 0x30) * 1;	       //日
+				Rtctime.Hour = (nb_Timedata[9] - 0x30) * 10 + (nb_Timedata[10] - 0x30) * 1;			//时
+				Rtctime.Minute = (nb_Timedata[12] - 0x30) * 10 + (nb_Timedata[13] - 0x30) * 1;	       //分
+				Rtctime.Second = (nb_Timedata[15] - 0x30) * 10 + (nb_Timedata[16] - 0x30) * 1;	       //秒
+				UnixTimeStamp = covBeijing2UnixTimeStp(&Rtctime);		//get UTC
+				UnixTimeStamp += 28800;									//UTC + 8hours
+				covUnixTimeStp2Beijing(UnixTimeStamp, &BjTime);			//get Beijing time
+				time_buf[1]= BjTime.Year - 2000;	   //年
+				time_buf[2]= BjTime.Month;	       //月
+				time_buf[3]= BjTime.Day;	       //日
+				time_buf[4]= BjTime.Hour;	   	   //时
+				time_buf[5]= BjTime.Minute;	       //分
+				time_buf[6]= BjTime.Second;	       //秒
+				for(m=1;m<7;m++) {
+					time_buf_bcd[m]= HexToBCD(time_buf[m]);    //存“年月日时分秒”
+				}
+				OSBsp.Device.RTC.ConfigExtTime(time_buf_bcd,RealTime);
+				Write_info_RTC(time_buf_bcd);
+					AppDataPointer->TransMethodData.GPRSTime = 1;
+				g_Printf_dbg("NB Automatic Time OK\r\n");
 			}
-			OSBsp.Device.RTC.ConfigExtTime(time_buf_bcd,RealTime);
-			Write_info_RTC(time_buf_bcd);
-				AppDataPointer->TransMethodData.GPRSTime = 1;
-			g_Printf_dbg("NB Automatic Time OK\r\n");
-		}
 		}
 		//*****************同步时间END************//
 		return 1;
@@ -1044,7 +1046,7 @@ void GetStoreData(void)
 		{
 			// BackupIndex--;
 			ResendData = 1;		//补发数据标志位
-			Data_Backup[68] = '\0';
+			Data_Backup[120] = '\0';
 			AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
 			break;		//退出循环，准备发送数据
 		}
@@ -1114,6 +1116,12 @@ void  TransmitTaskStart (void *p_arg)
 						}
 						Send_Buffer[5] = AppDataPointer->TransMethodData.SeqNumber/256;
 						Send_Buffer[6] = AppDataPointer->TransMethodData.SeqNumber%256;
+						
+						if(REGRST != 0){
+							Send_Buffer[29] = REGRST / 256; 	//添加reboot参数上报传感器数据最后一位
+							Send_Buffer[30] = REGRST % 256; 
+						}
+						
 						//Voltage
 						GetADCValue();
 						//检查信号质量
@@ -1136,21 +1144,7 @@ void  TransmitTaskStart (void *p_arg)
 					//发送数据
 					if(AppDataPointer->TransMethodData.NBNet == 1)
 					{
-						if(ResendData == 1)		//补发数据
-						{
-							g_Device_NB_Send_Str(Data_Backup,120);
-							// ResendData = 0;
-						}
-						else					//正常上报数据
-						{
-//							g_Device_NB_Send(Send_Buffer,60);
-							g_Device_NB_Send_Str(Data_Backup,60);
-							//上报CTwing
-							// g_Device_NB_Send(Send_Buffer_CTwing_NBSignal,16);
-							// g_Device_NB_Send(Send_Buffer_CTwing_NBSoildata,13);		
-							// g_Device_NB_Send(Send_Buffer_CTwing_NBWeatherdata,7);							
-						}
-						
+						g_Device_NB_Send_Str(Data_Backup,60);	
 						OSTimeDly(2500);	//等待5s
 						g_Device_NB_SendCheck();
 						if(AppDataPointer->TransMethodData.NBSendStatus == 1)	//确认帧发送成功,发送数据前会置0
@@ -1172,15 +1166,11 @@ void  TransmitTaskStart (void *p_arg)
 							else
 								AppDataPointer->TransMethodData.NBStatus = NB_Send_Over;
 
-							// if(NB_Fota)		//NB_Fota中断时，重新获取
-							// {
-							// 	GetCode(PackageNum);
-							// }
 						}
 						else
 						{
 							WriteStoreData();
-							AppDataPointer->TransMethodData.NBStatus = NB_Idel;			//发送失败进Idles
+							AppDataPointer->TransMethodData.NBStatus = NB_Send_Error;			//发送失败
 						}
 					}
 					else
@@ -1193,23 +1183,15 @@ void  TransmitTaskStart (void *p_arg)
 					{
 						g_Device_NB_GetReceive();
 					}
-					if((AppDataPointer->TransMethodData.NBStatus == NB_Idel) || (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error))	//发送完成或入网失败，进入低功耗
+					if((AppDataPointer->TransMethodData.NBStatus == NB_Idel) 
+						|| (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error)
+						|| (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error))	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
 					{
-						// OSBsp.Device.IOControl.PowerSet(AIR202_Power_On);
 						Hal_EnterLowPower_Mode();
 					}      
                 }    
             }
-			// else if(AppDataPointer->TransMethodData.NBStatus == NB_Init_Error){
-			// 	if(initRetry < 3){
-			// 		initRetry++;
-			// 		AppDataPointer->TransMethodData.NBStatus == NB_Power_on;	//软件重启模组2次，重新入网
-			// 	}else{
-			// 		initRetry = 0;
-			// 		Hal_EnterLowPower_Mode();				//重启入网失败则进入低功耗
-			// 	}
-				
-			// }
+
             OSTimeDlyHMSM(0u, 0u, 0u, 200u);  
         }
     }

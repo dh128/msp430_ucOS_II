@@ -719,6 +719,9 @@ void Hal_EnterLowPower_Mode(void)
 	AppDataPointer->TransMethodData.GPRSATStatus = 0;
 #endif
 #if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
+    if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
+        OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);	//关闭NB电源
+    }
     OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
     // OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);	
@@ -733,14 +736,11 @@ void Hal_EnterLowPower_Mode(void)
     P4SEL &=~BIT4;
     P4OUT &=~BIT4;
 	P4DIR |= BIT4;
+#endif
     //关闭串口2，Debug口
     P7SEL &= 0xFC;
     P7OUT = 0x00;
     P7DIR |= 0x03;
-    // P7SEL &=~BIT0;
-    // P7OUT &=~BIT0;
-	// P7DIR |= BIT0;
-#endif
 
     gManager.systemLowpower = 1;
     LED_OFF;
@@ -767,7 +767,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     #if (PRODUCT_TYPE == Weather_Station)      
        AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     
     #endif
-        #if (PRODUCT_TYPE == WRain_Station)      
+    #if (PRODUCT_TYPE == WRain_Station)      
         AppDataPointer->WRainData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;       
     #endif
     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
@@ -776,7 +776,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 #endif
 #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-    if(AppDataPointer->TransMethodData.NBStatus == NB_Init_Error){
+    if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
         AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
     }else{
         AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;

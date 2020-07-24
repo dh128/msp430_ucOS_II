@@ -436,8 +436,9 @@ unsigned long MMC_ReadCardSize(void)
     i <<= 1;
   MMC_CardSize *= i;
 
+  SD_CS_High ();
   return (MMC_CardSize);                        //返回容量值大小，单位为字节
-
+  
 }
 /*************************************************
 函数功能：检测MMC/SD卡是否插入

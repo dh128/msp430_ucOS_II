@@ -51,6 +51,7 @@ void g_SD_FileName_Creat(const char *docPath,uint8_t *date,char *filename)
 
 void g_SD_File_Write(const char *file_path,const char *dat)
 {
+	SD_CS_Low ();
 	g_Printf_dbg("write file to %s......\n\r",file_path);
 	res=f_mount(0, &fs);
 	res=f_open(&fsrc,(char *)file_path, FA_OPEN_ALWAYS | FA_WRITE);
@@ -73,6 +74,7 @@ void g_SD_File_Write(const char *file_path,const char *dat)
 		f_close(&fsrc);
 	}
 	f_mount(0,NULL);
+	SD_CS_High ();
 }
 void del_txt(char *direction,char *file_path)//É¾³ýÎÄ¼þ
 {

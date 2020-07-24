@@ -113,6 +113,7 @@ void  BSP_Init(void)
     OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);
 #endif  
     Recive_485_Enable;
+    W25Q16_CS_HIGH();
    // ScadaData_base_Init();   //后面已经执行了一�
     hal_Delay_ms(100);
 }
