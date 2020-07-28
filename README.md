@@ -117,5 +117,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 6、添加NB发送数据失败和初始化失败情况，增加NB入网失败清除频点操作，断电进入低功耗，退出低功耗后重新上电；
 7、修复不添加纪录传感器采集缺失BUG；
 8、去掉NB入网判断中的数据包长度；
+9、去掉补传功能；
 
 

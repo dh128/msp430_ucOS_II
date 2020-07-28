@@ -1041,7 +1041,7 @@ void GetStoreData(void)
 	{
 		ltoa( (long)BackupIndex , RespFile);
 		strcat(RespFile , ".txt");
-		temp = Get_String("0:/INDEX" , RespFile , Data_Backup , 70);
+		temp = Get_String("0:/INDEX" , RespFile , Data_Backup , 122);
 		if( temp == 1)		
 		{
 			// BackupIndex--;
@@ -1149,21 +1149,21 @@ void  TransmitTaskStart (void *p_arg)
 						g_Device_NB_SendCheck();
 						if(AppDataPointer->TransMethodData.NBSendStatus == 1)	//确认帧发送成功,发送数据前会置0
 						{
-							if(ResendData)
-							{
-								ResendData = 0;
-								del_txt("0:/INDEX",RespFile);				//删除临时存储，同时更改存储BackupIndex值
-								CreatFileNum(0);		//参数0   BackupIndex++;
-								cacheBuf[0] = BackupIndex/256;
-								cacheBuf[1] = BackupIndex%256;
-								cacheBuf[2] = StartFile/256;
-								cacheBuf[3] = StartFile%256;
-								cacheBuf[4] = FullFlag;
-								OSBsp.Device.InnerFlash.FlashRsvWrite(cacheBuf,5,infor_ChargeAddr,18);
-							}	
-							if(BackupIndex >=1)
-								GetStoreData();
-							else
+							// if(ResendData)
+							// {
+							// 	ResendData = 0;
+							// 	del_txt("0:/INDEX",RespFile);				//删除临时存储，同时更改存储BackupIndex值
+							// 	CreatFileNum(0);		//参数0   BackupIndex++;
+							// 	cacheBuf[0] = BackupIndex/256;
+							// 	cacheBuf[1] = BackupIndex%256;
+							// 	cacheBuf[2] = StartFile/256;
+							// 	cacheBuf[3] = StartFile%256;
+							// 	cacheBuf[4] = FullFlag;
+							// 	OSBsp.Device.InnerFlash.FlashRsvWrite(cacheBuf,5,infor_ChargeAddr,18);
+							// }	
+							// if(BackupIndex >=1)
+							// 	GetStoreData();
+							// else
 								AppDataPointer->TransMethodData.NBStatus = NB_Send_Over;
 
 						}
@@ -1176,7 +1176,7 @@ void  TransmitTaskStart (void *p_arg)
 					else
 					{
 						//存储数据等待下次补传
-						WriteStoreData();
+						//WriteStoreData();
 						AppDataPointer->TransMethodData.NBStatus = NB_Init_Error;
 					}
 					if(AppDataPointer->TransMethodData.NBStatus == NB_Send_Over)		//不在线直接进Idle
