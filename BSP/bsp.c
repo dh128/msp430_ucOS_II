@@ -84,6 +84,7 @@ static void BSP_OSCloseWatchDog(void);
 
 void  BSP_Init(void)
 {
+    uint8_t hwclock[8];
     __disable_interrupt();                                      /* Disable all int. until we are ready to accept them   */
     
     // BSP_OSCloseWatchDog();
@@ -91,7 +92,7 @@ void  BSP_Init(void)
     BSP_OSClockInit();
     BSP_OSTickInit();                                           /* Initialize the OS tick timer   */
     // TimerBInit();
-    g_Device_InnerRTC_Init();   
+       
     g_Device_IO_Init();
     g_Device_Usart0_Init(9600);                                //通信模块串口
     g_Device_Usart1_Init(9600);                                //Socket串口
@@ -104,6 +105,8 @@ void  BSP_Init(void)
     hal_Delay_ms(100);
     g_Printf_info("BSP init over\r\n");
     g_Device_ExtRTC_Init();
+    OSBsp.Device.RTC.ReadExtTime(hwclock,RealTime);
+    g_Device_InnerRTC_Init(hwclock);
     hal_Delay_ms(100);
     g_Printf_info("RTC init over\r\n");
 #if HAVE_SDCARD_SERVICE

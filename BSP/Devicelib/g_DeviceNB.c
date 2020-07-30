@@ -548,8 +548,8 @@ void g_Device_NBSignal(void)
 void ProcessCommand()
 {
 	char *CommandBuff;
-	uint8_t CommandBuffData[50];
-	uint8_t CommandBuffNum;
+	uint8_t CommandBuffData[50]={0};
+	uint8_t CommandBuffNum = 0;;
 
 	uint16_t Temp_SendPeriod;
 	unsigned char Flash_Tmp[14];  //flash操作中间变量
@@ -574,8 +574,9 @@ void ProcessCommand()
 			//将发送周期的信息存入Flash
 			// delay_ms(10);
 			OSTimeDly(5);
-			Flash_Tmp[11] = App.Data.TerminalInfoData.SendPeriod;//上传周期（min）
-			OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp[11], 1, infor_ChargeAddr, 11);//把终端信息写入FLASH
+			Flash_Tmp[11] = (Temp_SendPeriod & 0xFF00)>>8;	//修改周期存储值（min）
+			Flash_Tmp[12] = Temp_SendPeriod & 0x00FF;		
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[11], 2, infor_ChargeAddr, 11);//把周期信息写入FLASH
 		}
 		else
 		{
@@ -1096,7 +1097,7 @@ void  TransmitTaskStart (void *p_arg)
 			{
                 g_Device_NB_Init();
             }
-			else if(AppDataPointer->TransMethodData.NBStatus == NB_Init_Done)
+			else if(AppDataPointer->TransMethodData.NBStatus >= NB_Init_Done)
 			{
                 if( AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER)
 				{

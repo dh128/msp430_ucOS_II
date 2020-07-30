@@ -134,7 +134,13 @@ uint8_t HexToBCD(uint8_t hex)
 	temp = hex/10*16 + hex%10;
 	return temp;
 }
+uint8_t BCDToHEX(uint8_t bcd_data)    //BCD转为HEX子程序
+{
+	uint8_t temp;
 
+    temp = (bcd_data/16*10 + bcd_data%16);
+    return temp;
+}
 
 //Itoa函数
 char* Itoa(int val,char* dst,int radix)

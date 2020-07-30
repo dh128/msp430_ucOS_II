@@ -244,15 +244,16 @@ void g_Device_RTCstring_Creat(uint8_t *datetime,char *t_str)
 	Send_Buffer[38] = UnixTimeStamp & 0xFF;
 }
 
-void g_Device_InnerRTC_Init(void)
+void g_Device_InnerRTC_Init(uint8_t *date)
 {
     RTCCTL01 = RTCMODE + RTCBCD + RTCHOLD + RTCTEV_0 + RTCSSEL_0;		//  Min. changed interrupt
-    RTCHOUR = 0x00;        //初始时间：2000年0月0日00:00:00
-    RTCMIN  = 0x00;
-    RTCSEC  = 0x00;
-    RTCDAY  = 0x01;
-    RTCMON  = 0x01;
-    RTCYEAR = 0x2000;
+    RTCYEAR 	= 0x2000 + date[1];		//初始时间：从硬件时钟读取
+	RTCMON  	= date[2];
+    RTCDAY  	= date[3];
+	RTCHOUR 	= date[4];        
+    RTCMIN  	= date[5];
+    RTCSEC  	= date[6];
+	RTCADOWDAY  = date[7];    
     RTCCTL01 &= ~RTCHOLD;//启动实时时钟
 
     RTCCTL0 |= RTCTEVIE;//打开每分钟中断标志
@@ -425,6 +426,7 @@ uint32_t covBeijing2UnixTimeStp(RtcStruct *beijingTime)
 #pragma vector=RTC_VECTOR
 __interrupt void RTC_ISR(void)
 {
+	uint16_t min;
     switch (__even_in_range(RTCIV, RTC_RT1PSIFG))
     {
         case RTC_NONE:
@@ -432,9 +434,15 @@ __interrupt void RTC_ISR(void)
 
         case RTC_RTCTEVIFG:		//分钟
 			{
+				min = BCDToHEX(RTCMIN);
 				if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //上传频率大于5min才具备低功耗模式
 				{
-					g_MinuteTick ++;
+					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
+						__bic_SR_register_on_exit(LPM0_bits);
+						TBCTL |= MC_1;     //start timerB
+						Hal_ExitLowPower_Mode(Rtc_Int);
+					}
+					//g_MinuteTick ++;
 					// g_Printf_dbg("g_MinuteTick wakeup %d times\r\n",g_MinuteTick);	
 					//强行进低功耗会影响FOTA接收dh202029
 					// if(g_MinuteTick == (App.Data.TerminalInfoData.SendPeriod-1)){       //ML 20191121强行进低功耗
@@ -442,17 +450,17 @@ __interrupt void RTC_ISR(void)
 					// 		Hal_EnterLowPower_Mode();
 					// 	}
 					// }
-					if(g_MinuteTick >= App.Data.TerminalInfoData.SendPeriod){
-						g_MinuteTick = 0;
-						// if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
-							__bic_SR_register_on_exit(LPM0_bits);
-							// WDTCTL  = WDT_MDLY_32;
-							// SFRIE1 |= 1;  
-							TBCTL |= MC_1;     //start timerB
-								// Hal_ExitLowPower_Mode();
-							Hal_ExitLowPower_Mode(Rtc_Int);
-						// }		
-					}
+					// if(g_MinuteTick >= App.Data.TerminalInfoData.SendPeriod){
+					// 	g_MinuteTick = 0;
+					// 	// if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
+					// 		__bic_SR_register_on_exit(LPM0_bits);
+					// 		// WDTCTL  = WDT_MDLY_32;
+					// 		// SFRIE1 |= 1;  
+					// 		TBCTL |= MC_1;     //start timerB
+					// 			// Hal_ExitLowPower_Mode();
+					// 		Hal_ExitLowPower_Mode(Rtc_Int);
+					// 	// }		
+					// }
 				}
 
 				g_MinuteTimeTick ++;
@@ -471,13 +479,6 @@ __interrupt void RTC_ISR(void)
 							OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
 							OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
 						#endif
-						#if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
-							OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
-							// OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
-							OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
-						#endif
-
-//						hal_Reboot();  //定时24h复位一次
 					}
 				}
 			} 
