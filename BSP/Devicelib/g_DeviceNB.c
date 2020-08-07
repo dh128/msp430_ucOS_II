@@ -173,7 +173,60 @@ void g_Device_NB_Restart(void)
 		AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
 	}
 }
-
+/*******************************************************************************
+* 函数名		: SyncTime
+* 描述	    	: NB网络校时
+* 输入参数  	: 无
+* 返回参数  	: 无
+*******************************************************************************/
+void SyncTime(void)
+{
+	RtcStruct BjTime;
+	char *a;
+	unsigned char i=0,m=0;
+	unsigned char nb_Timedata[22]={0};
+	uint8_t time_buf[8];
+	uint8_t time_buf_bcd[8];
+	if(AppDataPointer->TerminalInfoData.AutomaticTimeStatus == AUTOMATIC_TIME_ENABLE)
+	{
+		AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
+		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
+		User_Printf("AT+CCLK?\r\n");
+		OSTimeDly(200);			//等待串口接收
+		a=strstr(aRxBuff,"+CCLK:");
+		if(a!=NULL)
+		{
+			while(*(a+6)!='\r')
+			{
+				nb_Timedata[i]=*(a+6);
+				i++;
+				a++;
+			}	
+			nb_Timedata[i]='\n';	
+			Rtctime.Year = 2000+(nb_Timedata[0] - 0x30) * 10 + (nb_Timedata[1] - 0x30) * 1;	       //年
+			Rtctime.Month = (nb_Timedata[3] - 0x30) * 10 + (nb_Timedata[4] - 0x30) * 1;	       //月
+			Rtctime.Day = (nb_Timedata[6] - 0x30) * 10 + (nb_Timedata[7] - 0x30) * 1;	       //日
+			Rtctime.Hour = (nb_Timedata[9] - 0x30) * 10 + (nb_Timedata[10] - 0x30) * 1;			//时
+			Rtctime.Minute = (nb_Timedata[12] - 0x30) * 10 + (nb_Timedata[13] - 0x30) * 1;	       //分
+			Rtctime.Second = (nb_Timedata[15] - 0x30) * 10 + (nb_Timedata[16] - 0x30) * 1;	       //秒
+			UnixTimeStamp = covBeijing2UnixTimeStp(&Rtctime);		//get UTC
+			UnixTimeStamp += 28800;									//UTC + 8hours
+			covUnixTimeStp2Beijing(UnixTimeStamp, &BjTime);			//get Beijing time
+			time_buf[1]= BjTime.Year - 2000;	   //年
+			time_buf[2]= BjTime.Month;	       //月
+			time_buf[3]= BjTime.Day;	       //日
+			time_buf[4]= BjTime.Hour;	   	   //时
+			time_buf[5]= BjTime.Minute;	       //分
+			time_buf[6]= BjTime.Second;	       //秒
+			for(m=1;m<7;m++) {
+				time_buf_bcd[m]= HexToBCD(time_buf[m]);    //存“年月日时分秒”
+			}
+			OSBsp.Device.RTC.ConfigExtTime(time_buf_bcd,RealTime);
+			Write_info_RTC(time_buf_bcd);
+			g_Printf_dbg("NB Automatic Time OK\r\n");
+		}
+	}
+}
 /*******************************************************************************
 * 函数名		: g_Device_NB_Init
 * 描述	    	: NB模块初始化---BC35G
@@ -182,14 +235,8 @@ void g_Device_NB_Restart(void)
 *******************************************************************************/
 char g_Device_NB_Init(void)
 {
-	RtcStruct BjTime;
 	uint8_t ii = 0;
-	//ML
-	char *a;
-	unsigned char i=0,m=0;
-	unsigned char nb_Timedata[22]={0};
-	uint8_t time_buf[8];
-	uint8_t time_buf_bcd[8];
+	
 	if(AppDataPointer->TransMethodData.NBStatus == NB_Boot)
 	{
 		NB_Config("AT+CFUN=0\r\n",5,5);
@@ -250,46 +297,8 @@ char g_Device_NB_Init(void)
 		OSTimeDly(500);
 		AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
 		//********ML同步时间-20191111************//
-		if(AppDataPointer->TerminalInfoData.AutomaticTimeStatus == AUTOMATIC_TIME_ENABLE)
-		{
-			AppDataPointer->TransMethodData.GPRSTime = 0;
-			AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
-			User_Printf("AT+CCLK?\r\n");
-			OSTimeDly(200);			//等待串口接收
-			a=strstr(aRxBuff,"+CCLK:");
-			if(a!=NULL)
-			{
-				while(*(a+6)!='\r')
-				{
-					nb_Timedata[i]=*(a+6);
-					i++;
-					a++;
-				}	
-				nb_Timedata[i]='\n';	
-				Rtctime.Year = 2000+(nb_Timedata[0] - 0x30) * 10 + (nb_Timedata[1] - 0x30) * 1;	       //年
-				Rtctime.Month = (nb_Timedata[3] - 0x30) * 10 + (nb_Timedata[4] - 0x30) * 1;	       //月
-				Rtctime.Day = (nb_Timedata[6] - 0x30) * 10 + (nb_Timedata[7] - 0x30) * 1;	       //日
-				Rtctime.Hour = (nb_Timedata[9] - 0x30) * 10 + (nb_Timedata[10] - 0x30) * 1;			//时
-				Rtctime.Minute = (nb_Timedata[12] - 0x30) * 10 + (nb_Timedata[13] - 0x30) * 1;	       //分
-				Rtctime.Second = (nb_Timedata[15] - 0x30) * 10 + (nb_Timedata[16] - 0x30) * 1;	       //秒
-				UnixTimeStamp = covBeijing2UnixTimeStp(&Rtctime);		//get UTC
-				UnixTimeStamp += 28800;									//UTC + 8hours
-				covUnixTimeStp2Beijing(UnixTimeStamp, &BjTime);			//get Beijing time
-				time_buf[1]= BjTime.Year - 2000;	   //年
-				time_buf[2]= BjTime.Month;	       //月
-				time_buf[3]= BjTime.Day;	       //日
-				time_buf[4]= BjTime.Hour;	   	   //时
-				time_buf[5]= BjTime.Minute;	       //分
-				time_buf[6]= BjTime.Second;	       //秒
-				for(m=1;m<7;m++) {
-					time_buf_bcd[m]= HexToBCD(time_buf[m]);    //存“年月日时分秒”
-				}
-				OSBsp.Device.RTC.ConfigExtTime(time_buf_bcd,RealTime);
-				Write_info_RTC(time_buf_bcd);
-					AppDataPointer->TransMethodData.GPRSTime = 1;
-				g_Printf_dbg("NB Automatic Time OK\r\n");
-			}
-		}
+		SyncTime();
+		
 		//*****************同步时间END************//
 		return 1;
 	}
@@ -914,6 +923,7 @@ void g_Device_NB_GetReceive(void)
 		AppDataPointer->TransMethodData.NBStatus = NB_Idel;
 		g_Printf_info("No (correct) message downloaded!\r\n");
 		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
+		SyncTime();
 	}
 
 	
@@ -1145,33 +1155,37 @@ void  TransmitTaskStart (void *p_arg)
 					//发送数据
 					if(AppDataPointer->TransMethodData.NBNet == 1)
 					{
-						g_Device_NB_Send_Str(Data_Backup,60);	
-						OSTimeDly(2500);	//等待5s
-						g_Device_NB_SendCheck();
-						if(AppDataPointer->TransMethodData.NBSendStatus == 1)	//确认帧发送成功,发送数据前会置0
-						{
-							// if(ResendData)
-							// {
-							// 	ResendData = 0;
-							// 	del_txt("0:/INDEX",RespFile);				//删除临时存储，同时更改存储BackupIndex值
-							// 	CreatFileNum(0);		//参数0   BackupIndex++;
-							// 	cacheBuf[0] = BackupIndex/256;
-							// 	cacheBuf[1] = BackupIndex%256;
-							// 	cacheBuf[2] = StartFile/256;
-							// 	cacheBuf[3] = StartFile%256;
-							// 	cacheBuf[4] = FullFlag;
-							// 	OSBsp.Device.InnerFlash.FlashRsvWrite(cacheBuf,5,infor_ChargeAddr,18);
-							// }	
-							// if(BackupIndex >=1)
-							// 	GetStoreData();
-							// else
-								AppDataPointer->TransMethodData.NBStatus = NB_Send_Over;
+						if(App.Data.TransMethodData.SeqNumber == 0){		//开机第一次不上报数据
+							AppDataPointer->TransMethodData.NBStatus = NB_Idel;
+						}else{
+							g_Device_NB_Send_Str(Data_Backup,60);	
+							OSTimeDly(2500);	//等待5s
+							g_Device_NB_SendCheck();
+							if(AppDataPointer->TransMethodData.NBSendStatus == 1)	//确认帧发送成功,发送数据前会置0
+							{
+								// if(ResendData)
+								// {
+								// 	ResendData = 0;
+								// 	del_txt("0:/INDEX",RespFile);				//删除临时存储，同时更改存储BackupIndex值
+								// 	CreatFileNum(0);		//参数0   BackupIndex++;
+								// 	cacheBuf[0] = BackupIndex/256;
+								// 	cacheBuf[1] = BackupIndex%256;
+								// 	cacheBuf[2] = StartFile/256;
+								// 	cacheBuf[3] = StartFile%256;
+								// 	cacheBuf[4] = FullFlag;
+								// 	OSBsp.Device.InnerFlash.FlashRsvWrite(cacheBuf,5,infor_ChargeAddr,18);
+								// }	
+								// if(BackupIndex >=1)
+								// 	GetStoreData();
+								// else
+									AppDataPointer->TransMethodData.NBStatus = NB_Send_Over;
 
-						}
-						else
-						{
-							WriteStoreData();
-							AppDataPointer->TransMethodData.NBStatus = NB_Send_Error;			//发送失败
+							}
+							else
+							{
+								WriteStoreData();
+								AppDataPointer->TransMethodData.NBStatus = NB_Send_Error;			//发送失败
+							}
 						}
 					}
 					else

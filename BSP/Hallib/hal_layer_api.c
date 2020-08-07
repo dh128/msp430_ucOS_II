@@ -570,8 +570,8 @@ uint32_t Hal_getTransmitPeriod(void)
     temp = OSBsp.Device.InnerFlash.innerFLASHRead(11,infor_ChargeAddr);
 	temp = temp<<8;
 	temp += OSBsp.Device.InnerFlash.innerFLASHRead(12,infor_ChargeAddr);
-    if(temp>360 && temp<=5){
-        temp = 15;           
+    if((temp>360) || (temp<5)){
+        temp = 10;
     }     
     g_Printf_info("%s %d\r\n",__func__,temp);
     return temp;
@@ -747,7 +747,8 @@ void Hal_EnterLowPower_Mode(void)
     P7SEL &= 0xFC;
     P7OUT = 0x00;
     P7DIR |= 0x03;
-
+    //关闭串口3接收中断
+    UCA3IE &= ~UCRXIE;
     gManager.systemLowpower = 1;
     LED_OFF;
     // WDTCTL = WDTPW + WDTHOLD;             //CloseWatchDog
@@ -761,8 +762,6 @@ void Hal_EnterLowPower_Mode(void)
 void Hal_ExitLowPower_Mode(uint8_t int_Src)
 {
     hal_Delay_ms(100);
-    P7SEL |= BIT0+BIT1;
-    g_Printf_info("Exit Low Power!\r\n");
     gManager.systemLowpower = 0;
     // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
     // OSBsp.Device.IOControl.PowerSet(Sensor_Power_On);
@@ -831,6 +830,10 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     OSBsp.Device.IOControl.PowerSet(GPS_Power_On);
     g_Device_Usart1_Init(9600);
 #endif
+    TBCTL |= MC_1;     //start timerB
+    P7SEL |= BIT0+BIT1;
+    UCA3IE |= UCRXIE;   //打开串口3 接收中断使能
+    g_Printf_info("Exit Low Power!\r\n");
 }
 
 char Hal_getCurrent_work_Mode(void)

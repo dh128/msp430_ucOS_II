@@ -34,6 +34,7 @@ enum NB_STATUS {
 
 unsigned char NB_Config(unsigned char *c , unsigned char m, unsigned char t);
 void g_Device_NB_Restart(void);
+void SyncTime(void); 
 char  g_Device_NB_Init(void);
 void g_Device_NB_GetIP(void);
 void g_Device_NB_Send(uint32_t *data ,uint8_t length);

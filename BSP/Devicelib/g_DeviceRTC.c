@@ -439,7 +439,6 @@ __interrupt void RTC_ISR(void)
 				{
 					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
 						__bic_SR_register_on_exit(LPM0_bits);
-						TBCTL |= MC_1;     //start timerB
 						Hal_ExitLowPower_Mode(Rtc_Int);
 					}
 					//g_MinuteTick ++;
