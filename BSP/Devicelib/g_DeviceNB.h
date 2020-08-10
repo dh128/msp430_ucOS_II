@@ -12,6 +12,7 @@ extern uint16_t BackupIndex;
 extern uint16_t StartFile;
 extern uint8_t FullFlag;
 extern char RespFile[10];
+extern char NB_Fota;
 
 extern uint32_t Send_Buffer_CTwing_NBSignal[16];
 extern uint32_t Send_Buffer_CTwing_NBSoildata[13];

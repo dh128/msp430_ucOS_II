@@ -673,6 +673,7 @@ void GetCode(int num)
 *******************************************************************************/
 void ProcessPCP(unsigned char *p)
 {
+	OS_CPU_SR   cpu_sr = 0u;
 	uint8_t PCPData[512];
 	uint16_t CRCtemp;
 //	uint16_t temp2=0;
@@ -708,7 +709,8 @@ void ProcessPCP(unsigned char *p)
 			// delay_ms(10);
 		}
 		//User_Printf("AT+NMGS=25,FFFE0113164700110056322E31300000000000000000000000\r\n");
-		OSTimeDly(5000);
+		// OSTimeDly(5000);
+		hal_Delay_sec(10);
 		g_Printf_info(" 0x13 delay over\r\n");
 		break;
 	case 0x14:			//新版本通知
@@ -724,10 +726,13 @@ void ProcessPCP(unsigned char *p)
 		//获取总包数
 		PackageLen = PCPData[26];
 		PackageLen = PackageLen*256 + PCPData[27];
+		Base_3V3_OFF;
+		W25Q16_ON;
+		OSTimeDly(100);
 		//擦除SPI
 		W25Q16_CS_HIGH();
-		OSTimeDly(50);
-		Base_3V3_ON;
+		// OSTimeDly(50);
+		hal_Delay_ms(100);
 		// P4OUT |= BIT0;
 		W25Q16_Init();
 		readAddr = FOTA_ADDR_START;
@@ -740,7 +745,8 @@ void ProcessPCP(unsigned char *p)
 		User_Printf("AT+NMGS=9,FFFE0114D768000100\r\n");		//允许升级
 		// System.Device.Timer.Stop(5);
 		// UpdateFlag = 1;
-		OSTimeDly(100);
+		// OSTimeDly(100);
+		hal_Delay_ms(200);
 		NB_Fota = 1;
 //		User_Printf("AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n");
 		GetCode(PackageNum);
@@ -759,14 +765,17 @@ void ProcessPCP(unsigned char *p)
 		// CRC校验通过、设备包正确则存储继续获取否则重新获取
 		if((CRCFlag == 1) && (ret == PackageNum))	
 		{
+			OS_ENTER_CRITICAL();
 			PackageNum ++;
 			for(m=0;m<length;m++)
 			{
 				SPI_Flash_Write_Data(PCPData[m+11],addr_write++);
 			}
 			aRxNum = 0;
+			OS_EXIT_CRITICAL();
 			User_Printf("AT+NMGR\r\n");		//防止出现重复缓存
-			OSTimeDly(100);
+			// OSTimeDly(100);
+			hal_Delay_ms(200);
 		}
 		else
 		{
@@ -781,7 +790,8 @@ void ProcessPCP(unsigned char *p)
 		g_Printf_info("get 0x17 command\r\n");
 		PackageNum = 0;		//结束下载，清零计数
 		User_Printf("AT+NMGS=9,FFFE0117B725000100\r\n");
-		OSTimeDly(500);		//上报升级成功
+		// OSTimeDly(500);		//上报升级成功
+		hal_Delay_sec(1);
 		//CRC
 		report[3]= 0x18;
 		report[4] = report[5] = 0;
@@ -804,13 +814,14 @@ void ProcessPCP(unsigned char *p)
 		g_Printf_info("%d version code printf begin:\r\n",newVersion);
 		// add_temp = FOTA_ADDR_START;
 		// lenth = 
+		OS_ENTER_CRITICAL();
 		for(m=FOTA_ADDR_START;m<addr_write;m++)
 		{
 			// d_t[m]=Read_Byte(m);
 			// OSBsp.Device.Usart2.WriteData(d_t[m]);
 			OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
 		}	
-
+		OS_EXIT_CRITICAL();
 		//判断存储数据头尾是否正确 然后配置启动标志位存放于infor_BootAddr
 		TestData[0] = SPI_Flash_ReadByte(addr_write-3);
 		TestData[1] = SPI_Flash_ReadByte(FOTA_ADDR_START+1);
@@ -864,15 +875,10 @@ void g_Device_NB_SendCheck(void)
 void g_Device_NB_GetReceive(void)
 {
 	uint8_t *Uart0_RxBuff;
-//	uint8_t Uart0_RxBuff_data[50];
-//	uint8_t Uart0_RxBuff_Num;
 	uint16_t i = 0;
-	//Uart0_RxBuff_Num = 0;
 
-	// Clear_Buffer(aRxBuff,&aRxNum);
 	Clear_CMD_Buffer((uint8_t *)aRxBuff,1050);
 	aRxNum = 0;
-	// OSTimeDly(4000);		//等待4000ms		使用下面的循环判断延时，待测试
 	if(NB_Fota)				//进入Fota后每次获取PCP数据延时，避免数据下发不及时
 	{
 		while(i < 40)
@@ -884,9 +890,8 @@ void g_Device_NB_GetReceive(void)
 			OSTimeDly(250);		//500ms
 		}
 	}
-	
 	User_Printf("AT+NMGR\r\n");
-	OSTimeDly(1000);		//等待2000ms
+	hal_Delay_sec(2);
 	if(Hal_CheckString(aRxBuff,",FFFE"))							//获取到PCP消息
 	{
 		//提取PCP消息
@@ -900,14 +905,7 @@ void g_Device_NB_GetReceive(void)
 			Uart0_RxBuff++;
 		}
 		Receive_data[i] = '\0';
-		// Uart0_RxBuff = strstr(aRxBuff,"FFFE");         //判断接收到的数据是否有效
-		// while(*(Uart0_RxBuff) != '\r')
-		// {
-		// 	Uart0_RxBuff_data[Uart0_RxBuff_Num] = *Uart0_RxBuff;
-		// 	Uart0_RxBuff_Num++;
-		// 	Uart0_RxBuff++;
-		// }
-		OSTimeDly(100);
+		hal_Delay_ms(200);
 		//处理PCP消息
 		ProcessPCP(Receive_data);
 	}
@@ -925,8 +923,6 @@ void g_Device_NB_GetReceive(void)
 		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 		SyncTime();
 	}
-
-	
 }
 /*******************************************************************************
 * 函数名  : CreatFileNum
@@ -1089,7 +1085,7 @@ void  TransmitTaskStart (void *p_arg)
 			{
 				//NB-IoT 第一次开机时对NB上电操作，后续进入低功耗不关电
 				g_Printf_dbg("Turn on NB power\r\n");
-				// g_Printf_info("\r\n\r\nNB-IoT Fota Test version 3\r\n\r\n");	//测试打印
+				 g_Printf_info("\r\n\r\nNB-IoT Fota Test version 21\r\n\r\n");	//测试打印
 				OSTimeDly(500);
                 OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);		//打开NB电源
 				//reset脚电平
@@ -1107,7 +1103,7 @@ void  TransmitTaskStart (void *p_arg)
 			{
                 g_Device_NB_Init();
             }
-			else if(AppDataPointer->TransMethodData.NBStatus >= NB_Init_Done)
+			else if(AppDataPointer->TransMethodData.NBStatus == NB_Init_Done)
 			{
                 if( AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER)
 				{
@@ -1159,7 +1155,7 @@ void  TransmitTaskStart (void *p_arg)
 							AppDataPointer->TransMethodData.NBStatus = NB_Idel;
 						}else{
 							g_Device_NB_Send_Str(Data_Backup,60);	
-							OSTimeDly(2500);	//等待5s
+							OSTimeDly(5000);	//等待10s
 							g_Device_NB_SendCheck();
 							if(AppDataPointer->TransMethodData.NBSendStatus == 1)	//确认帧发送成功,发送数据前会置0
 							{
@@ -1194,18 +1190,18 @@ void  TransmitTaskStart (void *p_arg)
 						//WriteStoreData();
 						AppDataPointer->TransMethodData.NBStatus = NB_Init_Error;
 					}
-					if(AppDataPointer->TransMethodData.NBStatus == NB_Send_Over)		//不在线直接进Idle
-					{
-						g_Device_NB_GetReceive();
-					}
-					if((AppDataPointer->TransMethodData.NBStatus == NB_Idel) 
-						|| (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error)
-						|| (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error))	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
-					{
-						Hal_EnterLowPower_Mode();
-					}      
-                }    
+				}      
             }
+			else if(AppDataPointer->TransMethodData.NBStatus == NB_Send_Over)		//不在线直接进Idle
+			{
+				g_Device_NB_GetReceive();
+			}
+			else if((AppDataPointer->TransMethodData.NBStatus == NB_Idel) 
+				|| (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error)
+				|| (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error))	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
+			{
+				Hal_EnterLowPower_Mode();
+			}  
 
             OSTimeDlyHMSM(0u, 0u, 0u, 200u);  
         }

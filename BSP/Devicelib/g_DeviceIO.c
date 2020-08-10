@@ -206,7 +206,7 @@ void g_Device_IO_Init(void)
 	P1OUT = 0x00;
 	P1DIR = 0xFF;
 	P2OUT = 0x00;
-	P2DIR = 0xFF;
+	P2DIR = 0xF7;	//P2.3设置为输入，连接NB模块的RI
 	P3OUT = 0x00;
 	P3DIR = 0xFF;
 	P4OUT = 0x00;
