@@ -130,11 +130,16 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 4、删除不需要退出低功耗的串口中断函数里的退出低功耗函数；
 5、进入低功耗关闭传感器串口3接收中断，退出低功耗时再打开。
 
-2020-8-9
+2020-8-9	dingh
 1、删除看门狗任务函数中的log输出；
 2、长时间处于DEVICE_STATUS_POWER_SCAN_OVER时判断是否处于升级状态，NB升级则不进入低功耗；
 3、添加scada_over_times和scada_idle_times清零操作；
 4、设置P2.3(对应NB模块的RI)为输入，RI为输出，0-3V；
 5、添加W25Q16电源控制宏；
 6、调整NB发送数据及接收数据处理过程，优化NB升级过程，获取数据过程禁止任务切换，读写SPI flash过程中添加临界态保护。
+
+2020-8-12	dingh
+1、修改水雨情设备传感器数量2，删除无用的采集，组包；
+2、NB升级前判断电量是否大于50%，信号信噪比是否大于0，不符合条件的不更新；
+3、NB升级过程中读取写入Flash数据，发现数据写入异常则停止升级操作；
 

@@ -64,20 +64,18 @@ static unsigned char CellID_data[10]={0};
 
 //PCP测试
 char NB_Fota = 0;		//Fota状态，开始时置1，结束时置0
-int PackageNum = 0;		//当前获取数据包计数，获取成功后+1
-char codeFile[11]={"0:/1106.txt"};
-uint32_t newVersion = 0;		//Fota 临时存储版本
+FotaStruct fota = {0,0,0,0,0,0,0,0};
 /* CRC计算前把CRC校验码位清零，然后计算整个CRC结果，填充在对应位置上 */
 uint32_t report[25]={0xFF,0xFE,0x01,0x13,0x00,0x00,0x00,0x11,0x00,0x30,0x30,0x32,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 							//	  版本命令  CRC      数据长度  结果码  数据002
+uint32_t response[9]={0xFF,0xFE,0x01,0x16,0x85,0x0E,0x00,0x01,0x00};
 uint32_t getBuffer[26]={0xFF,0xFE,0x01,0x15,0x00,0x00,0x00,0x12,0x31,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 								//	 版本命令  CRC      数据长度  数据版本+包计数
+uint8_t responseCommand[30]="AT+NMGS=9,FFFE0114D768000100\r\n";
 uint8_t reportCommand[63]="AT+NMGS=25,FFFE0113164700110056322E31300000000000000000000000\r\n";
 uint8_t getCommand[65]="AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n";
 unsigned char Receive_data[1024]={0};
-uint16_t PackageSize;
-uint16_t PackageLen;
-uint8_t CRCFlag = 0;
+
 static long addr_write = FOTA_ADDR_START;
 unsigned long readAddr = 0;     //SPI_Flash 读写地址
 // static unsigned char ECL_data=0;
@@ -641,7 +639,7 @@ void GetCode(int num)
 	uint16_t temp1=0;	
 	uint16_t ii = 0;
 	
-	if(num < PackageLen)	//分包获取数据包
+	if(num < fota.PackageLen)	//分包获取数据包
 	{
 		//CRC
 		getBuffer[24] =num/256;
@@ -663,7 +661,31 @@ void GetCode(int num)
 	{
 		User_Printf("AT+NMGS=9,FFFE0116850E000100\r\n");
 	}
-//	System.Device.Timer.Start(5,TimerSystick,200,Get_Data);
+}
+/*******************************************************************************
+* 函数名    : ReportUpErr
+* 描述	  	: 上报升级异常情况
+* 输入参数  : type--上报类型，data--result code
+* 返回参数  : 无
+*******************************************************************************/
+void ReportUpErr(uint8_t type, uint8_t data)
+{
+	uint16_t CRCtemp;
+	uint16_t ii = 0;
+	NB_Fota = 0;
+	response[8] = data;   //升级包校验失败
+	response[3] = type;
+	response[4] = response[5] = 0;
+	CRCtemp = CRC16CCITT(response,9);
+	response[4] =CRCtemp/256;
+	response[5] =CRCtemp%256;
+	//Send
+	Hex2Str(responseCommand,response,9,10);
+	for(ii=0;ii<30;ii++)
+	{
+		g_Device_SendByte_Uart0(responseCommand[ii]);		//获取数据指令
+		// delay_ms(10);
+	}
 }
 /*******************************************************************************
 * 函数名    : ProcessPCP
@@ -676,15 +698,13 @@ void ProcessPCP(unsigned char *p)
 	OS_CPU_SR   cpu_sr = 0u;
 	uint8_t PCPData[512];
 	uint16_t CRCtemp;
-//	uint16_t temp2=0;
+	long addTemp = 0;
 	uint16_t ret = 0;	
-//	uint16_t bai,shi,ge;
 	long ii;
 	long m;
 	long length;
 	uint8_t TestData[3]={0};
 	uint8_t Flash_Tmp[3];					//flash操作中间变量
-//	char d_t[530000];
 	HexStrToByte(p,PCPData);
 	switch (PCPData[3])
 	{
@@ -693,7 +713,6 @@ void ProcessPCP(unsigned char *p)
 		//version 获取
 		report[9]=App.Data.TerminalInfoData.Version/100 +0x30;
 		report[10]=App.Data.TerminalInfoData.Version%100/10 +0x30;
-//		report[11]=App.Data.TerminalInfoData.Version%10 +0x30;
 		report[11]=(App.Data.TerminalInfoData.Version-1)%10 +0x30;	//测试用，否则固件版本相同
 		//CRC
 		report[3]= 0x13;
@@ -708,24 +727,24 @@ void ProcessPCP(unsigned char *p)
 			g_Device_SendByte_Uart0(reportCommand[ii]);		//获取数据指令
 			// delay_ms(10);
 		}
-		//User_Printf("AT+NMGS=25,FFFE0113164700110056322E31300000000000000000000000\r\n");
-		// OSTimeDly(5000);
 		hal_Delay_sec(10);
 		g_Printf_info(" 0x13 delay over\r\n");
 		break;
 	case 0x14:			//新版本通知
 		g_Printf_info("get 0x14 command\r\n");
+		fota.PackageNum = 0;    //清除接收到数据包计数
+      	fota.CheckSum = 0;      //文件校验和清零
 		//提取版本号
-		newVersion = (PCPData[8]-0x30)*100 + (PCPData[9]-0x30)*10 + PCPData[10] - 0x30;
+		fota.newVersion = (PCPData[8]-0x30)*100 + (PCPData[9]-0x30)*10 + PCPData[10] - 0x30;
 		getBuffer[8] = PCPData[8];
 		getBuffer[9] = PCPData[9];
 		getBuffer[10] = PCPData[10];
-		//获取没报长度
-		PackageSize = PCPData[24];
-		PackageSize = PackageSize*256 + PCPData[25];
+		//获取每报长度
+		fota.PackageSize = PCPData[24];
+		fota.PackageSize = fota.PackageSize*256 + PCPData[25];
 		//获取总包数
-		PackageLen = PCPData[26];
-		PackageLen = PackageLen*256 + PCPData[27];
+		fota.PackageLen = PCPData[26];
+		fota.PackageLen = fota.PackageLen*256 + PCPData[27];
 		Base_3V3_OFF;
 		W25Q16_ON;
 		OSTimeDly(100);
@@ -747,31 +766,51 @@ void ProcessPCP(unsigned char *p)
 		// UpdateFlag = 1;
 		// OSTimeDly(100);
 		hal_Delay_ms(200);
-		NB_Fota = 1;
-//		User_Printf("AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n");
-		GetCode(PackageNum);
-		//System.Device.Timer.Start(6,TimerSystick,20,GetCode);
+		if(App.Data.TerminalInfoData.PowerQuantity < 50){
+			ReportUpErr(0x14,LowPower);//上报错误
+		}else if(App.Data.TransMethodData.SINR < 0){
+			ReportUpErr(0x14,PoorSingal);//上报错误
+		}else{
+			NB_Fota = 1;
+			GetCode(fota.PackageNum);
+		}
 	break;
-	case 0x15:			//请求升级包，不用
+	case 0x15:			//存储新数据包，请求下一包
 	//	byte[9],byte[10]为数据包数，应该等于PackageNum
 		ret = PCPData[9]*256 + PCPData[10];
 		length = strlen(p)/2-11;		//去除包头FFFE等11个字节数据
 		CRCtemp = PCPData[4]*256+PCPData[5];
 		PCPData[4] = PCPData[5] = 0;
 		if(CRCtemp == CRC16CCITT_Byte(PCPData,length+11))
-			CRCFlag = 1;
+			fota.CRCFlag = 1;
 		else
-			CRCFlag = 0;
+			fota.CRCFlag = 0;
 		// CRC校验通过、设备包正确则存储继续获取否则重新获取
-		if((CRCFlag == 1) && (ret == PackageNum))	
+		if((fota.CRCFlag == 1) && (ret == fota.PackageNum))	
 		{
 			OS_ENTER_CRITICAL();
-			PackageNum ++;
+			addTemp = addr_write;
+			fota.PackageNum ++;
+			/*文件和校验*/
+			//
 			for(m=0;m<length;m++)
 			{
 				SPI_Flash_Write_Data(PCPData[m+11],addr_write++);
 			}
 			aRxNum = 0;
+			//检查写入数据
+			for(m=0;m<length;m++)
+			{
+				if(PCPData[m+11] != SPI_Flash_ReadByte(addTemp++)){
+					break;
+				}
+			}
+			if(m < length){		//校验错误
+				g_Printf_info("package check error\r\n");
+				ReportUpErr(0x16, CheckErr);
+				NB_Fota = 0;
+				break;
+			}
 			OS_EXIT_CRITICAL();
 			User_Printf("AT+NMGR\r\n");		//防止出现重复缓存
 			// OSTimeDly(100);
@@ -779,16 +818,16 @@ void ProcessPCP(unsigned char *p)
 		}
 		else
 		{
-			g_Printf_info("CRCFlah= %d,packGet= %d, PackageNum= %d\r\n",(uint32_t)CRCFlag,(uint32_t)ret,(uint32_t)PackageNum);
+			g_Printf_info("CRCFlah= %d,packGet= %d, PackageNum= %d\r\n",(uint32_t)fota.CRCFlag,(uint32_t)ret,(uint32_t)fota.PackageNum);
 		}
-		GetCode(PackageNum);
+		GetCode(fota.PackageNum);
 	break;
 	case 0x016:			//上报下载情况
 		
 	break;
 	case 0x017:			//执行升级		重启后
 		g_Printf_info("get 0x17 command\r\n");
-		PackageNum = 0;		//结束下载，清零计数
+		fota.PackageNum = 0;		//结束下载，清零计数
 		User_Printf("AT+NMGS=9,FFFE0117B725000100\r\n");
 		// OSTimeDly(500);		//上报升级成功
 		hal_Delay_sec(1);
@@ -811,7 +850,7 @@ void ProcessPCP(unsigned char *p)
 	case 0x18:			//上报升级结果	重启后
 		g_Printf_info("get 0x18 command\r\n");
 		NB_Fota = 0;
-		g_Printf_info("%d version code printf begin:\r\n",newVersion);
+		g_Printf_info("%d version code printf begin:\r\n",fota.newVersion);
 		// add_temp = FOTA_ADDR_START;
 		// lenth = 
 		OS_ENTER_CRITICAL();
@@ -830,10 +869,10 @@ void ProcessPCP(unsigned char *p)
 			g_Printf_info("Enter %s and System will goto bootloader\r\n",__func__);
 			loop8:
 				Flash_Tmp[0] = 0x02; 		//置位Flash 标志位	//把infor_BootAddr写0x02，建立FOTA升级标志位
-				Flash_Tmp[1] = (uint8_t)newVersion;
+				Flash_Tmp[1] = (uint8_t)fota.newVersion;
 				OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 2, infor_BootAddr, 0);
 				hal_Delay_ms(10);
-				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == newVersion)
+				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == fota.newVersion)
 					hal_Reboot();			//重启MCU
 				else
 					goto loop8;	
@@ -1085,7 +1124,7 @@ void  TransmitTaskStart (void *p_arg)
 			{
 				//NB-IoT 第一次开机时对NB上电操作，后续进入低功耗不关电
 				g_Printf_dbg("Turn on NB power\r\n");
-				 g_Printf_info("\r\n\r\nNB-IoT Fota Test version 21\r\n\r\n");	//测试打印
+				// g_Printf_info("\r\n\r\nNB-IoT Fota Test version 21\r\n\r\n");	//测试打印
 				OSTimeDly(500);
                 OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);		//打开NB电源
 				//reset脚电平

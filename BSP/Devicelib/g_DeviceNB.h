@@ -8,6 +8,21 @@
 
 //�ϵ�����ʹ��
 #define MaxLength	5
+//result Code
+#define PoorSingal	0X02		//信号差
+#define LowPower	0X04		//电量低
+#define CheckErr	0X07		//升级包校验出错
+typedef struct {
+    uint16_t newVersion;		//Fota 临时存储版本
+    int PackageNum;		        //当前获取数据包计数，获取成功后+1
+    uint32_t CodeLen;
+    uint16_t PackageSize;
+    uint16_t PackageLen;
+    uint8_t CRCFlag;
+    uint8_t CheckSum;
+    uint8_t miss;
+}FotaStruct;
+extern FotaStruct fota;
 extern uint16_t BackupIndex;
 extern uint16_t StartFile;
 extern uint8_t FullFlag;
@@ -36,7 +51,7 @@ enum NB_STATUS {
 unsigned char NB_Config(unsigned char *c , unsigned char m, unsigned char t);
 void g_Device_NB_Restart(void);
 void SyncTime(void); 
-char  g_Device_NB_Init(void);
+char g_Device_NB_Init(void);
 void g_Device_NB_GetIP(void);
 void g_Device_NB_Send(uint32_t *data ,uint8_t length);
 void g_Device_NBSignal(void);
