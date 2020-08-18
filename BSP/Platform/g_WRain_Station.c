@@ -31,7 +31,7 @@
 
 #if (PRODUCT_TYPE == WRain_Station)
 
-#define SensorNum			12 
+#define SensorNum			2 
 #define CMDLength        	8
 #define SensorKind          0b111111111111
 uint16_t RainStatus;              //雨量传感器状态位
@@ -258,17 +258,12 @@ void InqureSensor(void)
 	} else if ( (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY) 
 	         || (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK) ) {
 		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_OK;
-		AppDataPointer->TerminalInfoData.SensorStatus = Hal_getSensorFlashStatus(); 
+		AppDataPointer->TerminalInfoData.SensorFlashStatus = Hal_getSensorFlashStatus(); 
 		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; 
 	}
 	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {	
 		SensorStatus_H = 0;
-		if(hal_GetBit(SensorStatus_L, 6)) 
-		{
-            SensorStatus_L = 0b01000000;
-		}else {
-			SensorStatus_L = 0;
-		}
+		SensorStatus_L = 0;
 		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)  //SensorNum = 12
 		{
 			// sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0001;
@@ -300,46 +295,7 @@ void InqureSensor(void)
 						// hal_ResetBit(SensorStatus_H, 2);		
 						OSBsp.Device.Usart3.WriteNData(ScadaUSLV,CMDLength);		
 						break;
-					case 3:
-						sensorSN = 3;
-						// hal_ResetBit(SensorStatus_H, 1);
-						break;
-					case 4:
-						sensorSN = 4;
-						// hal_ResetBit(SensorStatus_H, 0);
-						break;
-					case 5:
-						sensorSN = 5;
-						// hal_ResetBit(SensorStatus_L, 7);
-						break;
-					case 6:
-						sensorSN = 6;
-						// hal_ResetBit(SensorStatus_L, 6);					
-						break;
-					case 7:
-						sensorSN = 7;
-						// hal_ResetBit(SensorStatus_L, 5);
-						break;						
-					case 8:
-						sensorSN = 8;
-						// hal_ResetBit(SensorStatus_L, 4);	
-						break;
-					case 9:
-						sensorSN = 9;
-						// hal_ResetBit(SensorStatus_L, 3);
-						break;						
-					case 10:
-						sensorSN = 10;
-						// hal_ResetBit(SensorStatus_L, 2);											
-						break;
-					case 11:
-						sensorSN = 11;
-						// hal_ResetBit(SensorStatus_L, 1);
-						break;
-					case 12:
-						sensorSN = 12;
-						// hal_ResetBit(SensorStatus_L, 0);
-						break;
+					
 					default:
 						break;
 				}
@@ -380,6 +336,11 @@ void InqureSensor(void)
 			{
 				infor_ChargeAddrBuff[21] = SensorStatus_H;
 				infor_ChargeAddrBuff[22] = SensorStatus_L;
+				// OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+				OSBsp.Device.InnerFlash.innerFLASHWrite(infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+			}else{
+				infor_ChargeAddrBuff[21] = SensorKind/256;
+				infor_ChargeAddrBuff[22] = SensorKind%256;
 				// OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 				OSBsp.Device.InnerFlash.innerFLASHWrite(infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
 			}
@@ -460,24 +421,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 //	 if(hal_GetBit(SensorStatus_H, 2)) {
 		cJSON_AddNumberToObject(pSubJson,"Level",DataPointer->WRainData.LVValue);
 //	 }
-	if(hal_GetBit(SensorStatus_H, 1)) {
-	}
-	if(hal_GetBit(SensorStatus_H, 0)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 7)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 6)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 5)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 4)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 3)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 2) & hal_GetBit(SensorStatus_L, 1)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 0)) {
-	}
 	cJSON_AddItemToObject(pJsonRoot,"WRain_Station", pSubJson);
 #if (TRANSMIT_TYPE == GPRS_Mode)
 	cJSON_AddStringToObject(pJsonRoot, "CSQ",CSQBuffer);

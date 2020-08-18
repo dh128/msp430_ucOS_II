@@ -74,6 +74,8 @@ typedef enum {
 //*****************3.3V电源*********************////为TF卡、SPI Flash、MAX3485、Socket_3V3供电
 #define Base_3V3_ON		      P4OUT |= BIT0     //3.3V电源   上电
 #define Base_3V3_OFF          P4OUT &=~BIT0     //3.3V电源   掉电
+#define W25Q16_ON             P6OUT &= ~BIT1    //W25Q16 3.3V电源   上电
+#define W25Q16_OFF            P6OUT |= BIT1     //W25Q16 3.3V电源   掉点
 //*****************传感器电源********************//
 #define Sensor_12V_1_ON		  P1OUT |= BIT4	    //传感器电源接口1_12V 上电
 #define Sensor_12V_1_OFF      P1OUT &=~BIT4 	//传感器电源接口1_12V 掉电

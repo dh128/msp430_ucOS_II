@@ -44,8 +44,7 @@ enum EXT_RTC_DATA_TYPE {
 
 void g_Device_ExtRTC_Init(void);
 void g_Device_RTCstring_Creat(uint8_t *datetime,char *t_str);
-
-void g_Device_InnerRTC_Init(void);
+void g_Device_InnerRTC_Init(uint8_t *date);
 void Write_info_RTC(uint8_t *time);
 void Read_info_RTC(uint8_t *time);
 

@@ -51,7 +51,7 @@ uint16_t StartFile = 1;
 uint8_t FullFlag = 0;
 char RespFile[10];
 // char Data_Backup[70];
-char Data_Backup[120];
+char Data_Backup[122];
 uint8_t ResendData = 0;
 uint8_t cacheBuf[7];
 
@@ -64,20 +64,18 @@ static unsigned char CellID_data[10]={0};
 
 //PCP测试
 char NB_Fota = 0;		//Fota状态，开始时置1，结束时置0
-int PackageNum = 0;		//当前获取数据包计数，获取成功后+1
-char codeFile[11]={"0:/1106.txt"};
-uint32_t newVersion = 0;		//Fota 临时存储版本
+FotaStruct fota = {0,0,0,0,0,0,0,0};
 /* CRC计算前把CRC校验码位清零，然后计算整个CRC结果，填充在对应位置上 */
 uint32_t report[25]={0xFF,0xFE,0x01,0x13,0x00,0x00,0x00,0x11,0x00,0x30,0x30,0x32,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 							//	  版本命令  CRC      数据长度  结果码  数据002
+uint32_t response[9]={0xFF,0xFE,0x01,0x16,0x85,0x0E,0x00,0x01,0x00};
 uint32_t getBuffer[26]={0xFF,0xFE,0x01,0x15,0x00,0x00,0x00,0x12,0x31,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};
 								//	 版本命令  CRC      数据长度  数据版本+包计数
+uint8_t responseCommand[30]="AT+NMGS=9,FFFE0114D768000100\r\n";
 uint8_t reportCommand[63]="AT+NMGS=25,FFFE0113164700110056322E31300000000000000000000000\r\n";
 uint8_t getCommand[65]="AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n";
 unsigned char Receive_data[1024]={0};
-uint16_t PackageSize;
-uint16_t PackageLen;
-uint8_t CRCFlag = 0;
+
 static long addr_write = FOTA_ADDR_START;
 unsigned long readAddr = 0;     //SPI_Flash 读写地址
 // static unsigned char ECL_data=0;
@@ -173,89 +171,28 @@ void g_Device_NB_Restart(void)
 		AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
 	}
 }
-
 /*******************************************************************************
-* 函数名		: g_Device_NB_Init
-* 描述	    	: NB模块初始化---BC35G
+* 函数名		: SyncTime
+* 描述	    	: NB网络校时
 * 输入参数  	: 无
-* 返回参数  	: 初始化结果  0----失败；1----成功
+* 返回参数  	: 无
 *******************************************************************************/
-char g_Device_NB_Init(void)
+void SyncTime(void)
 {
 	RtcStruct BjTime;
-	uint8_t ii = 0;
-	//ML
 	char *a;
 	unsigned char i=0,m=0;
 	unsigned char nb_Timedata[22]={0};
 	uint8_t time_buf[8];
 	uint8_t time_buf_bcd[8];
-	if(AppDataPointer->TransMethodData.NBStatus == NB_Boot)
+	if(AppDataPointer->TerminalInfoData.AutomaticTimeStatus == AUTOMATIC_TIME_ENABLE)
 	{
-		NB_Config("AT+CFUN=0\r\n",5,5);
-		OSTimeDly(100);
-		NB_Config("ATE0\r\n",5,5);
-		OSTimeDly(100);
-		NB_Config("AT+NNMI=2\r\n",5,5);
-		OSTimeDly(100);
-		NB_Config("AT+CGSN=1\r\n",5,5);  //IMEI
-		OSTimeDly(100);
-		NB_Config("AT+NCDP=180.101.147.115\r\n",5,5);         //电信物联网中心平台
-		// NB_Config("AT+NCDP=221.229.214.202,5683\r\n",5,5); //CTWing
-		OSTimeDly(100);
-		NB_Config("AT+CFUN=1\r\n",100,5);
-		OSTimeDly(100);
-		NB_Config("AT+CIMI\r\n",5,5);    //USIM卡IMSI号
-		OSTimeDly(100);
-		NB_Config("AT+CGDCONT=1,\"IP\",\"CTNB\"\r\n",5,5);
-		OSTimeDly(100);
-		NB_Config("AT+CGATT=1\r\n",5,5);
-		OSTimeDly(100);
+		AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
 		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
-		//等待入网
-		while ((aRxNum<35) & (ii < 60))
-		{
-			Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
-			User_Printf("AT+CGPADDR\r\n");
-			g_Printf_dbg("AT+CGPADDR\r\n");
-			OSTimeDly(1000);
-			if(Hal_CheckString(aRxBuff,"+CGPADDR:0,") || Hal_CheckString(aRxBuff,"+CGPADDR:1,") || Hal_CheckString(aRxBuff,"+QLWEVTIND:3"))
-			{
-				// AppDataPointer->TransMethodData.NBStatus = NB_Registered;
-				break;
-			}
-		//		System.Device.Usart2.WriteString(dRxBuff);
-			ii++;
-
-		}
-		if(ii > 60)
-		{
-			// AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
-			g_Printf_dbg("GET IP Failed!\r\n");
-		}
-		else
-		{
-			// AppDataPointer->TransMethodData.NBStatus = NB_Get_IP;
-			g_Printf_dbg("GET IP Succeed!\r\n");
-			AppDataPointer->TransMethodData.NBNet = 1;
-		}
-		OSTimeDly(100);
-		NB_Config("AT+CMEE=1\r\n",5,5);   //CMEE
-		OSTimeDly(100);
-		NB_Config("AT+CSQ\r\n",5,5);   //CSQ
-		OSTimeDly(500);
-		NB_Config("AT+NCONFIG=AUTOCONNECT,TRUE\r\n",2,5); //打开自动连接
-		OSTimeDly(500);
-		AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
-		//********ML同步时间-20191111************//
-		if(AppDataPointer->TerminalInfoData.AutomaticTimeStatus == AUTOMATIC_TIME_ENABLE)
-		{
-			AppDataPointer->TransMethodData.GPRSTime = 0;
-			AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
 		User_Printf("AT+CCLK?\r\n");
 		OSTimeDly(200);			//等待串口接收
-        a=strstr(aRxBuff,"+CCLK:");
-	    if(a!=NULL)
+		a=strstr(aRxBuff,"+CCLK:");
+		if(a!=NULL)
 		{
 			while(*(a+6)!='\r')
 			{
@@ -284,10 +221,82 @@ char g_Device_NB_Init(void)
 			}
 			OSBsp.Device.RTC.ConfigExtTime(time_buf_bcd,RealTime);
 			Write_info_RTC(time_buf_bcd);
-				AppDataPointer->TransMethodData.GPRSTime = 1;
 			g_Printf_dbg("NB Automatic Time OK\r\n");
 		}
+	}
+}
+/*******************************************************************************
+* 函数名		: g_Device_NB_Init
+* 描述	    	: NB模块初始化---BC35G
+* 输入参数  	: 无
+* 返回参数  	: 初始化结果  0----失败；1----成功
+*******************************************************************************/
+char g_Device_NB_Init(void)
+{
+	uint8_t ii = 0;
+	
+	if(AppDataPointer->TransMethodData.NBStatus == NB_Boot)
+	{
+		NB_Config("AT+CFUN=0\r\n",5,5);
+		OSTimeDly(100);
+		NB_Config("ATE0\r\n",5,5);
+		OSTimeDly(100);
+		NB_Config("AT+NNMI=2\r\n",5,5);
+		OSTimeDly(100);
+		NB_Config("AT+CGSN=1\r\n",5,5);  //IMEI
+		OSTimeDly(100);
+		NB_Config("AT+NCDP=180.101.147.115\r\n",5,5);         //电信物联网中心平台
+		// NB_Config("AT+NCDP=221.229.214.202,5683\r\n",5,5); //CTWing
+		OSTimeDly(100);
+		NB_Config("AT+CFUN=1\r\n",100,5);
+		OSTimeDly(100);
+		NB_Config("AT+CIMI\r\n",5,5);    //USIM卡IMSI号
+		OSTimeDly(100);
+		NB_Config("AT+CGDCONT=1,\"IP\",\"CTNB\"\r\n",5,5);
+		OSTimeDly(100);
+		NB_Config("AT+CGATT=1\r\n",5,5);
+		OSTimeDly(100);
+		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
+		//等待入网
+		while (ii < 60)
+		{
+			Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
+			User_Printf("AT+CGPADDR\r\n");
+			g_Printf_dbg("AT+CGPADDR\r\n");
+			OSTimeDly(1000);
+			if(Hal_CheckString(aRxBuff,"+CGPADDR:0,") || Hal_CheckString(aRxBuff,"+CGPADDR:1,") || Hal_CheckString(aRxBuff,"+QLWEVTIND:3"))
+			{
+				// AppDataPointer->TransMethodData.NBStatus = NB_Registered;
+				break;
+			}
+		//		System.Device.Usart2.WriteString(dRxBuff);
+			ii++;
+
 		}
+		if(ii >= 60)
+		{
+			// AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
+			g_Printf_dbg("GET IP Failed!\r\n");
+			User_Printf("AT+NCSEARFCN\r\n");		//入网失败清除频点
+			g_Printf_dbg("AT+NCSEARFCN\r\n");
+		}
+		else
+		{
+			// AppDataPointer->TransMethodData.NBStatus = NB_Get_IP;
+			g_Printf_dbg("GET IP Succeed!\r\n");
+			AppDataPointer->TransMethodData.NBNet = 1;
+		}
+		OSTimeDly(100);
+		NB_Config("AT+CMEE=1\r\n",5,5);   //CMEE
+		OSTimeDly(100);
+		NB_Config("AT+CSQ\r\n",5,5);   //CSQ
+		OSTimeDly(500);
+		NB_Config("AT+NCONFIG=AUTOCONNECT,TRUE\r\n",2,5); //打开自动连接
+		OSTimeDly(500);
+		AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+		//********ML同步时间-20191111************//
+		SyncTime();
+		
 		//*****************同步时间END************//
 		return 1;
 	}
@@ -546,8 +555,8 @@ void g_Device_NBSignal(void)
 void ProcessCommand()
 {
 	char *CommandBuff;
-	uint8_t CommandBuffData[50];
-	uint8_t CommandBuffNum;
+	uint8_t CommandBuffData[50]={0};
+	uint8_t CommandBuffNum = 0;;
 
 	uint16_t Temp_SendPeriod;
 	unsigned char Flash_Tmp[14];  //flash操作中间变量
@@ -572,8 +581,9 @@ void ProcessCommand()
 			//将发送周期的信息存入Flash
 			// delay_ms(10);
 			OSTimeDly(5);
-			Flash_Tmp[11] = App.Data.TerminalInfoData.SendPeriod;//上传周期（min）
-			OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp[11], 1, infor_ChargeAddr, 11);//把终端信息写入FLASH
+			Flash_Tmp[11] = (Temp_SendPeriod & 0xFF00)>>8;	//修改周期存储值（min）
+			Flash_Tmp[12] = Temp_SendPeriod & 0x00FF;		
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[11], 2, infor_ChargeAddr, 11);//把周期信息写入FLASH
 		}
 		else
 		{
@@ -629,7 +639,7 @@ void GetCode(int num)
 	uint16_t temp1=0;	
 	uint16_t ii = 0;
 	
-	if(num < PackageLen)	//分包获取数据包
+	if(num < fota.PackageLen)	//分包获取数据包
 	{
 		//CRC
 		getBuffer[24] =num/256;
@@ -651,7 +661,31 @@ void GetCode(int num)
 	{
 		User_Printf("AT+NMGS=9,FFFE0116850E000100\r\n");
 	}
-//	System.Device.Timer.Start(5,TimerSystick,200,Get_Data);
+}
+/*******************************************************************************
+* 函数名    : ReportUpErr
+* 描述	  	: 上报升级异常情况
+* 输入参数  : type--上报类型，data--result code
+* 返回参数  : 无
+*******************************************************************************/
+void ReportUpErr(uint8_t type, uint8_t data)
+{
+	uint16_t CRCtemp;
+	uint16_t ii = 0;
+	NB_Fota = 0;
+	response[8] = data;   //升级包校验失败
+	response[3] = type;
+	response[4] = response[5] = 0;
+	CRCtemp = CRC16CCITT(response,9);
+	response[4] =CRCtemp/256;
+	response[5] =CRCtemp%256;
+	//Send
+	Hex2Str(responseCommand,response,9,10);
+	for(ii=0;ii<30;ii++)
+	{
+		g_Device_SendByte_Uart0(responseCommand[ii]);		//获取数据指令
+		// delay_ms(10);
+	}
 }
 /*******************************************************************************
 * 函数名    : ProcessPCP
@@ -661,17 +695,16 @@ void GetCode(int num)
 *******************************************************************************/
 void ProcessPCP(unsigned char *p)
 {
+	OS_CPU_SR   cpu_sr = 0u;
 	uint8_t PCPData[512];
 	uint16_t CRCtemp;
-//	uint16_t temp2=0;
+	long addTemp = 0;
 	uint16_t ret = 0;	
-//	uint16_t bai,shi,ge;
 	long ii;
 	long m;
 	long length;
 	uint8_t TestData[3]={0};
 	uint8_t Flash_Tmp[3];					//flash操作中间变量
-//	char d_t[530000];
 	HexStrToByte(p,PCPData);
 	switch (PCPData[3])
 	{
@@ -680,7 +713,6 @@ void ProcessPCP(unsigned char *p)
 		//version 获取
 		report[9]=App.Data.TerminalInfoData.Version/100 +0x30;
 		report[10]=App.Data.TerminalInfoData.Version%100/10 +0x30;
-//		report[11]=App.Data.TerminalInfoData.Version%10 +0x30;
 		report[11]=(App.Data.TerminalInfoData.Version-1)%10 +0x30;	//测试用，否则固件版本相同
 		//CRC
 		report[3]= 0x13;
@@ -695,27 +727,31 @@ void ProcessPCP(unsigned char *p)
 			g_Device_SendByte_Uart0(reportCommand[ii]);		//获取数据指令
 			// delay_ms(10);
 		}
-		//User_Printf("AT+NMGS=25,FFFE0113164700110056322E31300000000000000000000000\r\n");
-		OSTimeDly(5000);
+		hal_Delay_sec(10);
 		g_Printf_info(" 0x13 delay over\r\n");
 		break;
 	case 0x14:			//新版本通知
 		g_Printf_info("get 0x14 command\r\n");
+		fota.PackageNum = 0;    //清除接收到数据包计数
+      	fota.CheckSum = 0;      //文件校验和清零
 		//提取版本号
-		newVersion = (PCPData[8]-0x30)*100 + (PCPData[9]-0x30)*10 + PCPData[10] - 0x30;
+		fota.newVersion = (PCPData[8]-0x30)*100 + (PCPData[9]-0x30)*10 + PCPData[10] - 0x30;
 		getBuffer[8] = PCPData[8];
 		getBuffer[9] = PCPData[9];
 		getBuffer[10] = PCPData[10];
-		//获取没报长度
-		PackageSize = PCPData[24];
-		PackageSize = PackageSize*256 + PCPData[25];
+		//获取每报长度
+		fota.PackageSize = PCPData[24];
+		fota.PackageSize = fota.PackageSize*256 + PCPData[25];
 		//获取总包数
-		PackageLen = PCPData[26];
-		PackageLen = PackageLen*256 + PCPData[27];
+		fota.PackageLen = PCPData[26];
+		fota.PackageLen = fota.PackageLen*256 + PCPData[27];
+		Base_3V3_OFF;
+		W25Q16_ON;
+		OSTimeDly(100);
 		//擦除SPI
 		W25Q16_CS_HIGH();
-		OSTimeDly(50);
-		Base_3V3_ON;
+		// OSTimeDly(50);
+		hal_Delay_ms(100);
 		// P4OUT |= BIT0;
 		W25Q16_Init();
 		readAddr = FOTA_ADDR_START;
@@ -728,48 +764,73 @@ void ProcessPCP(unsigned char *p)
 		User_Printf("AT+NMGS=9,FFFE0114D768000100\r\n");		//允许升级
 		// System.Device.Timer.Stop(5);
 		// UpdateFlag = 1;
-		OSTimeDly(100);
-		NB_Fota = 1;
-//		User_Printf("AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n");
-		GetCode(PackageNum);
-		//System.Device.Timer.Start(6,TimerSystick,20,GetCode);
+		// OSTimeDly(100);
+		hal_Delay_ms(200);
+		if(App.Data.TerminalInfoData.PowerQuantity < 50){
+			ReportUpErr(0x14,LowPower);//上报错误
+		}else if(App.Data.TransMethodData.SINR < 0){
+			ReportUpErr(0x14,PoorSingal);//上报错误
+		}else{
+			NB_Fota = 1;
+			GetCode(fota.PackageNum);
+		}
 	break;
-	case 0x15:			//请求升级包，不用
+	case 0x15:			//存储新数据包，请求下一包
 	//	byte[9],byte[10]为数据包数，应该等于PackageNum
 		ret = PCPData[9]*256 + PCPData[10];
 		length = strlen(p)/2-11;		//去除包头FFFE等11个字节数据
 		CRCtemp = PCPData[4]*256+PCPData[5];
 		PCPData[4] = PCPData[5] = 0;
 		if(CRCtemp == CRC16CCITT_Byte(PCPData,length+11))
-			CRCFlag = 1;
+			fota.CRCFlag = 1;
 		else
-			CRCFlag = 0;
+			fota.CRCFlag = 0;
 		// CRC校验通过、设备包正确则存储继续获取否则重新获取
-		if((CRCFlag == 1) && (ret == PackageNum))	
+		if((fota.CRCFlag == 1) && (ret == fota.PackageNum))	
 		{
-			PackageNum ++;
+			OS_ENTER_CRITICAL();
+			addTemp = addr_write;
+			fota.PackageNum ++;
+			/*文件和校验*/
+			//
 			for(m=0;m<length;m++)
 			{
 				SPI_Flash_Write_Data(PCPData[m+11],addr_write++);
 			}
 			aRxNum = 0;
+			//检查写入数据
+			for(m=0;m<length;m++)
+			{
+				if(PCPData[m+11] != SPI_Flash_ReadByte(addTemp++)){
+					break;
+				}
+			}
+			if(m < length){		//校验错误
+				g_Printf_info("package check error\r\n");
+				ReportUpErr(0x16, CheckErr);
+				NB_Fota = 0;
+				break;
+			}
+			OS_EXIT_CRITICAL();
 			User_Printf("AT+NMGR\r\n");		//防止出现重复缓存
-			OSTimeDly(100);
+			// OSTimeDly(100);
+			hal_Delay_ms(200);
 		}
 		else
 		{
-			g_Printf_info("CRCFlah= %d,packGet= %d, PackageNum= %d\r\n",(uint32_t)CRCFlag,(uint32_t)ret,(uint32_t)PackageNum);
+			g_Printf_info("CRCFlah= %d,packGet= %d, PackageNum= %d\r\n",(uint32_t)fota.CRCFlag,(uint32_t)ret,(uint32_t)fota.PackageNum);
 		}
-		GetCode(PackageNum);
+		GetCode(fota.PackageNum);
 	break;
 	case 0x016:			//上报下载情况
 		
 	break;
 	case 0x017:			//执行升级		重启后
 		g_Printf_info("get 0x17 command\r\n");
-		PackageNum = 0;		//结束下载，清零计数
+		fota.PackageNum = 0;		//结束下载，清零计数
 		User_Printf("AT+NMGS=9,FFFE0117B725000100\r\n");
-		OSTimeDly(500);		//上报升级成功
+		// OSTimeDly(500);		//上报升级成功
+		hal_Delay_sec(1);
 		//CRC
 		report[3]= 0x18;
 		report[4] = report[5] = 0;
@@ -789,16 +850,17 @@ void ProcessPCP(unsigned char *p)
 	case 0x18:			//上报升级结果	重启后
 		g_Printf_info("get 0x18 command\r\n");
 		NB_Fota = 0;
-		g_Printf_info("%d version code printf begin:\r\n",newVersion);
+		g_Printf_info("%d version code printf begin:\r\n",fota.newVersion);
 		// add_temp = FOTA_ADDR_START;
 		// lenth = 
+		OS_ENTER_CRITICAL();
 		for(m=FOTA_ADDR_START;m<addr_write;m++)
 		{
 			// d_t[m]=Read_Byte(m);
 			// OSBsp.Device.Usart2.WriteData(d_t[m]);
 			OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
 		}	
-
+		OS_EXIT_CRITICAL();
 		//判断存储数据头尾是否正确 然后配置启动标志位存放于infor_BootAddr
 		TestData[0] = SPI_Flash_ReadByte(addr_write-3);
 		TestData[1] = SPI_Flash_ReadByte(FOTA_ADDR_START+1);
@@ -807,10 +869,10 @@ void ProcessPCP(unsigned char *p)
 			g_Printf_info("Enter %s and System will goto bootloader\r\n",__func__);
 			loop8:
 				Flash_Tmp[0] = 0x02; 		//置位Flash 标志位	//把infor_BootAddr写0x02，建立FOTA升级标志位
-				Flash_Tmp[1] = (uint8_t)newVersion;
+				Flash_Tmp[1] = (uint8_t)fota.newVersion;
 				OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 2, infor_BootAddr, 0);
 				hal_Delay_ms(10);
-				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == newVersion)
+				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == fota.newVersion)
 					hal_Reboot();			//重启MCU
 				else
 					goto loop8;	
@@ -852,15 +914,10 @@ void g_Device_NB_SendCheck(void)
 void g_Device_NB_GetReceive(void)
 {
 	uint8_t *Uart0_RxBuff;
-//	uint8_t Uart0_RxBuff_data[50];
-//	uint8_t Uart0_RxBuff_Num;
 	uint16_t i = 0;
-	//Uart0_RxBuff_Num = 0;
 
-	// Clear_Buffer(aRxBuff,&aRxNum);
 	Clear_CMD_Buffer((uint8_t *)aRxBuff,1050);
 	aRxNum = 0;
-	// OSTimeDly(4000);		//等待4000ms		使用下面的循环判断延时，待测试
 	if(NB_Fota)				//进入Fota后每次获取PCP数据延时，避免数据下发不及时
 	{
 		while(i < 40)
@@ -872,9 +929,8 @@ void g_Device_NB_GetReceive(void)
 			OSTimeDly(250);		//500ms
 		}
 	}
-	
 	User_Printf("AT+NMGR\r\n");
-	OSTimeDly(1000);		//等待2000ms
+	hal_Delay_sec(2);
 	if(Hal_CheckString(aRxBuff,",FFFE"))							//获取到PCP消息
 	{
 		//提取PCP消息
@@ -888,14 +944,7 @@ void g_Device_NB_GetReceive(void)
 			Uart0_RxBuff++;
 		}
 		Receive_data[i] = '\0';
-		// Uart0_RxBuff = strstr(aRxBuff,"FFFE");         //判断接收到的数据是否有效
-		// while(*(Uart0_RxBuff) != '\r')
-		// {
-		// 	Uart0_RxBuff_data[Uart0_RxBuff_Num] = *Uart0_RxBuff;
-		// 	Uart0_RxBuff_Num++;
-		// 	Uart0_RxBuff++;
-		// }
-		OSTimeDly(100);
+		hal_Delay_ms(200);
 		//处理PCP消息
 		ProcessPCP(Receive_data);
 	}
@@ -911,9 +960,8 @@ void g_Device_NB_GetReceive(void)
 		AppDataPointer->TransMethodData.NBStatus = NB_Idel;
 		g_Printf_info("No (correct) message downloaded!\r\n");
 		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
+		SyncTime();
 	}
-
-	
 }
 /*******************************************************************************
 * 函数名  : CreatFileNum
@@ -1039,12 +1087,12 @@ void GetStoreData(void)
 	{
 		ltoa( (long)BackupIndex , RespFile);
 		strcat(RespFile , ".txt");
-		temp = Get_String("0:/INDEX" , RespFile , Data_Backup , 70);
+		temp = Get_String("0:/INDEX" , RespFile , Data_Backup , 122);
 		if( temp == 1)		
 		{
 			// BackupIndex--;
 			ResendData = 1;		//补发数据标志位
-			Data_Backup[68] = '\0';
+			Data_Backup[120] = '\0';
 			AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
 			break;		//退出循环，准备发送数据
 		}
@@ -1076,7 +1124,7 @@ void  TransmitTaskStart (void *p_arg)
 			{
 				//NB-IoT 第一次开机时对NB上电操作，后续进入低功耗不关电
 				g_Printf_dbg("Turn on NB power\r\n");
-				// g_Printf_info("\r\n\r\nNB-IoT Fota Test version 3\r\n\r\n");	//测试打印
+				// g_Printf_info("\r\n\r\nNB-IoT Fota Test version 21\r\n\r\n");	//测试打印
 				OSTimeDly(500);
                 OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);		//打开NB电源
 				//reset脚电平
@@ -1114,6 +1162,12 @@ void  TransmitTaskStart (void *p_arg)
 						}
 						Send_Buffer[5] = AppDataPointer->TransMethodData.SeqNumber/256;
 						Send_Buffer[6] = AppDataPointer->TransMethodData.SeqNumber%256;
+						
+						if(REGRST != 0){
+							Send_Buffer[29] = REGRST / 256; 	//添加reboot参数上报传感器数据最后一位
+							Send_Buffer[30] = REGRST % 256; 
+						}
+						
 						//Voltage
 						GetADCValue();
 						//检查信号质量
@@ -1136,80 +1190,58 @@ void  TransmitTaskStart (void *p_arg)
 					//发送数据
 					if(AppDataPointer->TransMethodData.NBNet == 1)
 					{
-						if(ResendData == 1)		//补发数据
-						{
-							g_Device_NB_Send_Str(Data_Backup,120);
-							// ResendData = 0;
-						}
-						else					//正常上报数据
-						{
-//							g_Device_NB_Send(Send_Buffer,60);
-							g_Device_NB_Send_Str(Data_Backup,60);
-							//上报CTwing
-							// g_Device_NB_Send(Send_Buffer_CTwing_NBSignal,16);
-							// g_Device_NB_Send(Send_Buffer_CTwing_NBSoildata,13);		
-							// g_Device_NB_Send(Send_Buffer_CTwing_NBWeatherdata,7);							
-						}
-						
-						OSTimeDly(2500);	//等待5s
-						g_Device_NB_SendCheck();
-						if(AppDataPointer->TransMethodData.NBSendStatus == 1)	//确认帧发送成功,发送数据前会置0
-						{
-							if(ResendData)
+						if(App.Data.TransMethodData.SeqNumber == 0){		//开机第一次不上报数据
+							AppDataPointer->TransMethodData.NBStatus = NB_Idel;
+						}else{
+							g_Device_NB_Send_Str(Data_Backup,60);	
+							OSTimeDly(5000);	//等待10s
+							g_Device_NB_SendCheck();
+							if(AppDataPointer->TransMethodData.NBSendStatus == 1)	//确认帧发送成功,发送数据前会置0
 							{
-								ResendData = 0;
-								del_txt("0:/INDEX",RespFile);				//删除临时存储，同时更改存储BackupIndex值
-								CreatFileNum(0);		//参数0   BackupIndex++;
-								cacheBuf[0] = BackupIndex/256;
-								cacheBuf[1] = BackupIndex%256;
-								cacheBuf[2] = StartFile/256;
-								cacheBuf[3] = StartFile%256;
-								cacheBuf[4] = FullFlag;
-								OSBsp.Device.InnerFlash.FlashRsvWrite(cacheBuf,5,infor_ChargeAddr,18);
-							}	
-							if(BackupIndex >=1)
-								GetStoreData();
-							else
-								AppDataPointer->TransMethodData.NBStatus = NB_Send_Over;
+								// if(ResendData)
+								// {
+								// 	ResendData = 0;
+								// 	del_txt("0:/INDEX",RespFile);				//删除临时存储，同时更改存储BackupIndex值
+								// 	CreatFileNum(0);		//参数0   BackupIndex++;
+								// 	cacheBuf[0] = BackupIndex/256;
+								// 	cacheBuf[1] = BackupIndex%256;
+								// 	cacheBuf[2] = StartFile/256;
+								// 	cacheBuf[3] = StartFile%256;
+								// 	cacheBuf[4] = FullFlag;
+								// 	OSBsp.Device.InnerFlash.FlashRsvWrite(cacheBuf,5,infor_ChargeAddr,18);
+								// }	
+								// if(BackupIndex >=1)
+								// 	GetStoreData();
+								// else
+									AppDataPointer->TransMethodData.NBStatus = NB_Send_Over;
 
-							// if(NB_Fota)		//NB_Fota中断时，重新获取
-							// {
-							// 	GetCode(PackageNum);
-							// }
-						}
-						else
-						{
-							WriteStoreData();
-							AppDataPointer->TransMethodData.NBStatus = NB_Idel;			//发送失败进Idles
+							}
+							else
+							{
+								WriteStoreData();
+								AppDataPointer->TransMethodData.NBStatus = NB_Send_Error;			//发送失败
+							}
 						}
 					}
 					else
 					{
 						//存储数据等待下次补传
-						WriteStoreData();
+						//WriteStoreData();
 						AppDataPointer->TransMethodData.NBStatus = NB_Init_Error;
 					}
-					if(AppDataPointer->TransMethodData.NBStatus == NB_Send_Over)		//不在线直接进Idle
-					{
-						g_Device_NB_GetReceive();
-					}
-					if((AppDataPointer->TransMethodData.NBStatus == NB_Idel) || (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error))	//发送完成或入网失败，进入低功耗
-					{
-						// OSBsp.Device.IOControl.PowerSet(AIR202_Power_On);
-						Hal_EnterLowPower_Mode();
-					}      
-                }    
+				}      
             }
-			// else if(AppDataPointer->TransMethodData.NBStatus == NB_Init_Error){
-			// 	if(initRetry < 3){
-			// 		initRetry++;
-			// 		AppDataPointer->TransMethodData.NBStatus == NB_Power_on;	//软件重启模组2次，重新入网
-			// 	}else{
-			// 		initRetry = 0;
-			// 		Hal_EnterLowPower_Mode();				//重启入网失败则进入低功耗
-			// 	}
-				
-			// }
+			else if(AppDataPointer->TransMethodData.NBStatus == NB_Send_Over)		//不在线直接进Idle
+			{
+				g_Device_NB_GetReceive();
+			}
+			else if((AppDataPointer->TransMethodData.NBStatus == NB_Idel) 
+				|| (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error)
+				|| (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error))	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
+			{
+				Hal_EnterLowPower_Mode();
+			}  
+
             OSTimeDlyHMSM(0u, 0u, 0u, 200u);  
         }
     }

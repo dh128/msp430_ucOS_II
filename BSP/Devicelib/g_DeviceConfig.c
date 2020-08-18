@@ -191,6 +191,7 @@ static void g_Device_WirelessUpload_Config(g_Device_Config_CMD uploadCmd)   //�
 						time_buf[TimebuffNum]= HexToBCD(TimeBuff_Hex[TimebuffNum]);    //存“年月日时分秒周”
 					}
 					OSBsp.Device.RTC.ConfigExtTime(time_buf,RealTime);   //写入时间
+					Write_info_RTC(time_buf);		//同步写入MCU内部RTC
 					OSBsp.Device.Usart2.WriteString("NB Time Set Done\r\n");
 				}else{
 					OSBsp.Device.Usart2.WriteString("NB Time Set Failed！\r\n");

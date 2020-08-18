@@ -125,12 +125,12 @@ void  WtdTaskStart (void *p_arg)
         if(err == OS_ERR_NONE){     //获取到全部标志组
             //喂狗
         	InitWatchDog();
-            g_Printf_dbg("EventWtFlag = %x\r\n",res);
-            g_Printf_dbg("feed dog\r\n");
+            // g_Printf_dbg("EventWtFlag = %x\r\n",res);
+            // g_Printf_dbg("feed dog\r\n");
         }else{
 //        	sprintf(buffer, "EventWtFlag = %x\r\n",res);
 //            g_Printf_dbg("EventWtFlag = %x\r\n",res);
-        	g_Printf_dbg("Event wait timeout\r\n");
+        	// g_Printf_dbg("Event wait timeout\r\n");
         }
         OSTimeDly(1000);
     }
@@ -152,6 +152,8 @@ static  void  ScadaTaskStart (void *p_arg)
           TaskRefreshWTD(EventWtFlag , WTD_BIT_SCADA);
             if(AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_OFF){  //如果设备没上电10s预热，第一次还会读传感器数据
                 OSTimeDly(30);
+                scada_over_times = 0;
+                scada_idle_times = 0;
                 //  OSTimeDly(6000);  //节拍2ms  //TEST
                 g_Printf_info("SenSor_Power_On\r\n");
                 OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
@@ -181,22 +183,6 @@ static  void  ScadaTaskStart (void *p_arg)
                     //if(Scada_timeout_sec >= 20){
                     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCAN_OVER;
                     g_Printf_info("ScadaTask is over\n");
-
-// #if HAVE_SDCARD_SERVICE
-//
-//                         if (SD_Status == 0)  //只是一个示例
-//                         {
-//                             OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
-//                                 OSTimeDly(100);//
-//                                 SD_Storage_DebugLog(SD_DEBUG_UPTIME);
-//                                 SD_Storage_DebugLog(SD_DEBUG_SCAN_OK);
-//                                 SD_Storage_DebugLog(SD_DEBUG_NEXTLINE);
-//                         }
-// #endif
-                    //OSTimeDly(100);//
-                // OSBsp.Device.IOControl.PowerSet(Max485_Power_Off);
-                // // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
-                // OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
                 }
             }
             else if (AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER) //空跑2min
@@ -205,10 +191,16 @@ static  void  ScadaTaskStart (void *p_arg)
                 OSTimeDlyHMSM(0u, 0u, 2u, 0u);
                 if (scada_over_times == 60)  //120+120s 空跑4min
                 {
-                    g_Printf_dbg("DeviceStatus always scan_over, enter low_power!\r\n");
                     scada_over_times = 0;
+#if(TRANSMIT_TYPE == NBIoT_BC95_Mode)                    
+                    if(NB_Fota == 0){
+                        g_Printf_dbg("DeviceStatus always scan_over, enter low_power!\r\n");
+                        Hal_EnterLowPower_Mode();
+                    }
+#else
+                    g_Printf_dbg("DeviceStatus always scan_over, enter low_power!\r\n");
                     Hal_EnterLowPower_Mode();
-                    // hal_Reboot();  //复位 是否需要主机都复位？或者只需要
+#endif
                 }
                 if(App.Data.TerminalInfoData.SendPeriod <= NO_LOWPER_PERIOD)
                 {
