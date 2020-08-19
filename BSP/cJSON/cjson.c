@@ -137,7 +137,7 @@ static char *print_number(cJSON *item)
             else if (fabs(d)<1.0e-6 || fabs(d)>1.0e9)			
               sprintf(str,"%e",d);
             else												
-              sprintf(str,"%.3f",d);
+              sprintf(str,"%.2f",d);//.3f 改成.2f,只保留小数点�?�
 //			  sprintf(str,"%f",d);   //��ӡfloat���͵�С��������˵����ʾĬ��Ϊ6λ
 //  		      sprintf(str,"%lf",d);  //��ӡdouble���͵�С��
         }

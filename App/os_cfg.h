@@ -36,7 +36,7 @@
 #define OS_EVENT_MULTI_EN         1u   /* Include code for OSEventPendMulti()                          */
 #define OS_EVENT_NAME_EN          1u   /* Enable names for Sem, Mutex, Mbox and Q                      */
 
-#define OS_LOWEST_PRIO           31u   /* Defines the lowest priority that can be assigned ...         */
+#define OS_LOWEST_PRIO           15u   /* Defines the lowest priority that can be assigned ...         */
                                        /* ... MUST NEVER be higher than 254!                           */
 
 #define OS_MAX_EVENTS            10u   /* Max. number of event control blocks in your application      */
@@ -48,7 +48,7 @@
 #define OS_SCHED_LOCK_EN          1u   /* Include code for OSSchedLock() and OSSchedUnlock()           */
 
 #define OS_TICK_STEP_EN           1u   /* Enable tick stepping feature for uC/OS-View                  */
-#define OS_TICKS_PER_SEC         31u   /* Define the number of ticks in one second. See BSP_OSTickInit */
+#define OS_TICKS_PER_SEC         500u   /* Define the number of ticks in one second. See BSP_OSTickInit wj:31->500 */
 
 #define OS_TLS_TBL_SIZE           0u   /* Size of Thread-Local Storage Table                           */
 
@@ -56,11 +56,11 @@
                                        /* --------------------- TASK STACK SIZE ---------------------- */
 #define OS_TASK_TMR_STK_SIZE    128u   /* Timer      task stack size (# of OS_STK wide entries)        */
 #define OS_TASK_STAT_STK_SIZE   128u   /* Statistics task stack size (# of OS_STK wide entries)        */
-#define OS_TASK_IDLE_STK_SIZE   128u   /* Idle       task stack size (# of OS_STK wide entries)        */
+#define OS_TASK_IDLE_STK_SIZE    64u   /* Idle       task stack size (# of OS_STK wide entries)        */
 
 
                                        /* --------------------- TASK MANAGEMENT ---------------------- */
-#define OS_TASK_CHANGE_PRIO_EN    1u   /*     Include code for OSTaskChangePrio()                      */
+#define OS_TASK_CHANGE_PRIO_EN    0u   /*     Include code for OSTaskChangePrio()                      */
 #define OS_TASK_CREATE_EN         1u   /*     Include code for OSTaskCreate()                          */
 #define OS_TASK_CREATE_EXT_EN     1u   /*     Include code for OSTaskCreateExt()                       */
 #define OS_TASK_DEL_EN            1u   /*     Include code for OSTaskDel()                             */
@@ -71,7 +71,7 @@
 #define OS_TASK_STAT_STK_CHK_EN   1u   /*     Check task stacks from statistic task                    */
 #define OS_TASK_STAT_EN           1u   /*     Enable (1) or Disable(0) the statistics task             */
 #define OS_TASK_SUSPEND_EN        1u   /*     Include code for OSTaskSuspend() and OSTaskResume()      */
-#define OS_TASK_SW_HOOK_EN        1u   /*     Include code for OSTaskSwHook()                          */
+#define OS_TASK_SW_HOOK_EN        0u   /*     Include code for OSTaskSwHook()                          */
 
 
                                        /* ----------------------- EVENT FLAGS ------------------------ */
@@ -85,13 +85,13 @@
 
 
                                        /* -------------------- MESSAGE MAILBOXES --------------------- */
-#define OS_MBOX_EN                1u   /* Enable (1) or Disable (0) code generation for MAILBOXES      */
-#define OS_MBOX_ACCEPT_EN         1u   /*     Include code for OSMboxAccept()                          */
-#define OS_MBOX_DEL_EN            1u   /*     Include code for OSMboxDel()                             */
-#define OS_MBOX_PEND_ABORT_EN     1u   /*     Include code for OSMboxPendAbort()                       */
-#define OS_MBOX_POST_EN           1u   /*     Include code for OSMboxPost()                            */
-#define OS_MBOX_POST_OPT_EN       1u   /*     Include code for OSMboxPostOpt()                         */
-#define OS_MBOX_QUERY_EN          1u   /*     Include code for OSMboxQuery()                           */
+#define OS_MBOX_EN                0u   /* Enable (1) or Disable (0) code generation for MAILBOXES      */
+#define OS_MBOX_ACCEPT_EN         0u   /*     Include code for OSMboxAccept()                          */
+#define OS_MBOX_DEL_EN            0u   /*     Include code for OSMboxDel()                             */
+#define OS_MBOX_PEND_ABORT_EN     0u   /*     Include code for OSMboxPendAbort()                       */
+#define OS_MBOX_POST_EN           0u   /*     Include code for OSMboxPost()                            */
+#define OS_MBOX_POST_OPT_EN       0u   /*     Include code for OSMboxPostOpt()                         */
+#define OS_MBOX_QUERY_EN          0u   /*     Include code for OSMboxQuery()                           */
 
 
                                        /* --------------------- MEMORY MANAGEMENT -------------------- */

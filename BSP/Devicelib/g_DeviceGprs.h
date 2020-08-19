@@ -6,6 +6,8 @@
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
 
+extern char CSQBuffer[15];
+
 enum GprsStatus
 {
 	PowerOff     = 0,
@@ -26,6 +28,7 @@ enum GPRS_STATUS {
 	GPRS_Mqtt_Init_Done,
 	GPRS_Http_Preinit,
 	GPRS_Http_Init_Done,
+	GPRS_Init_Failed,
 	GPRS_Waitfor_OK,
 	GPRS_Waitfor_Download,
 	GPRS_Waitfor_Token,
@@ -40,14 +43,17 @@ enum GPRS_STATUS {
 	GPRS_MQTT_Enable_Pulish,
 	GPRS_Waitfor_GetIP,
 	GPRS_Get_HTTPACT,
-	GPRS_Http_Post_Done
+	GPRS_Http_Post_Done,
+	GPRS_Fota_Process,
+	GPRS_Wait_Idle,
+	GPRS_Http_Err
 };
 
 
 void g_Device_GPRS_Init(void);
 void g_Device_Establish_TCP_Connection(const char *ip,uint32_t port);
-int g_Device_http_post(const char *host,const char* path,const char *apikey,const char *data,
-                      char *response,int timeout);
+int16_t g_Device_http_post(const char *host,const char* path,const char *apikey,const char *data,
+                           char *response,int timeout);
 void g_Device_check_Response(char *res);
 void  TransmitTaskStart (void *p_arg);
 #endif

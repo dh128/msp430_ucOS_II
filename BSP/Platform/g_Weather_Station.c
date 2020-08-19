@@ -1,4 +1,4 @@
-/*
+﻿/*
 *********************************************************************************************************
 *                                              EXAMPLE CODE
 *
@@ -21,7 +21,7 @@
 *                                          MSP-EXP430F5259LP
 *                                          Evaluation Board
 *
-* Filename      : g_Voc_Station.c
+* Filename      : g_Weather_Station.c
 * Version       : V1.00
 * Programmer(s) : GLZ
 *********************************************************************************************************
@@ -29,33 +29,31 @@
 #include  <hal_layer_api.h>
 #include  <bsp.h>
 
-#if (PRODUCT_TYPE == Voc_Station)
+#if (PRODUCT_TYPE == Weather_Station)
 
-#define SensorNum			12
+#define SensorNum			12 
 #define CMDLength        	8
 #define SensorKind          0b111111111111
 
 AppStruct  App;
 DataStruct *AppDataPointer;
 
-//uint32_t Send_Buffer[34] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x01,0x7F,0xFF,0x7F,0xFF,0x7F,
-//0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0xff};
-
 
 uint32_t Send_Buffer[60] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x00,
                             0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,
-                            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff};
-					//      /-------/ /--/ /--/ /-----------------/ /-----------------/ /-----------------/ /-------/
-					//        period  电量  Ver       timestamp            Lng经度             lat纬度          海拔
-//const uint8_t ScadaSoilTempHumiCond[CMDLength] = {0x0C,0x03,0x00,0x00,0x00,0x02,0xC5,0x16};  //土壤温度、水分_RK
-const uint8_t ScadaBYH_RK[CMDLength]={0x02,0x03,0x01,0xF4,0x00,0x08,0x04,0x31};        //气象多要素百叶箱   光照  温湿度   CO2   仁科
-const uint8_t ScadaH2S_RK[CMDLength]={0x01,0x03,0x00,0x02,0x00,0x01,0x25,0xCA};        //  H2S传感器   仁科
+							0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff};
+//                          /-------/ /--/ /-----------------/ /-----------------/ /-----------------/ /-------/ /-------/ /-------/ /-------/ /-------/ /-------/ /--/
+//                            Period   ver		timestamp            Lng经度             lat纬度          海拔      RSRP      SINR       PCI      保留		模拟  	 保留       
 
 
 
+const uint8_t ScadaMetOne_ZXY[CMDLength] = {0x01,0x03,0x00,0x00,0x00,0x0A,0xC5,0xCD};		      //一体化气象-智翔宇
+const uint8_t ScadaMetOne_YS_HCD6816[CMDLength]={0xFF,0x03,0x00,0x07,0x00,0x0A,0x61,0xD2};        //气象八要素传感器--YS
+const uint8_t ScadaIllumination_YS[CMDLength]={0x07,0x03,0x00,0x00,0x00,0x01,0x84,0x6C};          //光照-YS
+const uint8_t ScadaRainGauge_XPH[CMDLength]={0x08,0x03,0x00,0x00,0x00,0x01,0x84,0x93};            //雨量-XPH
 
 
-float sensorFloatCahe = 0.0;
+
 uint32_t sensorCahe = 0;
 uint32_t ssensorCahe = 0;
 float SimulationSensorFloatCahe = 0.0;
@@ -66,8 +64,10 @@ static uint8_t SensorReviseStatus_H;      //修正
 static uint8_t SensorReviseStatus_L;
 static uint8_t SensorSimulationStatus_H;  //模拟
 static uint8_t SensorSimulationStatus_L;
+uint8_t ScadaZS_WS_Index = 0;
 
-//static uint8_t  SensorStatusBuff[2];       //传感器状态数组
+// static uint8_t SensorStatusBuff[2];            //传感器状态数组
+// static uint8_t SensorStatusSimulationBuff[2];  //传感器状态模拟数组
 
 /*******************************************************************************
 * 描述	    	: 4字节16进制转浮点数  结构体
@@ -82,7 +82,7 @@ Hex2Float SensorData;
 /*******************************************************************************
 * 函数名		: AnalyzeComand
 * 描述	    	: 解析传感器指令
-* 输入参数  	: data,len
+* 输入参数  	: 无
 * 返回参数  	: 无
 *******************************************************************************/
 static int AnalyzeComand(uint8_t *data,uint8_t Len)
@@ -98,103 +98,155 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 		CRC_Result[1] = (uint8_t)(CalcuResult & 0xFF);
 		if((data[Len-2] == CRC_Result[0]) && (data[Len-1] == CRC_Result[1]))   //判断数据接收是否存在异常
 		{
-		  LED_ON;
-		 if(data[1]==0x03)
-		  {
-			switch(data[0])
-			 {
-				case 0x27:	    //VOC
-					sensorCahe = (uint32_t)data[10]*65536 + (uint32_t)data[11]*256 + (uint32_t)data[12];
-					AppDataPointer->VOCData.VOC = (float)sensorCahe/100;
-					hal_SetBit(SensorStatus_H, 1);   //传感器状态位置1
-					Send_Buffer[7] = sensorCahe / 256;
-					Send_Buffer[8] = sensorCahe % 256;
-					break;
-				case 0x01:		//硫化氢
-					sensorCahe = (uint32_t)data[7]*256 + data[8];
-					AppDataPointer->VOCData.H2S = (float)sensorCahe;
-					hal_SetBit(SensorStatus_L, 7);   //传感器状态位置1
-					Send_Buffer[15] = sensorCahe / 256;
-					Send_Buffer[16] = sensorCahe % 256;
-					break;
-				case 0x09:
-					break;
-				case 0x0B:      //氨气
-					break;
-				case 0x02:	    ////气象多要素百叶箱   光照  温湿度   CO2   仁科
-					/**************温度*************/
-					hal_SetBit(SensorStatus_H, 3);      //传感器状态位置1
-					if(data[5]>=0xF0) //温度为负数，取补码
-					{
-						sensorCahe = 0XFFFF-((uint32_t)data[5]*256 + data[6])+0X01;
-						AppDataPointer->VOCData.Temperature = (float)sensorCahe/10*(-1);
-						sensorCahe = (uint32_t)data[5]*256 + data[6]; //原始数据存放到发送字节中
-						if(AppDataPointer->VOCData.Temperature < -40)
+	        LED_ON;  
+			if(data[1]==0x03)
+			{
+				switch(data[0])
+				{
+					case 0x01:	  //ZXY--风速、风向、温湿度、气压
+						if(data[2] == 0x14)   //数据长度是20，代表MetOne_ZXY
 						{
-							hal_SetBit(SensorReviseStatus_H, 3);    //传感器修正状态位置1
-							AppDataPointer->VOCData.Temperature = -15.01 + (float)(rand()%13)/10;	     //    -15.01~-13.81
-							sensorCahe = 0XFFFF-(uint32_t)(abs(AppDataPointer->VOCData.Temperature)*10)+0X01;
+							//风速
+							hal_SetBit(SensorStatus_H, 3);     //传感器状态位置1
+							SensorData.Hex[0] = data[4];       //CDAB格式
+							SensorData.Hex[1] = data[3];
+							SensorData.Hex[2] = data[6];
+							SensorData.Hex[3] = data[5];
+							AppDataPointer->MeteorologyData.WindSpeed = SensorData.Data;
+							Send_Buffer[7] = (uint32_t)(SensorData.Data*10)/256;
+							Send_Buffer[8] = (uint32_t)(SensorData.Data*10)%256;
+							//风向
+							hal_SetBit(SensorStatus_H, 2);     //传感器状态位置1
+							SensorData.Hex[0] = data[8];       //CDAB格式
+							SensorData.Hex[1] = data[7];
+							SensorData.Hex[2] = data[10];
+							SensorData.Hex[3] = data[9];
+							AppDataPointer->MeteorologyData.WindDirection = SensorData.Data;
+							Send_Buffer[9] = (uint32_t)(SensorData.Data)/256;
+							Send_Buffer[10] = (uint32_t)(SensorData.Data)%256;	
+							//空气温度
+							hal_SetBit(SensorStatus_H, 1);    //传感器状态位置1
+							SensorData.Hex[0] = data[12];     //CDAB格式
+							SensorData.Hex[1] = data[11];
+							SensorData.Hex[2] = data[14];
+							SensorData.Hex[3] = data[13];
+							AppDataPointer->MeteorologyData.AirTemperature = SensorData.Data;
+							Send_Buffer[11] = (uint32_t)(SensorData.Data*10)/256;
+							Send_Buffer[12] = (uint32_t)(SensorData.Data*10)%256;
+							//空气湿度
+							hal_SetBit(SensorStatus_H, 0);     //传感器状态位置1
+							SensorData.Hex[0] = data[16];      //CDAB格式
+							SensorData.Hex[1] = data[15];
+							SensorData.Hex[2] = data[18];
+							SensorData.Hex[3] = data[17];
+							AppDataPointer->MeteorologyData.AirHumidity = SensorData.Data;
+							Send_Buffer[13] = (uint32_t)(SensorData.Data*10)/256;
+							Send_Buffer[14] = (uint32_t)(SensorData.Data*10)%256;						
+							//气压
+							hal_SetBit(SensorStatus_L, 7);     //传感器状态位置1
+							SensorData.Hex[0] = data[20];       //CDAB格式
+							SensorData.Hex[1] = data[19];
+							SensorData.Hex[2] = data[22];
+							SensorData.Hex[3] = data[21];
+							AppDataPointer->MeteorologyData.AirPressure = (SensorData.Data)/10;
+							Send_Buffer[15] = (uint32_t)(SensorData.Data)/256;
+							Send_Buffer[16] = (uint32_t)(SensorData.Data)%256;	
 						}
-					}
-					else              //温度为正数
-					{
-						sensorCahe = (uint32_t)data[5]*256 + data[6];
-						AppDataPointer->VOCData.Temperature = (float)sensorCahe/10;
-						if(AppDataPointer->VOCData.Temperature > 80)
+						break;
+					case 0x07:    //YS--光照
+						hal_SetBit(SensorStatus_L, 2);     //传感器状态位置1
+						hal_SetBit(SensorStatus_L, 1);     //传感器状态位置1
+						sensorCahe = ((uint32_t)data[3]*256 + data[4])*10;
+						AppDataPointer->MeteorologyData.Illumination = sensorCahe;
+						Send_Buffer[25] = ((sensorCahe & 0xFF000000) >> 24);
+						Send_Buffer[26] = ((sensorCahe & 0x00FF0000) >> 16);
+						Send_Buffer[27] = ((sensorCahe & 0x0000FF00) >> 8);
+						Send_Buffer[28] = (sensorCahe & 0x000000FF);							
+						break;		
+					case 0x08:	  //XPH--雨量
+						hal_SetBit(SensorStatus_L, 6);     //传感器状态位置1
+						sensorCahe = (uint32_t)data[3]*256 + data[4];
+						AppDataPointer->MeteorologyData.RainGauge = (float)sensorCahe/10;
+						Send_Buffer[17] = sensorCahe / 256;
+						Send_Buffer[18] = sensorCahe % 256;						
+						break;									
+					case 0xFF:    //YS
+						//风速
+						hal_SetBit(SensorStatus_H, 3);     //传感器状态位置1
+						sensorCahe = (uint32_t)data[13]*256 + data[14];
+						AppDataPointer->MeteorologyData.WindSpeed = (float)sensorCahe/100;
+						Send_Buffer[7] = sensorCahe / 256;
+						Send_Buffer[8] = sensorCahe % 256;	 
+						//风向
+						hal_SetBit(SensorStatus_H, 2);     //传感器状态位置1
+						sensorCahe = (uint32_t)data[15]*256 + data[16];
+						AppDataPointer->MeteorologyData.WindDirection = (float)sensorCahe/10;
+						Send_Buffer[9] = sensorCahe / 256;
+						Send_Buffer[10] = sensorCahe % 256;
+						//空气温度
+						hal_SetBit(SensorStatus_H, 1);    //传感器状态位置1
+						sensorCahe = (uint32_t)data[7]*256 + data[8];
+						AppDataPointer->MeteorologyData.AirTemperature = (float)sensorCahe/100-40;
+						if(AppDataPointer->MeteorologyData.AirTemperature >= 0)
 						{
-							hal_SetBit(SensorReviseStatus_H, 3);    //传感器修正状态位置1
-							AppDataPointer->VOCData.Temperature = 15.01 + (float)(rand()%13)/10;	     //    15.01~16.21
-							sensorCahe = (uint32_t)((AppDataPointer->VOCData.Temperature)*10);
+							Send_Buffer[11] = (sensorCahe-4000) / 256;
+							Send_Buffer[12] = (sensorCahe-4000) % 256;
 						}
-					}
-					Send_Buffer[7] = sensorCahe / 256;
-					Send_Buffer[8] = sensorCahe % 256;
-					/**************湿度*************/
-					hal_SetBit(SensorStatus_H, 2);      //传感器状态位置1
-					sensorCahe = (uint32_t)data[3]*256 + data[4];
-					AppDataPointer->VOCData.Humidity = (float)sensorCahe/10;
-					if(AppDataPointer->VOCData.Humidity > 100)
-					  {
-						hal_SetBit(SensorReviseStatus_H, 2);    //传感器修正状态位置1
-						AppDataPointer->VOCData.Humidity = 42.01 + (float)(rand()%16)/10;	     //    42.01~43.51
-						sensorCahe = (uint32_t)((AppDataPointer->VOCData.Humidity)*10);
-					  }
-					Send_Buffer[9] = sensorCahe / 256;
-					Send_Buffer[10] = sensorCahe % 256;
-					/**************CO2*************/
-					hal_SetBit(SensorStatus_H, 0);      //传感器状态位置1
-					sensorCahe = (uint32_t)data[9]*256 + data[10];
-					AppDataPointer->VOCData.CO2 = sensorCahe;
-					Send_Buffer[11] = sensorCahe / 256;
-					Send_Buffer[12] = sensorCahe % 256;
-					/**************光照*************/
-					sensorCahe = (uint32_t)data[15]*16777216 + data[16]*65536 + data[17]*256 + data[18];
-					AppDataPointer->VOCData.Illumination =sensorCahe;
-					hal_SetBit(SensorStatus_L, 2);   //传感器状态位置1
-					hal_SetBit(SensorStatus_L, 1);   //传感器状态位置1
-					Send_Buffer[25] = data[15];
-					Send_Buffer[26] = data[16];
-					Send_Buffer[27] = data[17];
-					Send_Buffer[28] = data[18];
-					break;
-				case 0x07:	    //二氧化碳
-					sensorCahe = (uint32_t)data[10]*65536 + (uint32_t)data[11]*256 + (uint32_t)data[12];
-					AppDataPointer->VOCData.CO2 = sensorCahe;
-					hal_SetBit(SensorStatus_L, 4);   //传感器状态位置1
-					Send_Buffer[17] = sensorCahe / 256;
-					Send_Buffer[18] = sensorCahe % 256;
-					break;
-				default:
-					break;
-			}//switch(data[0]) END
+						else
+						{
+							sensorCahe = (uint32_t)(abs(AppDataPointer->MeteorologyData.AirTemperature*100));
+							Send_Buffer[11] = (0xFFFF-sensorCahe+0x01) / 256;
+							Send_Buffer[12] = (0xFFFF-sensorCahe+0x01) % 256;
+						}	
+						//空气湿度
+						hal_SetBit(SensorStatus_H, 0);     //传感器状态位置1
+						sensorCahe = (uint32_t)data[9]*256 + data[10];
+						AppDataPointer->MeteorologyData.AirHumidity = (float)sensorCahe/100;
+						Send_Buffer[13] = sensorCahe / 256;
+						Send_Buffer[14] = sensorCahe % 256;						
+						//气压
+						hal_SetBit(SensorStatus_L, 7);     //传感器状态位置1
+						sensorCahe = (uint32_t)data[11]*256 + data[12];
+						AppDataPointer->MeteorologyData.AirPressure = (float)sensorCahe/10;
+						Send_Buffer[15] = sensorCahe / 256;
+						Send_Buffer[16] = sensorCahe % 256;						
+// 						//+++++++雨量++++++//
+// 						SensorCahe = (uint32_t)data[17]*256 + data[18];
+// //								SensorCahe = SensorCahe/2;  //2min雨量采集 改成 1min
+// 						AppDataPointer->MeteorologyData.RainGauge = (float)SensorCahe/10;
+// 						SetBit(SensorStatus_L, 4);   //传感器状态位置1
+// 						Send_Buffer[17] = SensorCahe / 256;
+// 						Send_Buffer[18] = SensorCahe % 256;
+						//PM2.5
+//						hal_SetBit(SensorStatus_L, 5);     //传感器状态位置1
+//						sensorCahe = (uint32_t)data[3]*256 + data[4];
+//						AppDataPointer->MeteorologyData.PM25 = sensorCahe;
+//						Send_Buffer[19] = sensorCahe / 256;
+//						Send_Buffer[20] = sensorCahe % 256;
+//						//PM10
+//						hal_SetBit(SensorStatus_L, 4);     //传感器状态位置1
+//						sensorCahe = (uint32_t)data[5]*256 + data[6];
+//						AppDataPointer->MeteorologyData.PM10 = sensorCahe;
+//						Send_Buffer[21] = sensorCahe / 256;
+//						Send_Buffer[22] = sensorCahe % 256;
+//						//辐射
+//						hal_SetBit(SensorStatus_L, 3);     //传感器状态位置1
+//						sensorCahe = (uint32_t)data[19]*256 + data[20];
+//						AppDataPointer->MeteorologyData.Radiation = sensorCahe;
+//						Send_Buffer[23] = sensorCahe / 256;
+//						Send_Buffer[24] = sensorCahe % 256;
+						break;
+					default:
+						break;
+				}//switch(data[0]) END	
 			} //(data[1]==0x03)  END
 			Send_Buffer[55] = SensorReviseStatus_H;
 			Send_Buffer[56] = SensorReviseStatus_L;
 			Clear_CMD_Buffer(dRxBuff,dRxNum);
 			dRxNum=0;
 			Len = 0;
-			return 1;
-		}else{
+			return 1; 
+ 		}else{
 			Clear_CMD_Buffer(dRxBuff,dRxNum);
 			dRxNum=0;
 			Len = 0;
@@ -225,7 +277,7 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 static int SimulationSensorData(void)
 {
 	volatile char simulationIndex;
-	volatile uint16_t sensorNOTExistStatus = 0;
+	volatile uint16_t sensorNOTExistStatus = 0; 
 	uint8_t str[12];
     uint32_t temp =0;
 
@@ -253,72 +305,122 @@ static int SimulationSensorData(void)
 			switch(simulationIndex)
 			{
 				case 1:
-					/**************温度**************///
-					SimulationSensorFloatCahe = 18.01 + (float)(rand()%2) - (float)(rand()%2);
-					AppDataPointer->VOCData.Temperature = SimulationSensorFloatCahe;
+					/****************WS*************///0.61-1.21
+					SimulationSensorFloatCahe = 8.21 + (float)(rand()%6)/10 - (float)(rand()%6)/10;
+					if ((SimulationSensorFloatCahe < 0.0)|| (SimulationSensorIntCahe > 100))
+					{
+					  SimulationSensorFloatCahe = 10.01;
+					}
+					AppDataPointer->MeteorologyData.WindSpeed = SimulationSensorFloatCahe;
 					hal_SetBit(SensorStatus_H, 3);             //传感器状态位置1
 					hal_SetBit(SensorSimulationStatus_H, 3);   //传感器模拟状态位置1
-					Send_Buffer[7] = (uint32_t)(SimulationSensorFloatCahe*10) / 256;
-					Send_Buffer[8] = (uint32_t)(SimulationSensorFloatCahe*10) % 256;
+					Send_Buffer[7] = (uint32_t)(SimulationSensorFloatCahe*100) / 256;
+					Send_Buffer[8] = (uint32_t)(SimulationSensorFloatCahe*100) % 256;
 					break;
 				case 2:
-					/**************湿度**************///
-					SimulationSensorFloatCahe = 40.01 + (float)(rand()%10) - (float)(rand()%10);
-					AppDataPointer->VOCData.Humidity = SimulationSensorFloatCahe;
+					/**************WD****************///80.1-85.1
+					SimulationSensorIntCahe = 81 + rand()%5 - rand()%5 ;
+					if ((SimulationSensorIntCahe < 5) || (SimulationSensorIntCahe > 360))
+					{
+						SimulationSensorIntCahe = 101;
+					}
+					AppDataPointer->MeteorologyData.WindDirection = SimulationSensorIntCahe;
 					hal_SetBit(SensorStatus_H, 2);             //传感器状态位置1
 					hal_SetBit(SensorSimulationStatus_H, 2);   //传感器模拟状态位置1
-					Send_Buffer[9] = (uint32_t)(SimulationSensorFloatCahe*10) / 256;
-					Send_Buffer[10] = (uint32_t)(SimulationSensorFloatCahe*10) % 256;
+					Send_Buffer[9] = (uint32_t)(SimulationSensorIntCahe*10) / 256;
+					Send_Buffer[10] = (uint32_t)(SimulationSensorIntCahe*10) % 256;
 					break;
 				case 3:
-
+					/**************TEMP****************///6.01~8.31
+					SimulationSensorFloatCahe = 20.01 + (float)(rand()%2)- (float)(rand()%2);
+					if ((SimulationSensorFloatCahe < 0.0)|| (SimulationSensorIntCahe > 100))
+					{
+						 SimulationSensorFloatCahe = 21.01;
+					}
+					AppDataPointer->MeteorologyData.AirTemperature = SimulationSensorFloatCahe;
+					hal_SetBit(SensorStatus_H, 1);             //传感器状态位置1
+					hal_SetBit(SensorSimulationStatus_H, 1);   //传感器模拟状态位置1
+					Send_Buffer[11] = (uint32_t)(SimulationSensorFloatCahe*100) / 256;
+					Send_Buffer[12] = (uint32_t)(SimulationSensorFloatCahe*100) % 256;
 					break;
 				case 4:
-					/**************CO2**************///
-					SimulationSensorIntCahe = 431 + rand()%10 - rand()%10;
-					AppDataPointer->VOCData.CO2 = SimulationSensorIntCahe;
+					/**************Humi***************///30.21~35.61
+					SimulationSensorFloatCahe = 44.01 + (float)(rand()%5)/10 - (float)(rand()%5)/10;
+					if ((SimulationSensorFloatCahe < 0.0)|| (SimulationSensorIntCahe > 100))
+						{
+							SimulationSensorFloatCahe = 31.01;
+						}
+					AppDataPointer->MeteorologyData.AirHumidity = SimulationSensorFloatCahe;
 					hal_SetBit(SensorStatus_H, 0);             //传感器状态位置1
 					hal_SetBit(SensorSimulationStatus_H, 0);   //传感器模拟状态位置1
-					Send_Buffer[13] = (uint32_t)(SimulationSensorIntCahe) / 256;
-					Send_Buffer[14] = (uint32_t)(SimulationSensorIntCahe) % 256;
+					Send_Buffer[13] = (uint32_t)(SimulationSensorFloatCahe*100) / 256;
+					Send_Buffer[14] = (uint32_t)(SimulationSensorFloatCahe*100) % 256;
 					break;
 				case 5:
-					/**************H2S**************///
-					SimulationSensorFloatCahe = 0.01 + (float)(rand()%5)/10  - (float)(rand()%5)/10 ;
-					AppDataPointer->VOCData.H2S = SimulationSensorFloatCahe;
+					/**************Pressure**************///100.81~101.01
+					SimulationSensorFloatCahe = 1001.1 + (float)(rand()%2)/10 - (float)(rand()%2)/10;
+					if ((SimulationSensorFloatCahe < 300)|| (SimulationSensorIntCahe > 1500))
+						{
+							SimulationSensorFloatCahe = 1001.1;
+						}
+					AppDataPointer->MeteorologyData.AirPressure = SimulationSensorFloatCahe;
 					hal_SetBit(SensorStatus_L, 7);             //传感器状态位置1
 					hal_SetBit(SensorSimulationStatus_L, 7);   //传感器模拟状态位置1
-					Send_Buffer[15] = (uint32_t)(SimulationSensorFloatCahe) / 256;
-					Send_Buffer[16] = (uint32_t)(SimulationSensorFloatCahe) % 256;
+					Send_Buffer[15] = (uint32_t)(SimulationSensorFloatCahe*10) / 256;
+					Send_Buffer[16] = (uint32_t)(SimulationSensorFloatCahe*10) % 256;
 					break;
 				case 6:
+					 /**************Rain**************///7.21~7.61
+					SimulationSensorFloatCahe = 0.1 + (float)(rand()%2)/10 - (float)(rand()%2)/10;
+					if ((SimulationSensorFloatCahe < 0)|| (SimulationSensorIntCahe > 20))
+					{
+						SimulationSensorFloatCahe = 0.1;
+					}
+					AppDataPointer->MeteorologyData.RainGauge = SimulationSensorFloatCahe;
+					hal_SetBit(SensorStatus_L, 6);             //传感器状态位置1
+					hal_SetBit(SensorSimulationStatus_L, 6);   //传感器模拟状态位置1
+					Send_Buffer[17] = (uint32_t)(SimulationSensorFloatCahe*10) / 256;
+					Send_Buffer[18] = (uint32_t)(SimulationSensorFloatCahe*10) % 256;
 					break;
 				case 7:
+					/**************PM2.5**************///71~101
+					SimulationSensorFloatCahe = 31.01 + (float)(rand()%3)/10 - (float)(rand()%3)/10;
+					AppDataPointer->MeteorologyData.PM25 = SimulationSensorFloatCahe;
+					hal_SetBit(SensorStatus_L, 5);             //传感器状态位置1
+					hal_SetBit(SensorSimulationStatus_L, 5);   //传感器模拟状态位置1
+					Send_Buffer[19] = (uint32_t)(SimulationSensorFloatCahe) / 256;
+					Send_Buffer[20] = (uint32_t)(SimulationSensorFloatCahe) % 256;
 					break;
 				case 8:
-				    /**************PH**************///7.21~7.61
-					// SimulationSensorFloatCahe = 7.21 + (float)(rand()%4)/10;
-					// AppDataPointer->WaterData.PHValue = SimulationSensorFloatCahe;
-					// hal_SetBit(SensorStatus_L, 4);             //传感器状态位置1
-					// hal_SetBit(SensorSimulationStatus_L, 4);   //传感器模拟状态位置1
-					// Send_Buffer[21] = (uint32_t)(SimulationSensorFloatCahe*100) / 256;
-					// Send_Buffer[22] = (uint32_t)(SimulationSensorFloatCahe*100) % 256;
+					/**************PM10**************///18.01~23.91
+					SimulationSensorFloatCahe = 41.01 + (float)(rand()%3)/10 - (float)(rand()%3)/10 ;
+					AppDataPointer->MeteorologyData.PM10 = SimulationSensorFloatCahe;
+					hal_SetBit(SensorStatus_L, 4);             //传感器状态位置1
+					hal_SetBit(SensorSimulationStatus_L, 4);   //传感器模拟状态位置1
+					Send_Buffer[21] = (uint32_t)(SimulationSensorFloatCahe) / 256;
+					Send_Buffer[22] = (uint32_t)(SimulationSensorFloatCahe) % 256;
 					break;
 				case 9:
-					/**************CHL************/
+					/**************Radi************/
+					SimulationSensorIntCahe = 0  ;
+					AppDataPointer->MeteorologyData.Radiation = (uint16_t)SimulationSensorIntCahe;
+					hal_SetBit(SensorStatus_L, 3);             //传感器状态位置1
+					hal_SetBit(SensorSimulationStatus_L, 3);   //传感器模拟状态位置1
+					Send_Buffer[9] = (uint32_t)(SimulationSensorIntCahe) / 256;
+					Send_Buffer[10] = (uint32_t)(SimulationSensorIntCahe) % 256;
 					break;
 				case 10:
-					break;
-				case 11:
-					/**************光照**************///
-					SimulationSensorIntCahe = 551 + rand()%10 - rand()%10;
-					AppDataPointer->VOCData.Illumination = SimulationSensorIntCahe;
+					/**************光照************/
+					SimulationSensorIntCahe =  70 + rand()%10 - rand()%10 ;
+					AppDataPointer->MeteorologyData.Illumination = SimulationSensorIntCahe;
 					hal_SetBit(SensorStatus_L, 2);             //传感器状态位置1
 					hal_SetBit(SensorStatus_L, 1);             //传感器状态位置1
 					hal_SetBit(SensorSimulationStatus_L, 2);   //传感器模拟状态位置1
 					hal_SetBit(SensorSimulationStatus_L, 1);   //传感器模拟状态位置1
-					Send_Buffer[9] = (uint32_t)(SimulationSensorIntCahe) / 256;
-					Send_Buffer[10] = (uint32_t)(SimulationSensorIntCahe) % 256;
+					Send_Buffer[9] = (uint32_t)(SimulationSensorIntCahe*10) / 256;
+					Send_Buffer[10] = (uint32_t)(SimulationSensorIntCahe*10) % 256;
+					break;
+				case 11:
 					break;
 				case 12:
 					break;
@@ -328,7 +430,7 @@ static int SimulationSensorData(void)
 		}
 	}
 	Send_Buffer[57] = SensorSimulationStatus_H;
-	Send_Buffer[58] = SensorSimulationStatus_L;
+	Send_Buffer[58] = SensorSimulationStatus_L; 
 	return 1;
 }
 
@@ -341,32 +443,36 @@ static int SimulationSensorData(void)
 *******************************************************************************/
 void InqureSensor(void)
 {
-	//COD EC DO NH4 | Temp ORP ZS PH | CHL WL WS XX
+	//WS WD Temp Humi |Presure PM2.5 PM10  Rain | Radi XX XX XX                                                      
 	volatile char scadaIndex;
-	volatile uint16_t sensorExistStatus = 0;
+	volatile uint16_t sensorExistStatus = 0;   
 	volatile uint8_t sensorSN = 0;    //传感器编号，按照协议顺序排列
-	volatile uint16_t sensorStatus;   //0000 0011 1100 0000     Do,氨氮，温度，ORP
+	volatile uint16_t sensorStatus;   //0000 0011 1100 0000     
 
 	if(AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET) {
 		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_ALREADY;
-		AppDataPointer->TerminalInfoData.SensorStatus = SensorKind;
-		// Teminal_Data_Init();   //数据初始化
-	} else if ( (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY)
+		AppDataPointer->TerminalInfoData.SensorStatus = SensorKind; 
+	} else if ( (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY) 
 	         || (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK) ) {
 		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_OK;
-		AppDataPointer->TerminalInfoData.SensorFlashStatus = Hal_getSensorFlashStatus(); //wj20200217把上面一行改成了这一行
-		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; //这里是不是写反了或者上面的应该是SensorFlashStatus？？
+		AppDataPointer->TerminalInfoData.SensorStatus = Hal_getSensorFlashStatus(); 
+		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; 
 	}
-	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {
+	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {	
 		SensorStatus_H = 0;
-		SensorStatus_L = 0;
+		if(hal_GetBit(SensorStatus_L, 6)) 
+		{
+            SensorStatus_L = 0b01000000;
+		}else {
+			SensorStatus_L = 0;
+		}
 		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)  //SensorNum = 12
 		{
 			// sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0001;
 			// AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) >> 1;
 			// if(sensorExistStatus == 1)
 
-			memset(dRxBuff,0x0,dRxLength);
+			memset(dRxBuff,0x0,dRxLength); //dRxLength=50，清空，接收Usart3即传感器数据
 			dRxNum=0;
 			sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0800;
 			AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) << 1;
@@ -379,53 +485,62 @@ void InqureSensor(void)
 					case 1:
 						sensorSN = 1;
 						// hal_ResetBit(SensorStatus_H, 3);
-						OSBsp.Device.Usart3.WriteNData(ScadaBYH_RK,CMDLength);
+						OSBsp.Device.Usart3.WriteNData(ScadaMetOne_YS_HCD6816,CMDLength);	
+						//这里全是读取气象的参数，如果是水质的话，应该读取水质相应的。
 						break;
 					case 2:
 						sensorSN = 2;
-						// hal_ResetBit(SensorStatus_H, 2);
-						OSBsp.Device.Usart3.WriteNData(ScadaBYH_RK,CMDLength);
+						// hal_ResetBit(SensorStatus_H, 2);		
+						OSBsp.Device.Usart3.WriteNData(ScadaMetOne_YS_HCD6816,CMDLength);		
 						break;
 					case 3:
 						sensorSN = 3;
 						// hal_ResetBit(SensorStatus_H, 1);
-//						OSBsp.Device.Usart3.WriteNData(ScadaH2S_RK,CMDLength);
+						OSBsp.Device.Usart3.WriteNData(ScadaMetOne_YS_HCD6816,CMDLength);
 						break;
 					case 4:
 						sensorSN = 4;
 						// hal_ResetBit(SensorStatus_H, 0);
-						OSBsp.Device.Usart3.WriteNData(ScadaBYH_RK,CMDLength);
+						OSBsp.Device.Usart3.WriteNData(ScadaMetOne_YS_HCD6816,CMDLength);
 						break;
 					case 5:
 						sensorSN = 5;
 						// hal_ResetBit(SensorStatus_L, 7);
-						OSBsp.Device.Usart3.WriteNData(ScadaH2S_RK,CMDLength);
+						OSBsp.Device.Usart3.WriteNData(ScadaMetOne_YS_HCD6816,CMDLength);
 						break;
 					case 6:
 						sensorSN = 6;
 						// hal_ResetBit(SensorStatus_L, 6);
+						if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus == RAINGAUGE_SCADA_ENABLE)
+						{
+							AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_DISABLE;
+							OSBsp.Device.Usart3.WriteNData(ScadaRainGauge_XPH,CMDLength);
+						}						
 						break;
 					case 7:
 						sensorSN = 7;
 						// hal_ResetBit(SensorStatus_L, 5);
-						break;
+						OSBsp.Device.Usart3.WriteNData(ScadaMetOne_YS_HCD6816,CMDLength);
+						break;						
 					case 8:
 						sensorSN = 8;
-						// hal_ResetBit(SensorStatus_L, 4);
+						// hal_ResetBit(SensorStatus_L, 4);	
+						OSBsp.Device.Usart3.WriteNData(ScadaMetOne_YS_HCD6816,CMDLength);
 						break;
 					case 9:
 						sensorSN = 9;
 						// hal_ResetBit(SensorStatus_L, 3);
-						break;
+						OSBsp.Device.Usart3.WriteNData(ScadaMetOne_YS_HCD6816,CMDLength);
+						break;						
 					case 10:
 						sensorSN = 10;
-						// hal_ResetBit(SensorStatus_L, 2);
-						OSBsp.Device.Usart3.WriteNData(ScadaBYH_RK,CMDLength);
+						// hal_ResetBit(SensorStatus_L, 2);		
+						OSBsp.Device.Usart3.WriteNData(ScadaIllumination_YS,CMDLength);										
 						break;
 					case 11:
 						sensorSN = 11;
 						// hal_ResetBit(SensorStatus_L, 1);
-						OSBsp.Device.Usart3.WriteNData(ScadaBYH_RK,CMDLength);
+						OSBsp.Device.Usart3.WriteNData(ScadaIllumination_YS,CMDLength);
 						break;
 					case 12:
 						sensorSN = 12;
@@ -440,7 +555,7 @@ void InqureSensor(void)
 				// LED_ON;
 				// OSTimeDly(500);  //任务挂起
 				OSTimeDly(400);     //任务挂起
-				int ret = AnalyzeComand(dRxBuff,dRxNum);
+				int ret = AnalyzeComand(dRxBuff,dRxNum);//解包
 				OSTimeDly(100);     //LED指示灯延时
 				uint32_t times = sensorSN;
                 if(ret == 1){
@@ -454,11 +569,12 @@ void InqureSensor(void)
 				LED_OFF;
 				Clear_CMD_Buffer(dRxBuff,dRxNum);  //发送之前buff清0
 				dRxNum=0;
+
 			}
 		}
 
 		AppDataPointer->TerminalInfoData.SensorStatus = (uint16_t)SensorStatus_H*256 + (uint16_t)SensorStatus_L;
-		if(AppDataPointer->TerminalInfoData.SensorFlashWriteStatus == SENSOR_STATUS_WRITEFLASH_NOTYET)
+		if(AppDataPointer->TerminalInfoData.SensorFlashWriteStatus == SENSOR_STATUS_WRITEFLASH_NOTYET) 
 		{
 			AppDataPointer->TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_ALREADY;
 			//++++测试专用+++if+++++++//
@@ -477,16 +593,16 @@ void InqureSensor(void)
 		}
 
 		//根据标志位判断是否需要模拟数据
-		if (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK)
+		if (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK) 
 		{
 			if(OSBsp.Device.InnerFlash.innerFLASHRead(23,infor_ChargeAddr) == 0x01)
 			// if(OSBsp.Device.InnerFlash.innerFLASHRead(23,infor_ChargeAddr) == 0xFF)
 			{
-				AppDataPointer->TerminalInfoData.SensorStatusSimulation = (AppDataPointer->TerminalInfoData.SensorStatus) ^ (AppDataPointer->TerminalInfoData.SensorFlashStatus);
+				AppDataPointer->TerminalInfoData.SensorStatusSimulation = (AppDataPointer->TerminalInfoData.SensorStatus) ^ (AppDataPointer->TerminalInfoData.SensorFlashStatus); 
 				//传感器损坏，无数据才支持补发
 				if(AppDataPointer->TerminalInfoData.SensorStatusSimulation != 0) {
-					SimulationSensorData();
-					// dRxNum=0;
+					SimulationSensorData();	
+					// dRxNum=0;	
 				}
 			}
 		}
@@ -495,12 +611,12 @@ void InqureSensor(void)
 		AppDataPointer->TerminalInfoData.ReviseSimulationCode = AppDataPointer->TerminalInfoData.ReviseSimulationCode + (uint32_t)SensorSimulationStatus_H*256 + (uint32_t)SensorSimulationStatus_L;
 
 	} else {
-		OSTimeDly(10);
-		g_Printf_dbg("%s.AnalyzeSensor.No sensor to scan\r\n",__func__);
+		OSTimeDly(10);     
+		g_Printf_dbg("%s.AnalyzeSensor.No sensor to scan\r\n",__func__);	
 		AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCAN_OVER;
-		OSTimeDly(10);
+		OSTimeDly(10); 
 		g_Printf_info("ScadaTask is over\n");
-		OSTimeDly(10);
+		OSTimeDly(10); 
 	}
 }
 
@@ -544,35 +660,38 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
     }
 
 	if(hal_GetBit(SensorStatus_H, 3)) {
-		cJSON_AddNumberToObject(pSubJson,"Temp",DataPointer->VOCData.Temperature);
+		cJSON_AddNumberToObject(pSubJson,"Winds",DataPointer->MeteorologyData.WindSpeed);
 	}
 	if(hal_GetBit(SensorStatus_H, 2)) {
-		cJSON_AddNumberToObject(pSubJson,"Humi",DataPointer->VOCData.Humidity);
+		cJSON_AddNumberToObject(pSubJson,"Windd",DataPointer->MeteorologyData.WindDirection);
 	}
 	if(hal_GetBit(SensorStatus_H, 1)) {
-		// cJSON_AddNumberToObject(pSubJson,"SoilCond",DataPointer->VOCData.SoilCond);
+		cJSON_AddNumberToObject(pSubJson,"Temp",DataPointer->MeteorologyData.AirTemperature);
 	}
 	if(hal_GetBit(SensorStatus_H, 0)) {
-		cJSON_AddNumberToObject(pSubJson,"CO2",DataPointer->VOCData.CO2);
+		cJSON_AddNumberToObject(pSubJson,"Humi",DataPointer->MeteorologyData.AirHumidity);
 	}
 	if(hal_GetBit(SensorStatus_L, 7)) {
-		cJSON_AddNumberToObject(pSubJson,"H2S",DataPointer->VOCData.H2S);
+		cJSON_AddNumberToObject(pSubJson,"Press",DataPointer->MeteorologyData.AirPressure);
 	}
 	if(hal_GetBit(SensorStatus_L, 6)) {
+		cJSON_AddNumberToObject(pSubJson,"Rain",DataPointer->MeteorologyData.RainGauge);
 	}
 	if(hal_GetBit(SensorStatus_L, 5)) {
+		cJSON_AddNumberToObject(pSubJson,"PM2_5",DataPointer->MeteorologyData.PM25);
 	}
 	if(hal_GetBit(SensorStatus_L, 4)) {
+		cJSON_AddNumberToObject(pSubJson,"PM10",DataPointer->MeteorologyData.PM10);
 	}
 	if(hal_GetBit(SensorStatus_L, 3)) {
+		cJSON_AddNumberToObject(pSubJson,"Radi",DataPointer->MeteorologyData.Radiation);
 	}
-	if( (hal_GetBit(SensorStatus_L, 2))&&(hal_GetBit(SensorStatus_L, 1)) )
-	{
-		cJSON_AddNumberToObject(pSubJson, "llum",DataPointer->VOCData.Illumination);
+	if(hal_GetBit(SensorStatus_L, 2) & hal_GetBit(SensorStatus_L, 1)) {
+		cJSON_AddNumberToObject(pSubJson,"llum",DataPointer->MeteorologyData.Illumination);
 	}
 	if(hal_GetBit(SensorStatus_L, 0)) {
 	}
-	cJSON_AddItemToObject(pJsonRoot,"VOCData", pSubJson);
+	cJSON_AddItemToObject(pJsonRoot,"WeatherData", pSubJson);
 #if (TRANSMIT_TYPE == GPRS_Mode)
 	cJSON_AddStringToObject(pJsonRoot, "CSQ",CSQBuffer);
 #endif
@@ -626,11 +745,12 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	g_SD_FileName_Creat("0:/",date,filestore);
 	g_SD_File_Write(filestore,p);
 	g_SD_File_Write(filestore,"\r\n");     //数据换行
-#endif
+#endif  	
 	// OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);  //++++++++++++++++++++++++
 
     return p;
 }
+
 
 /*******************************************************************************
 * 函数名		: ScadaData_base_Init
@@ -655,12 +775,11 @@ void ScadaData_base_Init(void)
 	AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
 #elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
-    AppDataPointer->LoRa_F8L10D_Mode.LoRaStatus = LoRa_Power_off;
+    AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_off;
 #elif (TRANSMIT_TYPE == LoRa_M100C_Mode)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
     AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_off;
 #endif
-
 }
 
 /*******************************************************************************
@@ -673,7 +792,7 @@ void Terminal_Para_Init(void)
 {
 	int i = 0;
 	Hex2Double TransferData;
-
+	
 	/*********************设备当前运行状态****************************************/
 	App.Data.TerminalInfoData.DeviceFirstRunStatus = DEVICE_STATUS_FIRSTRUN_BEGIN;
 	/*********************读取Flash数据，并存放在数组中***************************/
@@ -721,7 +840,8 @@ void Terminal_Para_Init(void)
 	App.Data.TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_NOTYET;
 	/**************************允许同步时间状态***********************/
 	App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;
-
+	/**************************初始化允许雨量采集*********************/
+    App.Data.MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
 	#ifdef SIM800C
@@ -811,21 +931,22 @@ void Teminal_Data_Init(void)
 	SensorReviseStatus_H = 0x00;      //修正
 	SensorReviseStatus_L = 0x00;
 	Send_Buffer[55] = 0x00;
-	Send_Buffer[56] = 0x00;
+	Send_Buffer[56] = 0x00; 
 	SensorSimulationStatus_H = 0x00;  //模拟
 	SensorSimulationStatus_L = 0x00;
 	Send_Buffer[57] = 0x00;
-	Send_Buffer[58] = 0x00;
+	Send_Buffer[58] = 0x00; 
 	App.Data.TerminalInfoData.ReviseSimulationCode = 0;
 
-	AppDataPointer->VOCData.Temperature  = 0.0;
-	AppDataPointer->VOCData.Humidity    = 0.0;
-	AppDataPointer->VOCData.CO2   = 0;
-	AppDataPointer->VOCData.Illumination  = 0;
-	AppDataPointer->VOCData.H2S  = 0.0;
+	App.Data.MeteorologyData.WindSpeed = 0.0;
+	App.Data.MeteorologyData.WindDirection   = 0;
+	App.Data.MeteorologyData.AirTemperature   = 0.0;
+	App.Data.MeteorologyData.AirHumidity  = 0.0;
+	App.Data.MeteorologyData.AirPressure = 0.0;
+	App.Data.MeteorologyData.RainGauge = 0;
 }
 
 
 
-#endif //(PRODUCT_TYPE == Voc_Station)
+#endif //(PRODUCT_TYPE == Water_Station)
 

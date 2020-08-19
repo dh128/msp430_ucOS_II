@@ -36,10 +36,10 @@
 uint32_t TempADC_Value = 0;
 uint32_t BatADC_Value = 0;
 uint8_t  Flag_FanOPEN = 0;
-uint8_t  PowerQuantity = 0;
-uint16_t LastPowerQuantity = 0;
+uint8_t  PowerQuantity[4] = {50};
+//uint16_t LastPowerQuantity = 0;
 uint16_t SUMPowerQuantity = 0;
-uint8_t  AVGPowerQuantity = 0;
+//uint8_t  AVGPowerQuantity = 0;
 
 /*******************************************************************************
 * Function Name  : g_Device_ADC_Init，通过NTC检测环境温度控制风扇
@@ -69,6 +69,8 @@ void g_Device_ADC_Init(void)
 void ADCValueHandle(void)
 {
 	static uint16_t BATVoltage_Cache;   //BAT 电压值缓存
+	static uint8_t i=0;
+
 //	if((TempADC_Value >= 950)&&(Flag_FanOPEN == 0))
 //	{Power
 //		Ctr_Fan_ON;	//打开风扇
@@ -108,8 +110,13 @@ void ADCValueHandle(void)
 		BatADC_Value = BatADC_Value;
 	}
 
-	PowerQuantity = (int)((float)(BatADC_Value-Min_BatADC_Value)/(Max_BatADC_Value-Min_BatADC_Value)*100);  //电池电量百分比，精度1%
-	BATVoltage_Cache = (int)( (float)BatADC_Value/1024*2.5*2*100 );          //电池电压
+
+	for(i=0; i<3; i++)
+	{
+		PowerQuantity[i] = PowerQuantity[i+1]; //更替
+	}
+	PowerQuantity[3] = (uint8_t)((float)(BatADC_Value-Min_BatADC_Value)/(Max_BatADC_Value-Min_BatADC_Value)*100);  //电池电量百分比，精度1%
+	BATVoltage_Cache = (uint16_t)( (float)BatADC_Value/1024*2.5*2*100 );          //电池电压
 	App.Data.TerminalInfoData.BATVoltage = (float)BATVoltage_Cache/100;      //电池电压
 }
 
@@ -155,6 +162,9 @@ void ADCRead1000Routine(void)
 void GetADCValue(void)
 {
 	static uint8_t i=0,j=0;
+
+	ScadaBAT_ON;
+	OSTimeDly(500); 
 	//************电量处理Begin************//
 	for(j=0;j<5;j++)
 	{
@@ -164,9 +174,17 @@ void GetADCValue(void)
 			OSTimeDlyHMSM(0u, 0u, 0u, 40);  
 		}
 	}
-	App.Data.TerminalInfoData.PowerQuantity = PowerQuantity;      			 //电量    3.4 10% 3.5 20% ———— 4.0 70%  4.2 90%
-	// Send_Buffer[32] = PowerQuantity;
-	//************电量处理END************//
+
+	SUMPowerQuantity = 0;
+	for (i=0; i<4; i++)
+	{
+		SUMPowerQuantity += PowerQuantity[i];
+	}
+
+	App.Data.TerminalInfoData.PowerQuantity = (uint8_t)(SUMPowerQuantity >> 2); ///4
+	//App.Data.TerminalInfoData.PowerQuantity = (uint8_t)((PowerQuantity[0]+PowerQuantity[1])/2);     //电量    3.4 10% 3.5 20% ———— 4.0 70%  4.2 90%
+	infor_ChargeAddrBuff[13] = App.Data.TerminalInfoData.PowerQuantity ;                    //电池电量
+	Send_Buffer[33] = App.Data.TerminalInfoData.PowerQuantity;        
 }
 
 

@@ -237,8 +237,8 @@ unsigned char mmcReadBlock(unsigned long address, unsigned int count, unsigned c
 /***********************************************************************
 函数功能：MMC/SD卡单块数据写入
 操作内容：1、包括读取的地址、长度以及存入的缓冲区
-		  2、块大小可以设置，若为512，可以认为是一个标准扇区大小
-          3、数据后面是16位CRC值
+		     2、块大小可以设置，若为512，可以认为是一个标准扇区大小
+         3、数据后面是16位CRC值
 ***********************************************************************/
 unsigned char mmcWriteBlock(unsigned long address, unsigned int count, unsigned char *pBuffer)
 {
@@ -436,8 +436,9 @@ unsigned long MMC_ReadCardSize(void)
     i <<= 1;
   MMC_CardSize *= i;
 
+  SD_CS_High ();
   return (MMC_CardSize);                        //返回容量值大小，单位为字节
-
+  
 }
 /*************************************************
 函数功能：检测MMC/SD卡是否插入

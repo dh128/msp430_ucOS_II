@@ -39,15 +39,16 @@
 static void SetAllSensorPowerOn(bool onoff)
 {
 	if(onoff == true){
-		SenSor_3V_ON;        	//打开Sensor_3V3         //485芯片上电
-		Sensor_12V_Base_ON;     //传感板12V总电源  Power ON
-		Sensor_5V_Base_ON;      //打开传感板上5V总电压               //传感器接口5V总电压上电
-		Sensor_12V_1_ON;        //打开传感板上12V_1        //1,2传感器接口12V上电
-		Sensor_12V_2_ON;       	//打开传感板上12V_2        //3,4传感器接口12V上电
-		Sensor_12V_3_ON;        //打开传感板上12V_3        //5,6传感器接口12V上电
-		Sensor_5V_1_ON;        	//打开传感板上5V_1         //1,2传感器接口5V上电
-		Sensor_5V_2_ON;        	//打开传感板上5V_2         //3,4传感器接口5V上电
-		Sensor_5V_3_ON;        	//打开传感板上5V_3         //5,6传感器接口5V上电
+//******************总电源***********************//
+	Base_12V_ON;                  //12V总电源  上电
+	Base_5V_ON;                   //5V总电源   上电
+//*****************3.3V电源*********************////为TF卡、SPI Flash、MAX3485、Socket_3V3供电
+	Base_3V3_ON;                  //3.3V电源   上电
+//*****************传感器电源********************//
+	Sensor_12V_1_ON;              //传感器电源接口1_12V 上电
+	Sensor_12V_2_ON;              //传感器电源接口2_12V 上电
+	Sensor_5V_1_ON;               //传感器电源接口1_5V  上电
+	Sensor_5V_2_ON;               //传感器电源接口2_5V  上电
 		
 #if (PRODUCT_TYPE == AliveNest_Station) 
 		Send_485_Enable;
@@ -58,15 +59,16 @@ static void SetAllSensorPowerOn(bool onoff)
 		OSBsp.Device.Usart2.WriteString("PMS5003T Passive State Switch OK!\r\n");
 #endif
 	}else{
-		SenSor_3V_OFF;          //关闭Sensor_3V3          //485芯片掉电
-		Sensor_12V_base_OFF;    //关闭传感板上12V总电压    //传感器接口12V总电压掉电
-		Sensor_5V_base_OFF; 	//关闭传感板上5V总电压     //传感器接口5V总电压掉电
-		Sensor_12V_1_OFF;       //关闭传感板上12V_1        //1,2传感器接口12V掉电
-		Sensor_12V_2_OFF;       //关闭传感板上12V_2        //3,4传感器接口12V掉电
-		Sensor_12V_3_OFF;       //关闭传感板上12V_3        //5,6传感器接口12V掉电
-		Sensor_5V_1_OFF;        //关闭传感板上5V_1         //1,2传感器接口5V掉电
-		Sensor_5V_2_OFF;        //关闭传感板上5V_2         //3,4传感器接口5V掉电
-		Sensor_5V_3_OFF;        //关闭传感板上5V_3         //5,6传感器接口5V掉电
+//******************总电源***********************//
+	Base_12V_OFF;                 //12V总电源  掉电
+	Base_5V_OFF;                  //5V总电源   掉电
+//*****************3.3V电源*********************////为TF卡、SPI Flash、MAX3485、Socket_3V3供电
+	Base_3V3_OFF;                 //3.3V电源   掉电
+//*****************传感器电源********************//
+	Sensor_12V_1_OFF;             //传感器电源接口1_12V 掉电
+	Sensor_12V_2_OFF;             //传感器电源接口2_12V 掉电
+	Sensor_5V_1_OFF;              //传感器电源接口1_5V  掉电
+	Sensor_5V_2_OFF;              //传感器电源接口2_5V  掉电
 	}
 }
 
@@ -75,74 +77,111 @@ static void Power(ControlPower type)
 {
 	switch(type){
 		case BaseBoard_Power_On:
-			P1OUT |= BIT1;	//打开主板上5V电压 //FP6717控制管脚使能,VBUS-->5V转换
-			P4OUT |= BIT0;
-		break;
+			Base_12V_ON;            //12V总电源  上电
+			Base_5V_ON;             //5V总电源   上电
+			break;
 		case BaseBoard_Power_Off:
-			P1OUT &=~BIT1;	//关闭主板上5V电压 //FP6717控制管脚失能,VBUS-->5V关闭
-			P4OUT &=~BIT0;
-		break;
-		case LPModule_Power_On:
-			P4OUT |= BIT3;	//打开Socket_3V3 //传输板上插LoRa，NB模块时供电
-		break;
-		case LPModule_Power_Off:
-			P4OUT &=~BIT3;	//关闭Socket_3V3 //传输板上插LoRa，NB模块时掉电
-		break;
-		case GPRS_Power_On:
-			P4OUT |= BIT2;	//打开Socket_5V //传输板上插GPRS模块时供电
-		break;
-		case GPRS_Power_Off:
-			P4OUT &=~BIT2;	//关闭Socket_5V //传输板上插GPRS模块时掉电
-		break;
-		case SDCARD_Power_On:
-			P4OUT |= BIT0;	    //打开sd卡_3V3
-		break;
-		case SDCARD_Power_Off:
-			P4OUT &=~BIT0;	    //关闭sd卡_3V3
-		break;
-		case GPS_Power_On:
-			P4OUT |= BIT1;
-		break;
-		case GPS_Power_Off:
-			P4OUT &=~BIT1;	    //关闭sd卡_3V3
-		break;
-		case SenSor_Power_On:
-			P4OUT |= BIT2;      //打开Sensor_3V3         //485芯片上电
-			P3OUT |= BIT2;	    //打开传感板上5V总电压 //传感器接口5V总电压上电
-			P6OUT |= BIT2;	    //打开传感板上12V总电压 //传感器接口12V总电压上电
-			P1OUT |= BIT4;	    //打开传感板上12V_1 //1,2传感器接口12V上电
-			P1OUT |= BIT5;	    //打开传感板上12V_2 //3,4传感器接口12V上电
-			P6OUT |= BIT6;	    //打开传感板上12V_3 //5,6传感器接口12V上电
-			P1OUT |= BIT3;	    //打开传感板上5V_1 //1,2传感器接口5V上电
-			P6OUT |= BIT4;	    //打开传感板上5V_2 //3,4传感器接口5V上电
-			P6OUT |= BIT5;	    //打开传感板上5V_3 //5,6传感器接口5V上电	  
-		break;
-		case SenSor_Power_Off:
-			P4OUT &=~BIT2;      //关闭Sensor_3V3         //485芯片掉电
-			P3OUT &=~BIT2;	 	//关闭传感板上5V总电压 //传感器接口5V总电压掉电
-			P6OUT &=~BIT2;	 	//关闭传感板上12V总电压 //传感器接口12V总电压掉电
-			P1OUT &=~BIT4; 		//关闭传感板上12V_1 //1,2传感器接口12V掉电
-			P1OUT &=~BIT5; 		//关闭传感板上12V_2 //3,4传感器接口12V掉电
-			P6OUT &=~BIT6; 		//关闭传感板上12V_3 //5,6传感器接口12V掉电
-			P1OUT &=~BIT3; 		//关闭传感板上5V_1 //1,2传感器接口5V掉电
-			P6OUT &=~BIT4; 		//关闭传感板上5V_2 //3,4传感器接口5V掉电
-			P6OUT &=~BIT5; 		//关闭传感板上5V_3 //5,6传感器接口5V掉电
-		break;
-		case Motor_Power_On:
-			P6OUT |= BIT3;	    //打开传感板上电机 //传感器接口电机上电
-		break;
-		case Motor_Power_Off:
-			P6OUT &=~BIT3;	 	//关闭传感板上电机 //传感器接口电机掉电
-		break;
+			Base_12V_OFF;           //12V总电源  掉电
+			Base_5V_OFF;            //5V总电源   掉电
+			break;
+		case BaseBoard_12V_Power_On:
+			Base_12V_ON;            //12V总电源  上电
+			break;
+		case BaseBoard_12V_Power_Off:
+			Base_12V_OFF;           //12V总电源  掉电
+			break;
+		case BaseBoard_5V_Power_On:
+			Base_5V_ON;             //5V总电源   上电
+			break;
+		case BaseBoard_5V_Power_Off:
+			Base_5V_OFF;            //5V总电源   掉电
+			break;
+		case Sensor_Power_On:
+            Sensor_12V_1_ON;	    //传感器电源接口1_12V 上电
+			Sensor_12V_2_ON;        //传感器电源接口2_12V 上电
+			Sensor_5V_1_ON;         //传感器电源接口1_5V  上电
+			Sensor_5V_2_ON;         //传感器电源接口2_5V  上电
+			break;
+		case Sensor_Power1_On:
+            Sensor_12V_1_ON;	    //传感器电源接口1_12V 上电
+			Sensor_5V_1_ON;         //传感器电源接口1_5V  上电
+			break;
+		case Sensor_Power2_On:
+			Sensor_12V_2_ON;        //传感器电源接口2_12V 上电
+			Sensor_5V_2_ON;         //传感器电源接口2_5V  上电
+			break;			
+		case Sensor_Power_Off:
+			Sensor_12V_1_OFF;       //传感器电源接口1_12V 掉电
+			Sensor_12V_2_OFF;       //传感器电源接口2_12V 掉电
+			Sensor_5V_1_OFF;        //传感器电源接口1_5V  掉电
+			Sensor_5V_2_OFF;        //传感器电源接口2_5V  掉电
+			break;
+		case Sensor_Power1_Off:
+			Sensor_12V_1_OFF;       //传感器电源接口1_12V 掉电
+			Sensor_5V_1_OFF;        //传感器电源接口1_5V  掉电
+			break;
+		case Sensor_Power2_Off:
+			Sensor_12V_2_OFF;       //传感器电源接口2_12V 掉电
+			Sensor_5V_2_OFF;        //传感器电源接口2_5V  掉电
+			break;					
 		case AIR202_Power_On:
-			P2OUT |= BIT4;	    //打开传感板上电机 //传感器接口电机上电
+			Transmit_5V_OFF;	    //通信模块5V电源    掉电
+			Transmit_HighPower;
 			hal_Delay_sec(2);
-			P2OUT &=~BIT4; 
 			g_Printf_info("%s AIR202 On\r\n",__func__);
-		break;
+			Transmit_5V_ON;         //通信模块5V电源    上电
+			Transmit_LowPower;      //模块保持2s以上低电平开机，再保持1.5s以上低电平关机
+			OSTimeDly(1500);        //节拍2ms
+			Transmit_HighPower;
+			break;
 		case AIR202_Power_Off:
-			P2OUT &=~BIT4; 		//关闭传感板上电机 //传感器接口电机掉电
-		break;
+			Transmit_5V_OFF;	    //通信模块5V电源    掉电
+			break;
+		case SIM800C_Power_On:
+			Transmit_5V_ON;	        //通信模块5V电源    上电
+			break;
+		case SIM800C_Power_Off:
+			Transmit_5V_OFF;	    //通信模块5V电源    掉电
+			break;
+		case LPModule_Power_On:
+			P2SEL &=~ (BIT3 + BIT4);//1:复用功能  0：普通功能     
+		    P2DIR &=~ BIT3;         //1:输出模式  0：输入模式     NB震铃端口
+			P2DIR |= BIT4;          //1:输出模式  0：输入模式     NB复位端口
+			P2OUT |= BIT4;          //1:输出为高  0：输出为低     NB复位端口输出为高
+			Transmit_3V3_ON;	    //通信模块3V3电源   上电
+			break;
+		case LPModule_Power_Off:
+			Transmit_3V3_OFF;	    //通信模块3V3电源   掉电
+			break;
+		case GPS_Power_On:
+			Socket_3V3_ON;	        //GPS模块3V3电源    上电
+			break;
+		case GPS_Power_Off:
+			Socket_3V3_OFF;	        //GPS模块3V3电源    掉电
+			break;
+		case Base3V3_Power_On:
+			Base_3V3_ON;	        //Base 3V3电源      上电
+			break;
+		case Base3V3_Power_Off:
+			Base_3V3_OFF;	        //Base 3V3电源      掉电
+			break;
+		case SDCard_Power_On:
+			Base_3V3_ON;	        //SD卡3V3电源       上电
+			// OSTimeDly(500);
+			break;
+		case SDCard_Power_Off:
+			Base_3V3_OFF;	        //SD卡3V3电源       掉电
+			break;
+		case Max485_Power_On:
+			Base_3V3_ON;	        //485芯片3V3电源    上电
+			break;
+		case Max485_Power_Off:
+			Base_3V3_OFF;	        //485芯片3V3电源     掉电
+			break;
+		case Motor_Power_On:
+			break;
+		case Motor_Power_Off:
+			break;
 	}
 }
 
@@ -167,7 +206,7 @@ void g_Device_IO_Init(void)
 	P1OUT = 0x00;
 	P1DIR = 0xFF;
 	P2OUT = 0x00;
-	P2DIR = 0xFF;
+	P2DIR = 0xF7;	//P2.3设置为输入，连接NB模块的RI
 	P3OUT = 0x00;
 	P3DIR = 0xFF;
 	P4OUT = 0x00;
@@ -177,30 +216,30 @@ void g_Device_IO_Init(void)
 	P6OUT = 0x00;
 	P6DIR = 0xFF;
 
+	/******************打开指示灯************************/
 	LED_ON;//打开指示灯
-
-	//**************485控制预定义***************************//
+	/******************485控制预定义********************/
 	Recive_485_Enable;	  	    //485传感器接收使能
-	Out485_Recive_Enable;  	    //485配件接收使能
-	/*********************输入端口IO配置*******************/
-	P6DIR &=~ (BIT0+BIT1); //IO口方式选择，1:输出模式  0：输入模式                 AD0-BAT   AD1-TEMP
-
+	// Out485_Recive_Enable;  	    //485配件接收使能
+	/******************输入端口IO配置*******************/
+	P6DIR &=~ (BIT0+BIT1); //IO口方式选择，1:输出模式  0：输入模式          AD0-BAT   AD1-TEMP
+	/******************禁止传感器电量采集******************/
+	ScadaBAT_OFF;
     /*********************关掉无用的电源*******************/
-	//*******主板电源******//
-	Power(LPModule_Power_Off);	        //关闭Socket_3V3        //传输板上插LoRa，NB模块时掉电
-	Power(GPRS_Power_Off);      		//关闭Socket_5V         //传输板上插GPRS模块时掉电
-	Power(SDCARD_Power_Off);	        //关闭sd卡_3V3
-	Power(GPS_Power_Off);          		//关闭GPS_3V3
-	//******传感板电源*****//
-	Power(SenSor_Power_Off);    		//关闭所有传感器电源
-	Power(Motor_Power_Off);      		//关闭传感板上电机                       //传感器接口电机掉电
-	Power(AIR202_Power_Off);
+	Power(BaseBoard_Power_Off);	        
+	Power(Sensor_Power_Off);      		
+	Power(AIR202_Power_Off);	 
+	Power(LPModule_Power_Off);	    
+	Power(SDCard_Power_Off);      
+	Power(Motor_Power_Off);    	
 	/*********************打开需要用到的电源****************/
-	Power(SDCARD_Power_On);            	//打开sd卡_3V3
-	
+	Power(SDCard_Power_On);         
+
 
 	OSBsp.Device.IOControl.PowerSet = Power;
-	OSBsp.Device.IOControl.ResetWirelesModule = ResetWirelesModule;
+
+	// P2REN |= BIT2;
+	// OSBsp.Device.IOControl.ResetWirelesModule = ResetWirelesModule;
 }
 
 

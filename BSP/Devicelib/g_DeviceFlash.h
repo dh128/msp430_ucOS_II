@@ -10,6 +10,8 @@
 #define infor_BootAddr		0x1800
 #define infor_ChargeAddr	0x1900
 
+extern uint8_t infor_ChargeAddrBuff[32];
+
 //inforFLASH存储分布
 /**************************************************************************************************
  *   Boot 	 Vision |

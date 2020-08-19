@@ -1,0 +1,16 @@
+{
+    "files.associations": {
+        "bsp.h": "c",
+        "hal_layer_api.h": "c",
+        "hal_pmm.h": "c",
+        "hal_tlv.h": "c",
+        "g_deviceprintf.h": "c",
+        "hal_device.h": "c",
+        "g_devicespiflash.h": "c",
+        "g_deviceflash.h": "c",
+        "fatfs.h": "c",
+        "diskio.h": "c",
+        "g_devicesdmmc.h": "c",
+        "g_devicesd.h": "c"
+    }
+}

@@ -52,10 +52,11 @@
 
 
 #define  OS_TASK_TMR_PRIO            (OS_LOWEST_PRIO - 4)
-#define  UART_REC_TASK_TASK_PRIO      8
-#define  SCADA_TASK_TASK_PRIO         7
-#define  TRANSMIT_TASK_TASK_PRIO      6
-#define  MANAGER_TASK_TASK_PRIO       5
+#define  UART_REC_TASK_TASK_PRIO      9
+#define  SCADA_TASK_TASK_PRIO         8
+#define  TRANSMIT_TASK_TASK_PRIO      7
+#define  MANAGER_TASK_TASK_PRIO       6
+#define  WTD_TASK_PRIO                5
 
 #define  LOWEST_TASK_PRIO             15
 /*
@@ -81,9 +82,11 @@
 #define  TRACE_LEVEL_ERR                                3u
 #define  TRACE_LEVEL_DBG                                4u
 
+// #define  APP_CFG_TRACE_LEVEL                            TRACE_LEVEL_INFO
 #define  APP_CFG_TRACE_LEVEL                            TRACE_LEVEL_DBG
 
 
+#define NO_LOWPER_PERIOD 3
 
 
 #endif

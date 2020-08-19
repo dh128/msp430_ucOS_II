@@ -210,7 +210,7 @@ OSIntCtxSw:
 ;********************************************************************************************************
 ;                                              TICK ISR
 ;
-; Description: This ISR handles tick interrupts.  This ISR uses the Watchdog timer as the tick source.
+; Description: This ISR handles tick interrupts.  This ISR uses the timerB0 as the tick source.
 ;
 ; Notes      : 1) The following C pseudo-code describes the operations being performed in the code below.
 ;
@@ -258,10 +258,11 @@ OSIntCtxSw:
 
     .sect  ".text:_isr"                 ; place this function in the ISR section
     .asmfunc
-OSTickISR:                              ; wd timer ISR
+OSTickISR:                              ; timerB0 ISR
     PUSHM.A     #12, R15
 
-    BIC.W       #0x01, &SFRIE1          ; disable wd timer interrupt
+;    BIC.W       #0x01, &SFRIE1          ; disable wd timer interrupt
+    BIC.W 		#CCIE, TBCCTL0 ;        ; disable timerB0 interrupt
 
     CMP.B       #0, &OSIntNesting       ; if (OSIntNesting == 0)
     JNE         OSTickISR1
@@ -274,7 +275,9 @@ OSTickISR:                              ; wd timer ISR
 OSTickISR1:
     INC.B       &OSIntNesting           ; increase OSIntNesting
     
-    BIS.W       #0x01, &SFRIE1          ; enable wd timer interrupt    NOP
+;    BIS.W       #0x01, &SFRIE1          ; enable wd timer interrupt
+    BIS.W #CCIE, TBCCTL0                ; enable timerB0 interrupt
+    NOP
 
     EINT                                ; enable general interrupt to allow for interrupt nesting
     NOP
@@ -300,12 +303,12 @@ OSTickISR2:
 
 
 ;********************************************************************************************************
-;                                 WD TIMER INTERRUPT VECTOR ENTRY
+;                                 TIMERB0 INTERRUPT VECTOR ENTRY
 ;
 ; Interrupt vectors
 ;********************************************************************************************************
 
-    .sect   WDT_VECTOR
-    .short  OSTickISR                   ; interrupt vector. Watchdog/Timer, Timer mode
+    .sect   TIMERB0_VECTOR
+    .short  OSTickISR                   ; interrupt vector. TimerB0, Timer mode
 
     .end

@@ -4,32 +4,68 @@
 #include <stdint.h>
 #include <hal_device.h>
 
+enum DEVICE_STATUS_FIRSTRUN {
+	DEVICE_STATUS_FIRSTRUN_BEGIN = 0x01, 
+	DEVICE_STATUS_FIRSTRUN_OVER = 0x02
+};
 
 enum DEVICE_STATUS_e {
 	DEVICE_STATUS_POWER_OFF = 0x01, 
 	DEVICE_STATUS_POWER_SCANNING = 0x02,
 	DEVICE_STATUS_POWER_SCAN_OVER = 0x03,
+	DEVICE_STATUS_POWER_IDLE = 0x04
 };
 
-typedef struct
-{
-	uint8_t  Second;
-	uint8_t  Minute;
-	uint8_t  Hour;
-	uint8_t  Day;
-	uint8_t  Week;
-	uint8_t  Month;
-	uint32_t Year;
-}RtcStruct;
+enum SENSOR_STATUS_READFLASH {
+	SENSOR_STATUS_READFLASH_NOTYET = 0x01,           //未读取Flash中存储的传感器状态
+	SENSOR_STATUS_READFLASH_ALREADY = 0x02,          //准备好读取Flash中存储的传感器状态
+	SENSOR_STATUS_READFLASH_OK = 0x03               //成功读取Flash中存储的传感器状态
+};
+
+enum SENSOR_STATUS_WRITEFLASH {
+	SENSOR_STATUS_WRITEFLASH_NOTYET = 0x01,          //未写入Flash中存储的传感器状态
+	SENSOR_STATUS_WRITEFLASH_ALREADY = 0x02          //准备好写入Flash中存储的传感器状态
+};
+
+enum SENSOR_STATUS_WRITEFLASH_PRINTF {
+	SENSOR_STATUS_WRITEFLASH_PRINTF_ENABLE = 0x01,   //Flash中存储的传感器状态允许打印
+	SENSOR_STATUS_WRITEFLASH_PRINTF_DISABLE = 0x02   //Flash中存储的传感器状态不允许打印
+};
+
+enum AUTOMATIC_TIME_STATUS {
+	AUTOMATIC_TIME_ENABLE = 0x01,     //允许同步时间
+	AUTOMATIC_TIME_DISABLE = 0x02     //禁止同步时间
+};
+
+enum RAINGAUGE_SCADA_STATUS {
+	RAINGAUGE_SCADA_ENABLE = 0x01,     //允许采集雨量
+	RAINGAUGE_SCADA_DISABLE = 0x02     //禁止采集雨量
+};
+
+// typedef struct
+// {
+// 	uint8_t  Second;
+// 	uint8_t  Minute;
+// 	uint8_t  Hour;
+// 	uint8_t  Day;
+// 	uint8_t  Week;
+// 	uint8_t  Month;
+// 	uint32_t Year;
+// }RtcStruct;
 
 typedef struct
 {
+	char DeviceFirstRunStatus;          //设备首次运行状态
+	char AutomaticTimeStatus;           //同步时间状态
+
 	double    Longitude;                //地理位置经度
 	double    Latitude;                 //地理位置纬度
 	double    Altitude;                 //海拔高度
 //	float    Longitude;                //地理位置经度
 //	float    Latitude;                 //地理位置纬度
 //	float    Altitude;                 //海拔高度
+
+	uint32_t ReviseSimulationCode;      //传感器修正仿真编码
 
 	uint32_t SerialNumber;              //SN
 	uint32_t PD;
@@ -42,7 +78,15 @@ typedef struct
 	float    BATVoltage;                //电池电压   //2.75-4.2V
 	uint16_t LoraDeveui;				//LoRa Deveui
 
+	char SensorFlashReadStatus;         //传感器Flash读取存储状态
+	char SensorFlashWriteStatus;        //传感器Flash写入存储状态
+	char SensorFlashWriteStatusPrintf;  //传感器Flash写入存储状态
 	uint16_t SensorStatus;              //传感器状态
+	uint16_t SensorFlashStatus;         //传感器Flash存储状态
+	uint16_t SensorStatusSimulation;    //传感器数据模拟状态
+	uint16_t SensorStatusSimulation_Old; //传感器数据上一组模拟状态
+
+
 	char DeviceStatus;
 	char ProductKey[32];
 	char DeviceName[32];
@@ -59,13 +103,27 @@ typedef struct
 
 	char 	 *nIP;				 //如涉及IP地址
 	char 	 *nPort;			 //如涉及Port
+	uint8_t  GPRSTime;           //GPRS网络时间状态
 	uint8_t  GPRSNet;            //GPRS网络信号状态
 	uint8_t  GPRSAttached;       //GPRS网络附着状态
 	uint8_t  GPRSConnect;        //GPRS网络TCP连接状态
 	char GPRSStatus;
 	char GPRSATStatus;
 	uint32_t Http_Cid;
+	uint32_t Ftp_Cid;
+
+	float    RSRP;
+	float    SINR;
+	uint16_t PCI;
+	uint16_t ECL;
+	uint32_t CELLID;
+	uint8_t	 NBStatus;			//NB模组运行状态
+	uint8_t  NBNet;				//NB网络标志位
+	uint8_t  NBSendStatus;		//NB发送状态，发送后以OK位判断，收到OK即发送成功
 	uint8_t  LoRaJoinNET;        //LoRa入网状态
+	uint8_t  LoRaStatus;		//LoRa模组运行状态
+	uint8_t  LoRaNet;			//LoRa网络状态
+	uint8_t	 LoRaSendStatus;	//LoRa发送状态，确认帧使用，发送数据收到ACK后置1
 
 	float GPSLng_Point;          //GPS经度
 	float GPSLat_Point;          //GPS纬度
@@ -81,8 +139,8 @@ typedef struct
 
 typedef struct
 {
-	float Temperature;		     //室外温度         -40~60.0       ℃
-	float Humidity;				 //室外湿度          0~100.0    %
+	float Temperature;		     //室外温度             -40~60.0       ℃
+	float Humidity;				 //室外湿度             0~100.0    %
 	float WindSpeed;			 //风速                 0~30.0     m/s
 	int   WindDirection;		 //风向                 0~360      °
 	uint16_t PM25;			     //PM2.5     0~6000     ug/m3
@@ -92,20 +150,22 @@ typedef struct
 
 typedef struct
 {
-	float WindSpeed;			 //风速                 0~30.0    m/s
-	int   WindDirection;		 //风向                 0~360     °
-	float Temperature;		     //室外温度         -40~60.0      ℃
-	float Humidity;				 //室外湿度          0~100.0   %
-	float PM25;			         //PM2.5     0~6000    ug/m3
-	float PM10;			      	 //PM10      0~6000    ug/m3
-	uint32_t Illumination;       //光照                 0~200000  Lux
-	float AirPressure;           //大气压
-	float RainGauge;             //雨量                  0~4.0     mm/min
-	float Radiation;             //总辐射              0~2000    W/m2
+	char      RainGaugeScadaStatus;
+	float WindSpeed;			 //风速                  0~30.0    m/s
+	int   WindDirection;		 //风向                  0~360     °
+	float     AirTemperature;		 //室外温度             -40~60.0    ℃
+	float     AirHumidity;		     //室外湿度              0~100.0    %
+	float     AirPressure;           //大气压
+	float     RainGauge;             //雨量                  0~4.0     mm/min
+	float PM25;			         //PM2.5     0~6000     ug/m3
+	float PM10;			      	 //PM10      0~6000     ug/m3
+	uint32_t Illumination;       //光照                  0~200000  Lux
+	uint16_t  Radiation;             //总辐射                 0~2000    W/m2
 }MeteorologyPlatform;//气象检测平台
 
 typedef struct
 {
+	char  RainGaugeScadaStatus;
 	float RainGauge;             //雨量                  0~4.0     mm/min
 	uint16_t LVValue;            //液位
 }WRainPlatform;       //水雨情监测平台
@@ -113,25 +173,25 @@ typedef struct
 typedef struct
 {
 	float CODValue;
-	int16_t ORPValue;
-	float TemValue;
+	uint16_t ECValue;
 	float DoPercent;
 	float DOValue;
 	float DORealValue;
 	float NH4Value;
+	float    WaterTemp;
+	int16_t ORPValue;
 	float ZSValue;
 	float PHValue;
-	uint16_t ECValue;
-	uint16_t LVValue;
 	float CHLValue; //叶绿素
+	uint16_t LVValue;
 }WaterPlatform;       //水质监测平台
 
 typedef struct
 {
 	float SoilTemp;				 //土壤温度                -40~80.00   ℃
-	float SoilHum;		         //土壤水分（湿度）   0~80.00   %
-	uint16_t SoilConductivity;	 //土壤电导率              0~20000   us/cm
-	float SoilPH;			     //土壤PH        0~14.00   PH
+	float SoilHum;		         //土壤水分（湿度）        0~100.00   %
+	uint16_t SoilCond;	         //土壤电导率              0~20000   us/cm  SoilConductivity
+	float SoilPH;			     //土壤PH                 0~14.00   PH
 }SoilPlatform;   //土壤检测平台
 
 typedef struct
@@ -192,21 +252,21 @@ typedef struct
 {
 	float Temperature;		     //室外温度         -40~60.0      ℃
 	float Humidity;				 //室外湿度          0~100.0   %
-	uint32_t Illumination;       //光照                        0~200000  Lux
-	float H2S;			         //H2S       0~30.0   ppm
-	float NH3;		             //NH3       0~30.0   ppm
+	uint32_t Illumination;       //光照             0~200000  Lux
+	float H2S;			         //H2S              0~30.0   ppm
+	float NH3;		             //NH3              0~30.0   ppm
 }NoxiousGasPlatform;      //有害气体监测平台
 
 typedef struct
 {
-	float Temperature;		     //室外温度                 -40~60.0      ℃
-	float Humidity;				 //室外湿度                 0~100.0   %
-	uint32_t Illumination;       //光照                        0~200000  Lux
+	float Temperature;		     //室外温度                -40~60.0      ℃
+	float Humidity;				 //室外湿度                0~100.0   %
+	uint32_t Illumination;       //光照                    0~200000  Lux
 	float SoilTemp;				 //土壤温度                -20~80.00    ℃
-	float SoilHum;		         //土壤水分（湿度）   0~100.00   %
+	float SoilHum;		         //土壤水分（湿度）         0~100.00   %
 	uint16_t SoilConductivity;	 //土壤电导率              0~20000   us/cm
-	uint16_t CO2;		         //CO2          0~5000    ppm
-}WetherSoilPlatform;      //气象土壤监测平台
+	uint16_t CO2;		         //CO2                    0~5000    ppm
+}WeatherSoilPlatform;             //气象土壤监测平台
 
 typedef struct
 {
@@ -218,7 +278,7 @@ typedef struct
 	float SoilTemp;				 //土壤温度                -20~80.00    ℃
 	float SoilHum;		         //土壤水分（湿度）   0~100.00   %
 	uint16_t SoilConductivity;	 //土壤电导率              0~20000   us/cm
-}PlantingPlatform;         //农作种植环境监测平台
+}PlantingPlatform;               //农作种植环境监测平台
 
 typedef struct
 {
@@ -241,24 +301,36 @@ typedef struct
 typedef struct
 {
 	float Temperature;		     //水温          0~50.00         ℃
-	float CL;		             //氯离子      0~10000.00    ℃    正常在200以下
+	float CL;		             //氯离子        0~10000.00      ℃    正常在200以下
 }CLCupboardPlatform;             //氯离子柜式监测站
+
+typedef struct
+{
+	char ip[16];		     
+	uint32_t port;
+	char username[32];		
+	char password[32];  
+	char imgpath[32];
+	char imgname[32];
+	uint32_t imgversion;                
+}Fota_Info;             
 
 typedef struct
 {
     TerminalPlatform           TerminalInfoData;
     TransMethodPlatform        TransMethodData;
-
+	Fota_Info                  FotaInfor;
 #if (PRODUCT_TYPE == Voc_Station) 
     VOCPlatform                VOCData;
 #elif (PRODUCT_TYPE == Dust_Station) 
     DustPlatform               DustData;
 #elif (PRODUCT_TYPE == WRain_Station) 
     WRainPlatform              WRainData;
-#endif
-    MeteorologyPlatform        MeteorologyData;
-	WaterPlatform			   WaterData;
-#if (PRODUCT_TYPE == Soil_Station) 
+#elif (PRODUCT_TYPE == Weather_Station) 
+	MeteorologyPlatform        MeteorologyData;
+#elif (PRODUCT_TYPE == Water_Station) 
+    WaterPlatform			   WaterData;	
+#elif (PRODUCT_TYPE == Soil_Station) 
 	SoilPlatform               SoilData;
 #elif (PRODUCT_TYPE == Agriculture_Station) 
 	AgriculturePlatform        AgricultureData;
@@ -275,7 +347,7 @@ typedef struct
 	InputmodeWellPlatform      InputmodeWellData;
 
 	NoxiousGasPlatform         NoxiousGasData;
-	WetherSoilPlatform         WetherSoilData;
+	WeatherSoilPlatform        WeatherSoilData;
 
 	PlantingPlatform           PlantingData;
 	LevelFlowratePlatform      LevelFlowrateData;
@@ -284,7 +356,7 @@ typedef struct
 	CLCupboardPlatform         CLCupboardData;
 
 //  以下为系统保留数据，系统层直接使用
-    RtcStruct Rtc;
+    // RtcStruct                  RtcData;
 
 
 }DataStruct;
@@ -305,10 +377,15 @@ extern DataStruct *AppDataPointer;
 extern uint32_t SensorCahe;
 extern uint32_t sSensorCahe;
 
+// extern uint8_t Send_Buffer[34];
+// extern uint32_t Send_Buffer[34];
+extern uint32_t Send_Buffer[60];
+
 void InqureSensor(void);
 char *MakeJsonBodyData(DataStruct *DataPointer);
 void ScadaData_base_Init();
 void Terminal_Para_Init(void);
+void Teminal_Data_Init(void);
 
 #endif
 
