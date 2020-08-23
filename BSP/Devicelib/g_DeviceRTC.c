@@ -467,11 +467,11 @@ __interrupt void RTC_ISR(void)
 				{
 					g_MinuteTimeTick = 0;
 					g_HourTimeTick ++;
+					App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
 					if(g_HourTimeTick == 24)//TEST
 					{
 						g_HourTimeTick = 0;
 						App.Data.TransMethodData.SeqNumber = 0;
-						App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
 						//复位前把模块电源控制都关闭
 						#if (TRANSMIT_TYPE == GPRS_Mode)
 							OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);

@@ -143,3 +143,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2、NB升级前判断电量是否大于50%，信号信噪比是否大于0，不符合条件的不更新；
 3、NB升级过程中读取写入Flash数据，发现数据写入异常则停止升级操作；
 
+2020-8-23	dingh
+1、修改校时周期为1小时。
+
