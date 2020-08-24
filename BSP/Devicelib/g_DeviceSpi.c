@@ -98,7 +98,7 @@ void g_Device_SPI2_Init(void)
 	                                        	//UCCKPH(SD CARD需要在上升沿读写数据且UCCKPL==0）
 												//8位数据SPI主机，不活动状态为高电平，高位在前
 	UCB2CTL1 |= UCSSEL__SMCLK;                  //选择参考时钟为SCMLK=16MHz
-	UCB2BR0 = 6;								//6分频
+	UCB2BR0 = 8;								//8分频==2M
 	UCB2BR1 = 0;
 	UCB2CTL1 &= ~UCSWRST;						//完成寄存器设置
 	//UCB2IE |= UCRXIE;							//使能中断

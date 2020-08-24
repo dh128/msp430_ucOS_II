@@ -146,3 +146,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2020-8-23	dingh
 1、修改校时周期为1小时。
 
+2020-8-24	dingh
+1、修改SPI时钟为2M；
+2、升级下载完成后输出code,等待10s,然后重启。

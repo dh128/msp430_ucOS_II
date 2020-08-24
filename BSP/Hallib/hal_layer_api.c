@@ -628,7 +628,17 @@ uint8_t Hal_getFullFlag(void)
     g_Printf_info("%s %d\n",__func__,temp);
     return (uint8_t)temp;
 }
-
+void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num)
+{
+    uint16_t j;
+    uint32_t result = *sum;
+    for(j=0;j<num;j++)
+    {
+      result += *data;
+      data ++;
+    }
+    *sum = result & 0xff;
+}
 #ifdef AIR202
 int Hal_getProductKey(char *produckey)
 {

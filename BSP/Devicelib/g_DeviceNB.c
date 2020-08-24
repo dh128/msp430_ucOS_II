@@ -76,7 +76,7 @@ uint8_t reportCommand[63]="AT+NMGS=25,FFFE0113164700110056322E313000000000000000
 uint8_t getCommand[65]="AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n";
 unsigned char Receive_data[1024]={0};
 
-static long addr_write = FOTA_ADDR_START;
+long addr_write = FOTA_ADDR_START;
 unsigned long readAddr = 0;     //SPI_Flash 读写地址
 // static unsigned char ECL_data=0;
 
@@ -638,7 +638,8 @@ void GetCode(int num)
 {
 	uint16_t temp1=0;	
 	uint16_t ii = 0;
-	
+	// long m = 0;
+	// uint32_t sumTemp = 0;
 	if(num < fota.PackageLen)	//分包获取数据包
 	{
 		//CRC
@@ -659,7 +660,31 @@ void GetCode(int num)
 	}
 	else		//上报下载完成
 	{
-		User_Printf("AT+NMGS=9,FFFE0116850E000100\r\n");
+		//重新上电flash，读取校验
+		// W25Q16_OFF;
+		// hal_Delay_sec(1);
+		// W25Q16_ON;
+		// hal_Delay_ms(200);
+		// W25Q16_Init();
+		// hal_Delay_ms(200);
+		// sumTemp = 0;
+		// for(m=FOTA_ADDR_START;m<addr_write;m++)
+		// {
+		// 	sumTemp += SPI_Flash_ReadByte(m);
+		// 	// sumTemp &= 0x00FF;
+		// }	
+		// if((sumTemp & 0xFF) == fota.CheckSum){
+		// 	g_Printf_dbg("Check code OK\r\n");
+			User_Printf("AT+NMGS=9,FFFE0116850E000100\r\n");
+		// }else{			
+		// 	g_Printf_dbg("Check code Err,checkSum=%x,sumTemp=%x\r\n",fota.CheckSum,sumTemp);
+		// 	for(m=FOTA_ADDR_START;m<addr_write;m++)		//输出错误固件查看
+		// 	{
+		// 		OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
+		// 	}	
+		// 	ReportUpErr(0x16, CheckErr);
+		// 	NB_Fota = 0;
+		// }
 	}
 }
 /*******************************************************************************
@@ -792,7 +817,8 @@ void ProcessPCP(unsigned char *p)
 			addTemp = addr_write;
 			fota.PackageNum ++;
 			/*文件和校验*/
-			//
+			// Hal_calcFileSum(&fota.CheckSum, PCPData+11, length);
+			//固件写入
 			for(m=0;m<length;m++)
 			{
 				SPI_Flash_Write_Data(PCPData[m+11],addr_write++);
@@ -806,8 +832,12 @@ void ProcessPCP(unsigned char *p)
 				}
 			}
 			if(m < length){		//校验错误
-				g_Printf_info("package check error\r\n");
+				g_Printf_info("package check error m= %d,addr=%ld,checkaddr=%ld\r\n",m,addr_write,addTemp);
 				ReportUpErr(0x16, CheckErr);
+				for(m=FOTA_ADDR_START;m<addr_write;m++)		//输出错误固件查看
+				{
+					OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
+				}	
 				NB_Fota = 0;
 				break;
 			}
@@ -829,7 +859,6 @@ void ProcessPCP(unsigned char *p)
 		g_Printf_info("get 0x17 command\r\n");
 		fota.PackageNum = 0;		//结束下载，清零计数
 		User_Printf("AT+NMGS=9,FFFE0117B725000100\r\n");
-		// OSTimeDly(500);		//上报升级成功
 		hal_Delay_sec(1);
 		//CRC
 		report[3]= 0x18;
@@ -872,10 +901,13 @@ void ProcessPCP(unsigned char *p)
 				Flash_Tmp[1] = (uint8_t)fota.newVersion;
 				OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 2, infor_BootAddr, 0);
 				hal_Delay_ms(10);
-				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == fota.newVersion)
+				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == fota.newVersion){
+					// W25Q16_OFF;		//SPI断电
+					hal_Delay_sec(10);
 					hal_Reboot();			//重启MCU
-				else
+				}else{
 					goto loop8;	
+				}
 		}
 		else
 		{

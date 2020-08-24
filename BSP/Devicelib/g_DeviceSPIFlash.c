@@ -190,7 +190,7 @@ void SPI_Flash_Write_Page(uint8_t* pBuffer,long WriteAddr,uint16_t NumByteToWrit
 		OSBsp.Device.Spi2.WriteReadData(pBuffer[i]);//循环写数
 	}
 	W25Q16_CS_HIGH();                                            //取消片选
-	hal_Delay_ms(5);											//等待写数据完成3-5ms
+	// hal_Delay_ms(5);											//等待写数据完成3-5ms
 	SPI_Flash_Wait_Busy();					                             //等待写入结束
 }
 
