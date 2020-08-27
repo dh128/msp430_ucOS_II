@@ -96,9 +96,9 @@ void SPI_Flash_Wait_Busy(void)
 void SPI_FLASH_Write_Enable(void)
 {
 	W25Q16_CS_LOW();                             //使能器件
-	hal_Delay_us(10);
+	// hal_Delay_us(10);
 	OSBsp.Device.Spi2.WriteReadData(W25X_WriteEnable);        //发送写使能
-	hal_Delay_us(10);
+	// hal_Delay_us(10);
 	W25Q16_CS_HIGH();                            //取消片选
 }
 
@@ -181,14 +181,19 @@ void SPI_Flash_Write_Page(uint8_t* pBuffer,long WriteAddr,uint16_t NumByteToWrit
  	uint16_t i;
   	SPI_FLASH_Write_Enable();                                   //SET WEL
 	W25Q16_CS_LOW();                                            //使能器件
+	// hal_Delay_us(10);
 	OSBsp.Device.Spi2.WriteReadData(W25X_PageProgram);                       //发送写页命令
 	OSBsp.Device.Spi2.WriteReadData((uint8_t)((WriteAddr)>>16));                  //发送24bit地址
 	OSBsp.Device.Spi2.WriteReadData((uint8_t)((WriteAddr)>>8));
-	OSBsp.Device.Spi2.WriteReadData((uint8_t)WriteAddr);
-	for(i=0;i<NumByteToWrite;i++) 
-	{
-		OSBsp.Device.Spi2.WriteReadData(pBuffer[i]);//循环写数
-	}
+	if(NumByteToWrite == 256)
+		OSBsp.Device.Spi2.WriteReadData(0);
+	else
+		OSBsp.Device.Spi2.WriteReadData((uint8_t)WriteAddr);
+	OSBsp.Device.Spi2.WriteNData(pBuffer,NumByteToWrite);
+	// for(i=0;i<NumByteToWrite;i++) 
+	// {
+	// 	OSBsp.Device.Spi2.WriteReadData(pBuffer[i]);//循环写数
+	// }
 	W25Q16_CS_HIGH();                                            //取消片选
 	// hal_Delay_ms(5);											//等待写数据完成3-5ms
 	SPI_Flash_Wait_Busy();					                             //等待写入结束
@@ -208,6 +213,10 @@ void SPI_Flash_Write_NoCheck(uint8_t * pbuf,long WriteAddr,uint16_t Len)
     if(Len<=PageLen) PageLen=Len; // 不大于256 个字节
     while(1)
     {
+		if(WriteAddr % 0x10000 == 0)
+			hal_Delay_sec(1);
+		else
+			hal_Delay_us(10);
         SPI_Flash_Write_Page(pbuf,WriteAddr,PageLen);
         if(PageLen==Len)break;   // 写入结束了
         else

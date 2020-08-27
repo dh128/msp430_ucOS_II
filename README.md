@@ -148,4 +148,11 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 
 2020-8-24	dingh
 1、修改SPI时钟为2M；
-2、升级下载完成后输出code,等待10s,然后重启。
+2、升级下载完成后输出code,等待10s,然后重启。、
+2020-8-25
+1、添加goto语句，检验SPI写入数据是否正常；
+2、升级过程中关闭其他电源；
+3、W25x16改用分页写；
+2020-8-27
+1、进低功耗前不修改串口配置，仅关闭串口中断；
+2、退出低功耗打开串口中断。

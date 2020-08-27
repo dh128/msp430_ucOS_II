@@ -754,9 +754,11 @@ void Hal_EnterLowPower_Mode(void)
 	P4DIR |= BIT4;
 #endif
     //关闭串口2，Debug口
-    P7SEL &= 0xFC;
-    P7OUT = 0x00;
-    P7DIR |= 0x03;
+    // P7SEL &= 0xFC;
+    // P7OUT = 0x00;
+    // P7DIR |= 0x03;
+    //关闭串口2 接收中断
+    UCA2IE &= ~UCRXIE;
     //关闭串口3接收中断
     UCA3IE &= ~UCRXIE;
     gManager.systemLowpower = 1;
@@ -841,7 +843,8 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     g_Device_Usart1_Init(9600);
 #endif
     TBCTL |= MC_1;     //start timerB
-    P7SEL |= BIT0+BIT1;
+    //P7SEL |= BIT0+BIT1;
+    UCA2IE |= UCRXIE;   //打开串口1 接收中断使能
     UCA3IE |= UCRXIE;   //打开串口3 接收中断使能
     g_Printf_info("Exit Low Power!\r\n");
 }

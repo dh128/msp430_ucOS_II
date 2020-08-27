@@ -77,7 +77,7 @@ uint8_t getCommand[65]="AT+NMGS=26,FFFE0115CFC0001231000000000000000000000000000
 unsigned char Receive_data[1024]={0};
 
 long addr_write = FOTA_ADDR_START;
-unsigned long readAddr = 0;     //SPI_Flash 读写地址
+// unsigned long readAddr = 0;     //SPI_Flash 读写地址
 // static unsigned char ECL_data=0;
 
 //static char TimeString[20] = "20170804 16:00:00";
@@ -722,12 +722,14 @@ void ProcessPCP(unsigned char *p)
 {
 	OS_CPU_SR   cpu_sr = 0u;
 	uint8_t PCPData[512];
+	uint8_t readData[512];
 	uint16_t CRCtemp;
 	long addTemp = 0;
 	uint16_t ret = 0;	
 	long ii;
 	long m;
-	long length;
+	uint8_t checkTimes = 0;
+	uint16_t length;
 	uint8_t TestData[3]={0};
 	uint8_t Flash_Tmp[3];					//flash操作中间变量
 	HexStrToByte(p,PCPData);
@@ -738,7 +740,7 @@ void ProcessPCP(unsigned char *p)
 		//version 获取
 		report[9]=App.Data.TerminalInfoData.Version/100 +0x30;
 		report[10]=App.Data.TerminalInfoData.Version%100/10 +0x30;
-		report[11]=(App.Data.TerminalInfoData.Version-1)%10 +0x30;	//测试用，否则固件版本相同
+		report[11]=(App.Data.TerminalInfoData.Version)%10 +0x30;	//测试用，否则固件版本相同
 		//CRC
 		report[3]= 0x13;
 		report[4] = report[5] = 0;
@@ -770,7 +772,10 @@ void ProcessPCP(unsigned char *p)
 		//获取总包数
 		fota.PackageLen = PCPData[26];
 		fota.PackageLen = fota.PackageLen*256 + PCPData[27];
-		Base_3V3_OFF;
+		//关闭其他电源
+		OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
+		OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
+		Base_3V3_ON;
 		W25Q16_ON;
 		OSTimeDly(100);
 		//擦除SPI
@@ -779,13 +784,14 @@ void ProcessPCP(unsigned char *p)
 		hal_Delay_ms(100);
 		// P4OUT |= BIT0;
 		W25Q16_Init();
-		readAddr = FOTA_ADDR_START;
+		addr_write = FOTA_ADDR_START;
 		for (ii=0;ii<6;ii++)
 		{
-			SPI_Flash_Erase_Block(readAddr);
-			readAddr += 0x10000;
+			SPI_Flash_Erase_Block(addr_write);
+			addr_write += 0x10000;
 		}
 		g_Printf_info("Erase SPI_Flash\r\n");
+		addr_write = FOTA_ADDR_START;
 		User_Printf("AT+NMGS=9,FFFE0114D768000100\r\n");		//允许升级
 		// System.Device.Timer.Stop(5);
 		// UpdateFlag = 1;
@@ -793,7 +799,7 @@ void ProcessPCP(unsigned char *p)
 		hal_Delay_ms(200);
 		if(App.Data.TerminalInfoData.PowerQuantity < 50){
 			ReportUpErr(0x14,LowPower);//上报错误
-		}else if(App.Data.TransMethodData.SINR < 0){
+		}else if(App.Data.TransMethodData.SINR < -5){
 			ReportUpErr(0x14,PoorSingal);//上报错误
 		}else{
 			NB_Fota = 1;
@@ -819,28 +825,36 @@ void ProcessPCP(unsigned char *p)
 			/*文件和校验*/
 			// Hal_calcFileSum(&fota.CheckSum, PCPData+11, length);
 			//固件写入
-			for(m=0;m<length;m++)
-			{
-				SPI_Flash_Write_Data(PCPData[m+11],addr_write++);
-			}
-			aRxNum = 0;
+			checkTimes = 0;
+check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 			//检查写入数据
+			// hal_Delay_ms(100);
+			SPI_Flash_Read(readData , addr_write , length);
 			for(m=0;m<length;m++)
 			{
-				if(PCPData[m+11] != SPI_Flash_ReadByte(addTemp++)){
+				if(PCPData[m+11] != readData[m]){
+					checkTimes ++;
 					break;
 				}
 			}
 			if(m < length){		//校验错误
+				if(checkTimes < 10){		//重复10次失败则放弃
+					hal_Delay_sec(2);
+					g_Printf_dbg("check again\r\n");
+					goto check;
+				}
 				g_Printf_info("package check error m= %d,addr=%ld,checkaddr=%ld\r\n",m,addr_write,addTemp);
 				ReportUpErr(0x16, CheckErr);
-				for(m=FOTA_ADDR_START;m<addr_write;m++)		//输出错误固件查看
+				for(m=FOTA_ADDR_START;m<(addr_write+500);m++)		//输出错误固件查看
 				{
 					OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
 				}	
 				NB_Fota = 0;
+				OS_EXIT_CRITICAL();		//break前退出临界态
 				break;
 			}
+			aRxNum = 0;
+			addr_write += length;
 			OS_EXIT_CRITICAL();
 			User_Printf("AT+NMGR\r\n");		//防止出现重复缓存
 			// OSTimeDly(100);
@@ -888,8 +902,27 @@ void ProcessPCP(unsigned char *p)
 			// d_t[m]=Read_Byte(m);
 			// OSBsp.Device.Usart2.WriteData(d_t[m]);
 			OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
+			hal_Delay_us(5);
 		}	
 		OS_EXIT_CRITICAL();
+		// Base_3V3_OFF;
+		
+		// OSTimeDly(10000);
+		// W25Q16_ON;
+		// OSTimeDly(100);
+		// //擦除SPI
+		// W25Q16_CS_HIGH();
+		// W25Q16_Init();
+		// g_Printf_info("%d version code printf one more:\r\n",fota.newVersion);
+		// OS_ENTER_CRITICAL();
+		// for(m=FOTA_ADDR_START;m<addr_write;m++)
+		// {
+		// 	// d_t[m]=Read_Byte(m);
+		// 	// OSBsp.Device.Usart2.WriteData(d_t[m]);
+		// 	OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
+		// 	hal_Delay_us(5);
+		// }	
+		// OS_EXIT_CRITICAL();
 		//判断存储数据头尾是否正确 然后配置启动标志位存放于infor_BootAddr
 		TestData[0] = SPI_Flash_ReadByte(addr_write-3);
 		TestData[1] = SPI_Flash_ReadByte(FOTA_ADDR_START+1);
