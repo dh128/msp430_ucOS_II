@@ -601,7 +601,7 @@ __interrupt void USCI_A2_ISR(void)
 		case 0:break;                             // Vector 0 - no interrupt
 		case 2:                                   // Vector 2 - RXIFG
 		   if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
-			__bic_SR_register_on_exit(LPM0_bits);	
+			__bic_SR_register_on_exit(LPM3_bits);	
 				// WDTCTL  = WDT_MDLY_32;
 				// SFRIE1 |= 1;  
 				TBCTL |= MC_1;     //start timerB

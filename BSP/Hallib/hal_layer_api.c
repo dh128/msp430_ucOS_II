@@ -767,7 +767,7 @@ void Hal_EnterLowPower_Mode(void)
     // SFRIE1 &= 0;
     TBCTL &=~  MC_1;     //stop timerB
     for(m=0;m<1000;m++);
-    __bis_SR_register(LPM0_bits + GIE);   //进入低功耗
+    __bis_SR_register(LPM3_bits + GIE);   //进入低功耗
 }
 
 // void Hal_ExitLowPower_Mode(void)

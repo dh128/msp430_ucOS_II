@@ -223,7 +223,7 @@ static  void  ScadaTaskStart (void *p_arg)
                 OSTimeDlyHMSM(0u, 0u, 2u, 0u);
                 if (scada_idle_times == 60)  //120+120s 空跑4min
                 {
-                    g_Printf_dbg("DeviceStatus always idle,try reboot!\r\n");
+                    g_Printf_dbg("DeviceStatus always idle, low power!\r\n");
                     scada_idle_times = 0;
                     Hal_EnterLowPower_Mode();
                     // hal_Reboot();  //复位 是否需要主机都复位？或者只需要
