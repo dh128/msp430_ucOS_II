@@ -156,3 +156,5 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2020-8-27
 1、进低功耗前不修改串口配置，仅关闭串口中断；
 2、退出低功耗打开串口中断。
+2020-9-3	dingh	WRain
+1、关闭SVS 002.txt测试865057041800016
