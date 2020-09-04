@@ -158,3 +158,7 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2、退出低功耗打开串口中断。
 2020-9-3	dingh	WRain
 1、关闭SVS 002.txt测试865057041800016
+2020-9-4	dingh	WRain
+1、NB升级时关闭SD卡电源，现有电路要么拔掉SD卡，要么去除三线上拉电阻；
+2、添加升级中断后继续获取数据功能；
+3、NB采用电池供电方式工作；

@@ -775,7 +775,6 @@ void ProcessPCP(unsigned char *p)
 		//关闭其他电源
 		OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
 		OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
-		Base_3V3_ON;
 		W25Q16_ON;
 		OSTimeDly(100);
 		//擦除SPI
@@ -905,25 +904,7 @@ check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 			hal_Delay_us(5);
 		}	
 		OS_EXIT_CRITICAL();
-		// Base_3V3_OFF;
-		
-		// OSTimeDly(10000);
-		// W25Q16_ON;
-		// OSTimeDly(100);
-		// //擦除SPI
-		// W25Q16_CS_HIGH();
-		// W25Q16_Init();
-		// g_Printf_info("%d version code printf one more:\r\n",fota.newVersion);
-		// OS_ENTER_CRITICAL();
-		// for(m=FOTA_ADDR_START;m<addr_write;m++)
-		// {
-		// 	// d_t[m]=Read_Byte(m);
-		// 	// OSBsp.Device.Usart2.WriteData(d_t[m]);
-		// 	OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
-		// 	hal_Delay_us(5);
-		// }	
-		// OS_EXIT_CRITICAL();
-		//判断存储数据头尾是否正确 然后配置启动标志位存放于infor_BootAddr
+
 		TestData[0] = SPI_Flash_ReadByte(addr_write-3);
 		TestData[1] = SPI_Flash_ReadByte(FOTA_ADDR_START+1);
 		if(TestData[0] == 'q' && TestData[1] == 'c')	//确认@c400和q\r\n,存储结束后addr_writer值为\n后面一位
@@ -935,7 +916,6 @@ check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 				OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 2, infor_BootAddr, 0);
 				hal_Delay_ms(10);
 				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == fota.newVersion){
-					// W25Q16_OFF;		//SPI断电
 					hal_Delay_sec(10);
 					hal_Reboot();			//重启MCU
 				}else{
@@ -1261,6 +1241,10 @@ void  TransmitTaskStart (void *p_arg)
 							g_Device_NB_Send_Str(Data_Backup,60);	
 							OSTimeDly(5000);	//等待10s
 							g_Device_NB_SendCheck();
+							if(NB_Fota){									//升级中断的情况，继续获取下发数据包
+								GetCode(fota.PackageNum);
+								OSTimeDly(200);
+							}
 							if(AppDataPointer->TransMethodData.NBSendStatus == 1)	//确认帧发送成功,发送数据前会置0
 							{
 								// if(ResendData)
