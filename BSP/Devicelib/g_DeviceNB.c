@@ -577,6 +577,8 @@ void ProcessCommand()
 		if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
 		{
 			App.Data.TerminalInfoData.SendPeriod = (unsigned char)(Temp_SendPeriod & 0x00FF);
+			Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
+			Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
 			g_Printf_info("NB Set SendPeriod OK\r\n");
 			//将发送周期的信息存入Flash
 			// delay_ms(10);
@@ -783,12 +785,14 @@ void ProcessPCP(unsigned char *p)
 		hal_Delay_ms(100);
 		// P4OUT |= BIT0;
 		W25Q16_Init();
+		OS_ENTER_CRITICAL();
 		addr_write = FOTA_ADDR_START;
 		for (ii=0;ii<6;ii++)
 		{
 			SPI_Flash_Erase_Block(addr_write);
 			addr_write += 0x10000;
 		}
+		OS_EXIT_CRITICAL();
 		g_Printf_info("Erase SPI_Flash\r\n");
 		addr_write = FOTA_ADDR_START;
 		User_Printf("AT+NMGS=9,FFFE0114D768000100\r\n");		//允许升级
@@ -796,9 +800,9 @@ void ProcessPCP(unsigned char *p)
 		// UpdateFlag = 1;
 		// OSTimeDly(100);
 		hal_Delay_ms(200);
-		if(App.Data.TerminalInfoData.PowerQuantity < 50){
+		if(App.Data.TerminalInfoData.PowerQuantity < 30){
 			ReportUpErr(0x14,LowPower);//上报错误
-		}else if(App.Data.TransMethodData.SINR < -5){
+		}else if(App.Data.TransMethodData.SINR < -10){
 			ReportUpErr(0x14,PoorSingal);//上报错误
 		}else{
 			NB_Fota = 1;
@@ -806,6 +810,9 @@ void ProcessPCP(unsigned char *p)
 		}
 	break;
 	case 0x15:			//存储新数据包，请求下一包
+		//关闭其他电源,下载中断，会重新打开电源，这里确保电源关闭，防止干扰写数据
+		OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
+		OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
 	//	byte[9],byte[10]为数据包数，应该等于PackageNum
 		ret = PCPData[9]*256 + PCPData[10];
 		length = strlen(p)/2-11;		//去除包头FFFE等11个字节数据
@@ -840,6 +847,11 @@ check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 				if(checkTimes < 10){		//重复10次失败则放弃
 					hal_Delay_sec(2);
 					g_Printf_dbg("check again\r\n");
+					W25Q16_Init();
+					addTemp = addr_write + m;
+					if(addTemp % 4096 == 0){
+						SPI_Flash_Erase_Sector(addTemp);
+					}
 					goto check;
 				}
 				g_Printf_info("package check error m= %d,addr=%ld,checkaddr=%ld\r\n",m,addr_write,addTemp);

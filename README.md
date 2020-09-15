@@ -148,7 +148,7 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 
 2020-8-24	dingh
 1、修改SPI时钟为2M；
-2、升级下载完成后输出code,等待10s,然后重启。、
+2、升级下载完成后输出code,等待10s,然后重启。
 2020-8-25
 1、添加goto语句，检验SPI写入数据是否正常；
 2、升级过程中关闭其他电源；
@@ -162,3 +162,13 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、NB升级时关闭SD卡电源，现有电路要么拔掉SD卡，要么去除三线上拉电阻；
 2、添加升级中断后继续获取数据功能；
 3、NB采用电池供电方式工作；
+
+2020-9-9	dingh	WRain
+1、NB接收固件时关闭传感器电源，确保电源相对稳定；
+2、固件校验出错，增加W25x16初始化；
+3、w25x16删除0x10000时的延时。经过验证，效果不太稳定；
+
+2020-9-14	dingh	WRain
+1、BSP\Devicelib\g_DeviceSPIFlash.c 取消w25x16驱动中也操作写数据，整页时地址清零；
+2、BSP\Devicelib\g_DeviceNB.c 擦除Flash时添加临界态保护;
+3、BSP\Devicelib\g_DeviceNB.c 添加下发修改周期后同步发送数据包周期字段。

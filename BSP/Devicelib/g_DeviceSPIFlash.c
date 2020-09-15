@@ -181,14 +181,14 @@ void SPI_Flash_Write_Page(uint8_t* pBuffer,long WriteAddr,uint16_t NumByteToWrit
  	uint16_t i;
   	SPI_FLASH_Write_Enable();                                   //SET WEL
 	W25Q16_CS_LOW();                                            //使能器件
-	// hal_Delay_us(10);
+	hal_Delay_us(10);
 	OSBsp.Device.Spi2.WriteReadData(W25X_PageProgram);                       //发送写页命令
 	OSBsp.Device.Spi2.WriteReadData((uint8_t)((WriteAddr)>>16));                  //发送24bit地址
 	OSBsp.Device.Spi2.WriteReadData((uint8_t)((WriteAddr)>>8));
-	if(NumByteToWrite == 256)
-		OSBsp.Device.Spi2.WriteReadData(0);
-	else
-		OSBsp.Device.Spi2.WriteReadData((uint8_t)WriteAddr);
+	// if(NumByteToWrite == 256)
+	// 	OSBsp.Device.Spi2.WriteReadData(0);
+	// else
+	OSBsp.Device.Spi2.WriteReadData((uint8_t)WriteAddr);
 	OSBsp.Device.Spi2.WriteNData(pBuffer,NumByteToWrite);
 	// for(i=0;i<NumByteToWrite;i++) 
 	// {
@@ -213,10 +213,10 @@ void SPI_Flash_Write_NoCheck(uint8_t * pbuf,long WriteAddr,uint16_t Len)
     if(Len<=PageLen) PageLen=Len; // 不大于256 个字节
     while(1)
     {
-		if(WriteAddr % 0x10000 == 0)
-			hal_Delay_sec(1);
-		else
-			hal_Delay_us(10);
+		// if(WriteAddr % 0x10000 == 0)
+		// 	hal_Delay_sec(1);
+		// else
+		hal_Delay_us(10);
         SPI_Flash_Write_Page(pbuf,WriteAddr,PageLen);
         if(PageLen==Len)break;   // 写入结束了
         else
@@ -283,7 +283,7 @@ uint8_t W25Q16_Init(void)
 	status = SPI_Flash_ReadSR();
 	if(status > 3)		//出现保护位
 	{
-		// printf("Clear protect bit\r\n");
+		g_Printf_info("ststus=%d Clear protect bit\r\n",status);
 		SPI_Flash_WriteSR();
 	}
 
