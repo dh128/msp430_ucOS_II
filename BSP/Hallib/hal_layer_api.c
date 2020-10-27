@@ -754,9 +754,9 @@ void Hal_EnterLowPower_Mode(void)
 	P4DIR |= BIT4;
 #endif
     //关闭串口2，Debug口
-    // P7SEL &= 0xFC;
-    // P7OUT = 0x00;
-    // P7DIR |= 0x03;
+    P7SEL &= 0xFC;
+    P7OUT = 0x00;
+    P7DIR |= 0x03;
     //关闭串口2 接收中断
     UCA2IE &= ~UCRXIE;
     //关闭串口3接收中断
@@ -767,7 +767,7 @@ void Hal_EnterLowPower_Mode(void)
     // SFRIE1 &= 0;
     TBCTL &=~  MC_1;     //stop timerB
     for(m=0;m<1000;m++);
-    __bis_SR_register(LPM3_bits + GIE);   //进入低功耗
+    __bis_SR_register(LPM0_bits + GIE);   //进入低功耗
 }
 
 // void Hal_ExitLowPower_Mode(void)
@@ -796,7 +796,11 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
         AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
     }else{
-        AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+        if(App.Data.TransMethodData.SeqNumber == 0){        //seq==0重启模组，避免校时偏差
+            AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
+        }else{
+            AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+        }
     }
 #endif
 #if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
@@ -843,8 +847,8 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     g_Device_Usart1_Init(9600);
 #endif
     TBCTL |= MC_1;     //start timerB
-    //P7SEL |= BIT0+BIT1;
-    UCA2IE |= UCRXIE;   //打开串口1 接收中断使能
+    P7SEL |= BIT0+BIT1; //修改串口2 IO 功能
+    UCA2IE |= UCRXIE;   //打开串口2 接收中断使能
     UCA3IE |= UCRXIE;   //打开串口3 接收中断使能
     g_Printf_info("Exit Low Power!\r\n");
 }

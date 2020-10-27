@@ -172,3 +172,9 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、BSP\Devicelib\g_DeviceSPIFlash.c 取消w25x16驱动中也操作写数据，整页时地址清零；
 2、BSP\Devicelib\g_DeviceNB.c 擦除Flash时添加临界态保护;
 3、BSP\Devicelib\g_DeviceNB.c 添加下发修改周期后同步发送数据包周期字段。
+
+2020-10-27	dingh	WRain
+1、取消PMM_disableSvsLSvmL，测试发现无效；
+2、24小时后seqno清零，同时软件重启模组，避免网络校时偏差；
+3、修改LPM3回LPM0；
+4、进低功耗前修改串口为低电平输出。
