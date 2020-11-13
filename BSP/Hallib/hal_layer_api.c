@@ -847,8 +847,8 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     g_Device_Usart1_Init(9600);
 #endif
     TBCTL |= MC_1;     //start timerB
-    P7SEL |= BIT0+BIT1; //修改串口2 IO 功能
-    UCA2IE |= UCRXIE;   //打开串口2 接收中断使能
+    // P7SEL |= BIT0+BIT1; //修改串口2 IO 功能
+    // UCA2IE |= UCRXIE;   //打开串口2 接收中断使能
     UCA3IE |= UCRXIE;   //打开串口3 接收中断使能
     g_Printf_info("Exit Low Power!\r\n");
 }

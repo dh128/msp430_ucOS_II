@@ -178,3 +178,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2、24小时后seqno清零，同时软件重启模组，避免网络校时偏差；
 3、修改LPM3回LPM0；
 4、进低功耗前修改串口为低电平输出。
+
+2020-11-03	dingh	WRain
+1、取消退出低功耗时串口2恢复功能，测试7天正常。
