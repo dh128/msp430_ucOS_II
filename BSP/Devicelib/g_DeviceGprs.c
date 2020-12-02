@@ -29,8 +29,8 @@
 #include  <bsp.h>
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
-//const char *g_30000IoT_HOST = "118.190.136.20:8080";
-//const char *g_30000IoT_PATH = "/envm/Sensordata HTTP/1.1";
+// const char *g_30000IoT_HOST = "172.17.1.109:8082";
+// const char *g_30000IoT_PATH = "/saveWaterQuality";
 const char *g_30000IoT_HOST = "30000iot.cn:9001";
 const char *g_30000IoT_PATH = "/api/Upload/data/";
 //const char *g_30000IoT_HOST = "47.111.88.91:6096";
@@ -100,21 +100,18 @@ void g_Device_GPRS_Init(void)
 			OSTimeDly(1000);	
 			if((gprs_tick == 8)&&(AppDataPointer->TransMethodData.GPRSAttached == 0)){
 				gprs_tick = 0;
-				g_Printf_info("Manual gain access to network\r\n");
-				g_Printf_dbg("AT+CGATT=1\r\n"); //手动附着GPRS网络
-				User_Printf("AT+CGATT=1\r\n");
+				AppDataPointer->TransMethodData.GPRSStatus = GPRS_Init_Failed;
 				OSTimeDly(1000);
-				AppDataPointer->TransMethodData.GPRSAttached = 1;       //手动附着GPRS网络,防止进入到这个死循环,信号差不一定附着不上的
 			}	
 		}else if((AppDataPointer->TransMethodData.GPRSNet == 1)
 		       &&(AppDataPointer->TransMethodData.GPRSAttached == 1)
 			   &&(AppDataPointer->TerminalInfoData.AutomaticTimeStatus == AUTOMATIC_TIME_ENABLE)){
-				AppDataPointer->TransMethodData.GPRSTime = 0;
-				AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
-				memset(aRxBuff,0x0,256);
-				g_Printf_dbg("AT+CCLK?\r\n");
-				User_Printf("AT+CCLK?\r\n");  //获取基站定位和日期
-				OSTimeDly(2000);//2ms
+			AppDataPointer->TransMethodData.GPRSTime = 0;
+			AppDataPointer->TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_DISABLE;  //禁止时间同步
+			memset(aRxBuff,0x0,256);
+			g_Printf_dbg("AT+CCLK?\r\n");
+			User_Printf("AT+CCLK?\r\n");  //获取基站定位和日期
+			OSTimeDly(2000);//2ms
 		}
 		else if((AppDataPointer->TransMethodData.GPRSNet == 1)&&
 				(AppDataPointer->TransMethodData.GPRSAttached == 1)){
@@ -840,6 +837,7 @@ void  TransmitTaskStart (void *p_arg)
 					}else {
 						App.Data.TransMethodData.SeqNumber++;
 					}
+					failed_times = 0;	//Initdone 之后清零失败次数
 					//************电量处理Begin************//
 	                GetADCValue();
                     //************电量处理End*************//
@@ -902,10 +900,10 @@ void  TransmitTaskStart (void *p_arg)
             	}
             	else
             	{  //用模块重启来实现故障自恢复
-					OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
-					OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
-					OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
-					OSTimeDly(1000); //2s
+					g_Printf_dbg("AT+RESET\r\n");
+                	User_Printf("AT+RESET\r\n");
+					OSTimeDly(1000);OSTimeDly(1000); OSTimeDly(1000); OSTimeDly(1000); OSTimeDly(1000); 
+					OSTimeDly(1000);OSTimeDly(1000); OSTimeDly(1000); OSTimeDly(1000); OSTimeDly(1000);  //2s
 					AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 					AppDataPointer->TransMethodData.GPRSNet = 0;
 					AppDataPointer->TransMethodData.GPRSAttached =0;
@@ -917,53 +915,23 @@ void  TransmitTaskStart (void *p_arg)
 
 			 	g_Printf_info("Gprs init failed\r\n");
 			 	failed_times++;
-			 	if (failed_times == 1) //第一次初始化失败，重启GPRS模块
+			 	if (failed_times < 5) //第一次初始化失败，重启GPRS模块
 			 	{
-					OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
-					OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
-					OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+					g_Printf_dbg("AT+RESET\r\n");
+                	User_Printf("AT+RESET\r\n");
+					OSTimeDly(1000);OSTimeDly(1000); OSTimeDly(1000); OSTimeDly(1000); OSTimeDly(1000); 
+					OSTimeDly(1000);OSTimeDly(1000); OSTimeDly(1000); OSTimeDly(1000); OSTimeDly(1000);  //2s
 					//清零
 					AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 					AppDataPointer->TransMethodData.GPRSNet = 0;
 					AppDataPointer->TransMethodData.GPRSAttached =0;
 					AppDataPointer->TransMethodData.GPRSATStatus = 0;
-					//关闭2s
-					OSTimeDlyHMSM(0u, 0u, 2u, 0u);
-			 	}
-			 	else if (failed_times < 10)
-			 	{
-			 		if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD)
-			 		{
-			 		    g_Printf_dbg("GPRS Init ERR!\r\n");
-			 		    failed_times = 0;
-			 		    Hal_EnterLowPower_Mode();//上传频率大于5min，才进低功耗模式，对应取消RTC_ISR
-			 		}
-			 		else
-			 		{
-			 			g_Printf_dbg("GPRS Init Retry!\r\n");
-						OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
-						OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
-						OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
-						//清零
-						AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
-						AppDataPointer->TransMethodData.GPRSNet = 0;
-						AppDataPointer->TransMethodData.GPRSAttached =0;
-						AppDataPointer->TransMethodData.GPRSATStatus = 0;
-						//关闭2s
-						OSTimeDlyHMSM(0u, 0u, 2u, 0u);
-			 		}
 			 	}
 			 	else // 9次初始化失败，重启，只存在于<NO_LOWPER_PERIOD的逻辑里
 			 	{
-			 		    g_Printf_dbg("GPRS Init Retry vaild,try reboot!\r\n");
-			 			failed_times = 0;
-						App.Data.TransMethodData.SeqNumber = 0;
-						App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
-						OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
-						OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
-						OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
-
-						hal_Reboot();  //直接复位
+					failed_times = 0;	//结束计数，清零，进入低功耗
+					g_Printf_dbg("GPRS Init Retry vaild, abandon!\r\n");
+					Hal_EnterLowPower_Mode();	//进低功耗模式
 			 	}
 
             }
@@ -975,13 +943,14 @@ void  TransmitTaskStart (void *p_arg)
             	{
             		g_Printf_dbg("GPRS Unkonw error,try reboot!\r\n");
             		idle_times = 0;
-					App.Data.TransMethodData.SeqNumber = 0;
-					App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
-					OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
-					OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
-					OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
+					Hal_EnterLowPower_Mode();	//进低功耗模式
+					// App.Data.TransMethodData.SeqNumber = 0;
+					// App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
+					// OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
+					// OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
+					// OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
 
-					hal_Reboot();  //复位 是否需要主机都复位？或者只需要
+					// hal_Reboot();  //复位 是否需要主机都复位？或者只需要
             	}
             }
 
@@ -991,6 +960,7 @@ void  TransmitTaskStart (void *p_arg)
         {
         	g_Printf_dbg("TransmitTaskStart ERR!\r\n");
             OSTimeDlyHMSM(0u, 0u, 0u, 200u);  
+			hal_Reboot();  //任务启动失败，必须重启
         }
     }
 }

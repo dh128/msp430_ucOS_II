@@ -182,8 +182,11 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2020-11-03	dingh	WRain
 1、取消退出低功耗时串口2恢复功能，测试7天正常。
 
-2020-11-03	dingh	Cat1
+2020-11-27	dingh	Cat1
 1、从WRain程序中checkout到Cat1分支，开发cat1模组上报数据功能,打开Debug串口，用于接收log；
 2、cat1模组采用上海合宙公司的Air724UG，修改GPRS程序中的部分指令配置，时钟读、存；
 3、修改水质程序，删除GPS信息组包，取消外部时钟读取，直接采用内部时钟，天机默认WL字段上报，不然平台不显示；
 4、修改GPRS程序中入网，校时，上报功能。
+
+2020-11-30	dingh	Cat1
+1、修改GPRS程序中cat1模组入网失败处理，CGATT？失败后，手动入网无效，所有失败均须重启模组。
