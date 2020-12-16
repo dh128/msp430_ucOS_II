@@ -437,6 +437,11 @@ __interrupt void RTC_ISR(void)
 				min = BCDToHEX(RTCMIN);
 				if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //上传频率大于5min才具备低功耗模式
 				{
+					
+					#if (PRODUCT_TYPE == WRain_Station)    
+					if(min == 0)  //水雨情设备整点采集雨量
+						AppDataPointer->WRainData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;       
+					#endif
 					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
 						__bic_SR_register_on_exit(LPM0_bits);
 						Hal_ExitLowPower_Mode(Rtc_Int);

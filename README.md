@@ -181,3 +181,7 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 
 2020-11-03	dingh	WRain
 1、取消退出低功耗时串口2恢复功能，测试7天正常。
+
+2020-12-15	dingh	WRain
+1、取消hal_layer_api.c文件中退出低功耗时使能雨量采集；
+2、在RTC中断中增加min==0时，使能雨量采集，实现雨量整点采集上报。

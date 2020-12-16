@@ -784,9 +784,9 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     #if (PRODUCT_TYPE == Weather_Station)      
        AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     
     #endif
-    #if (PRODUCT_TYPE == WRain_Station)      
-        AppDataPointer->WRainData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;       
-    #endif
+    // #if (PRODUCT_TYPE == WRain_Station)      
+    //     AppDataPointer->WRainData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;       
+    // #endif
     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
         
 #if (TRANSMIT_TYPE == GPRS_Mode)
