@@ -185,3 +185,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2020-12-15	dingh	WRain
 1、取消hal_layer_api.c文件中退出低功耗时使能雨量采集；
 2、在RTC中断中增加min==0时，使能雨量采集，实现雨量整点采集上报。
+2020-12-17	dingh	WRain
+1、修改雨量位周期检测，每小时上报一次1小时内雨量，0点上报24小时内雨量;
+2、修改周期雨量与液位传感器值存放位置；

@@ -716,6 +716,20 @@ void Hal_EnterLowPower_Mode(void)
     OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
     OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
+    if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
+    {
+        AppDataPointer->WRainData.RainGaugeScadaStatus &=  ~RAINGAUGE_REPORT_HOUR;
+        App.Data.WRainData.RainGaugeH = 0.0;
+        Send_Buffer[11] = 0x7F;
+        Send_Buffer[12] = 0xFF;	
+    }
+    if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_REPORT_DAY)//判断发送24小时数据
+    {
+        AppDataPointer->WRainData.RainGaugeScadaStatus &= ~RAINGAUGE_REPORT_DAY;
+	    App.Data.WRainData.RainGaugeD = 0.0;
+        Send_Buffer[13] = 0x7F;
+        Send_Buffer[14] = 0xFF;	
+    }
 #else
     OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
@@ -784,9 +798,9 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     #if (PRODUCT_TYPE == Weather_Station)      
        AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     
     #endif
-    // #if (PRODUCT_TYPE == WRain_Station)      
-    //     AppDataPointer->WRainData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;       
-    // #endif
+    #if (PRODUCT_TYPE == WRain_Station)      
+        AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;       
+    #endif
     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
         
 #if (TRANSMIT_TYPE == GPRS_Mode)

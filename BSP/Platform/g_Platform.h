@@ -39,7 +39,8 @@ enum AUTOMATIC_TIME_STATUS {
 
 enum RAINGAUGE_SCADA_STATUS {
 	RAINGAUGE_SCADA_ENABLE = 0x01,     //允许采集雨量
-	RAINGAUGE_SCADA_DISABLE = 0x02     //禁止采集雨量
+	RAINGAUGE_REPORT_HOUR  = 0x02,     //小时上报雨量
+	RAINGAUGE_REPORT_DAY   = 0x04     //24小时上报雨量
 };
 
 // typedef struct
@@ -165,8 +166,10 @@ typedef struct
 
 typedef struct
 {
-	char  RainGaugeScadaStatus;
+	char  RainGaugeScadaStatus;		//bit0--周期采集，bit1--小时上报，bit2--24小时上报
 	float RainGauge;             //雨量                  0~4.0     mm/min
+	float RainGaugeH;			//小时雨量
+	float RainGaugeD;			//24小时雨量
 	uint16_t LVValue;            //液位
 }WRainPlatform;       //水雨情监测平台
 

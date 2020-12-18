@@ -439,8 +439,14 @@ __interrupt void RTC_ISR(void)
 				{
 					
 					#if (PRODUCT_TYPE == WRain_Station)    
-					if(min == 0)  //水雨情设备整点采集雨量
-						AppDataPointer->WRainData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;       
+					if(min == 0)  //水雨情设备上报整点和24小时雨量
+					{
+						AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_HOUR;    
+						if(RTCHOUR == 0)
+						{
+							AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_DAY;
+						}
+					}
 					#endif
 					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
 						__bic_SR_register_on_exit(LPM0_bits);
