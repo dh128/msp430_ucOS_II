@@ -1300,7 +1300,8 @@ void  TransmitTaskStart (void *p_arg)
 				|| (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error)
 				|| (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error))	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
 			{
-				Hal_EnterLowPower_Mode();
+				if( AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER)
+					Hal_EnterLowPower_Mode();
 			}  
 
             OSTimeDlyHMSM(0u, 0u, 0u, 200u);  

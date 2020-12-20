@@ -31,37 +31,40 @@
 
 #if (PRODUCT_TYPE == Flowmeter_Station)
 
-#define SensorNum			12
+#define SensorNum			2
 #define CMDLength        	8
 #define SensorKind          0b111111111111
-
+//定义管道类型数据
+typedef struct {
+	uint8_t type;		//类型
+	float width;		//宽度，单位米
+	float height;		//高度，圆形管道等于width 单位米
+	float high;			//传感器安装高度，单位米
+}shape_t;
+shape_t shape;		//定义管道
+#define PI 3.14159		//圆周率
 AppStruct  App;
 DataStruct *AppDataPointer;
 
-//uint32_t Send_Buffer[34] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x01,0x7F,0xFF,0x7F,0xFF,0x7F,
-//0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x00,0x00,0x00,0x00,0x00,0x00,0xff};
-
-
 uint32_t Send_Buffer[60] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x00,
                             0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,
-                            0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff};
-					//      /-------/ /--/ /--/ /-----------------/ /-----------------/ /-----------------/ /-------/
-					//        period  电量  Ver       timestamp            Lng经度             lat纬度          海拔
+							0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff};
+//                          /-------/ /--/ /-----------------/ /-----------------/ /-----------------/ /-------/ /-------/ /-------/ /-------/ /-------/ /-------/ /--/
+//                            Period   ver		timestamp            Lng经度             lat纬度          海拔      RSRP      SINR       PCI      保留		模拟  	 保留  
 
-const uint8_t ScadaFlow1[CMDLength]  = {0x01,0x03,0x00,0x00,0x00,0x0E,0xC4,0x0E};	          //超声波流量计
+const uint8_t ScadaFlow1[CMDLength]  = {0x01,0x03,0x00,0x00,0x00,0x0E,0xC4,0x0E};   //超声波流量计综合指令，单位m
+const uint8_t ScadaSS[CMDLength]  	 = {0x0A,0x03,0x00,0x02,0x00,0x02,0x64,0xB0};	//读取悬浮物传感器指令，单位m/s
+const uint8_t CleanSS[CMDLength]	 = {0x0A,0x06,0x00,0x14,0x00,0x42,0x48,0x84};	//悬浮物传感器手动刮刷指令
 
 
 #define WQ_FlowD_Num 		5
 #define WQ_FlowS_Num 		5
 
-static float  WQ_FlowD[WQ_FlowD_Num]; //申请每一次用于水温的记录，最多读WQ_FlowD_Num次
+static float  WQ_FlowD[WQ_FlowD_Num]; //申请每一次用于水深的记录，最多读WQ_FlowD_Num次
 static uint8_t FlowDtimes = 0; //存储水温的临时变量
-static float  WQ_FlowS[WQ_FlowS_Num]; //申请每一次用于水温的记录，最多读WQ_FlowS_Num次
+static float  WQ_FlowS[WQ_FlowS_Num]; //申请每一次用于流速的记录，最多读WQ_FlowS_Num次
 static uint8_t FlowStimes = 0; //存储水温的临时变量
-float wq_FlowD_sum = 0.0;
-float wq_FlowS_sum = 0.0;
-float wq_FlowD = 0.0;
-float wq_FlowS = 0.0;
+
 
 float sensorFloatCahe = 0.0;
 uint32_t sensorCahe = 0;
@@ -106,58 +109,77 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 		CRC_Result[1] = (uint8_t)(CalcuResult & 0xFF);
 		if((data[Len-2] == CRC_Result[0]) && (data[Len-1] == CRC_Result[1]))   //判断数据接收是否存在异常
 		{
-		  LED_ON;
-		 if(data[1]==0x03)
-		  {
-			switch(data[0])
-			 {
-			   case 0x01:		//流量计1
-			   //水深1
-				SensorData.Hex[0] = data[6];      //大端模式，高位字节存放在后面
-				SensorData.Hex[1] = data[5];
-				SensorData.Hex[2] = data[4];
-				SensorData.Hex[3] = data[3];
-				//存储采集数据，用于算术平均
-				if (FlowDtimes <= (WQ_FlowD_Num-1))
+		  	LED_ON;
+		 	if(data[1]==0x03)
+		  	{
+				switch(data[0])
 				{
-				   WQ_FlowD[FlowDtimes] = SensorData.Data;
-//				   g_Printf_dbg("Get a ZSValue Tempture: %f\r\n",WQ_WaterTemp[watertemprectimes]);
-				   if((WQ_FlowD[FlowDtimes] <= -10.0) || (WQ_FlowD[FlowDtimes] >= 50.0))
-				   {
-					   WQ_FlowD[FlowDtimes] = AppDataPointer->FlowmeterData.Depth1Vlaue;
+				case 0x01:		//流量计 
+					hal_SetBit(SensorStatus_H, 1);   //传感器状态位置1
+					//水深			
+					SensorData.Hex[0] = data[6];      //MCU是小端模式，低位字节存放在低位，传感器数据0xABCD
+					SensorData.Hex[1] = data[5];
+					SensorData.Hex[2] = data[4];
+					SensorData.Hex[3] = data[3];
+					if (FlowDtimes <= (WQ_FlowD_Num-1))//存储采集数据，用于算术平均
+					{
+						WQ_FlowD[FlowDtimes] = SensorData.Data;
+						//g_Printf_dbg("Get a ZSValue Tempture: %f\r\n",WQ_WaterTemp[watertemprectimes]);
+						if((WQ_FlowD[FlowDtimes] <= -10.0) || (WQ_FlowD[FlowDtimes] >= 50.0))
+						{
+							WQ_FlowD[FlowDtimes] = AppDataPointer->FlowmeterData.DepthValue;
+						}
+						FlowDtimes++;
 					}
-				   FlowDtimes++;
-				}
+					
+					AppDataPointer->FlowmeterData.DepthValue = SensorData.Data;
+					Send_Buffer[13]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)/256;
+					Send_Buffer[14]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)%256;
 
-				hal_SetBit(SensorStatus_H, 3);   //传感器状态位置1
-				AppDataPointer->FlowmeterData.Depth1Vlaue = SensorData.Data;
-				Send_Buffer[7]=(int)(AppDataPointer->FlowmeterData.Depth1Vlaue*1000)/256;
-				Send_Buffer[8]=(int)(AppDataPointer->FlowmeterData.Depth1Vlaue*1000)%256;
+					//水温
+					SensorData.Hex[0] = data[26];      //MCU是小端模式，低位字节存放在低位
+					SensorData.Hex[1] = data[25];
+					SensorData.Hex[2] = data[24];
+					SensorData.Hex[3] = data[23];	
+					AppDataPointer->FlowmeterData.TempValue = SensorData.Data;
+					Send_Buffer[7]=(int)(AppDataPointer->FlowmeterData.TempValue*100)/256;
+					Send_Buffer[8]=(int)(AppDataPointer->FlowmeterData.TempValue*100)%256;
 
-				//瞬时流速1
-				SensorData.Hex[0] = data[30];      //大端模式，高位字节存放在后面
-				SensorData.Hex[1] = data[29];
-				SensorData.Hex[2] = data[28];
-				SensorData.Hex[3] = data[27];
-				//存储采集数据，用于算术平均
-				if (FlowStimes <= (WQ_FlowS_Num-1))
-				{
-				   WQ_FlowS[FlowStimes] = SensorData.Data;
-			//				   g_Printf_dbg("Get a ZSValue Tempture: %f\r\n",WQ_WaterTemp[watertemprectimes]);
-				  if((WQ_FlowS[FlowStimes] <= -10.0) || (WQ_FlowS[FlowStimes] >= 50.0))
-				   {
-					   WQ_FlowS[FlowStimes] = AppDataPointer->FlowmeterData.Speed1Vlaue;
-				   }
-					 FlowStimes++;
-				 }
-				hal_SetBit(SensorStatus_H, 2);   //传感器状态位置1
-				AppDataPointer->FlowmeterData.Speed1Vlaue = SensorData.Data;
-				Send_Buffer[9]=(int)(AppDataPointer->FlowmeterData.Speed1Vlaue*1000)/256;
-				Send_Buffer[10]=(int)(AppDataPointer->FlowmeterData.Speed1Vlaue*1000)%256;
-				break;
-				default:
+					//瞬时流速
+					SensorData.Hex[0] = data[30];     //MCU是小端模式，低位字节存放在低位
+					SensorData.Hex[1] = data[29];
+					SensorData.Hex[2] = data[28];
+					SensorData.Hex[3] = data[27];		
+					if (FlowStimes <= (WQ_FlowS_Num-1))//存储采集数据，用于算术平均
+					{
+						WQ_FlowS[FlowStimes] = SensorData.Data;
+					//  g_Printf_dbg("Get a ZSValue Tempture: %f\r\n",WQ_WaterTemp[watertemprectimes]);
+						if((WQ_FlowS[FlowStimes] <= -10.0) || (WQ_FlowS[FlowStimes] >= 50.0))
+						{
+							WQ_FlowS[FlowStimes] = AppDataPointer->FlowmeterData.SpeedValue;
+						}
+						FlowStimes++;
+					}
+					AppDataPointer->FlowmeterData.SpeedValue = SensorData.Data;
+					Send_Buffer[11]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)/256;
+					Send_Buffer[12]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)%256;
 					break;
-			}//switch(data[0]) END
+				case 0x0A:
+					SensorData.Hex[0] = data[4];      //MCU是小端模式，低位字节存放在低位，传感器数据0xCDAB
+					SensorData.Hex[1] = data[3];
+					SensorData.Hex[2] = data[6];
+					SensorData.Hex[3] = data[5];
+					
+					hal_SetBit(SensorStatus_H, 2);   //传感器状态位置1
+					AppDataPointer->FlowmeterData.SSValue = SensorData.Data;
+					Send_Buffer[17]=((uint32_t)(AppDataPointer->FlowmeterData.SSValue*1000) & 0xFF000000)>>24;
+					Send_Buffer[18]=((uint32_t)(AppDataPointer->FlowmeterData.SSValue*1000) & 0x00FF0000)>>16;
+					Send_Buffer[19]=((uint32_t)(AppDataPointer->FlowmeterData.SSValue*1000) & 0x0000FF00)>>8;
+					Send_Buffer[20]=(uint32_t)(AppDataPointer->FlowmeterData.SSValue*1000) & 0x000000FF;
+					break;
+				default:
+						break;
+				}//switch(data[0]) END
 			} //(data[1]==0x03)  END
 			Send_Buffer[55] = SensorReviseStatus_H;
 			Send_Buffer[56] = SensorReviseStatus_L;
@@ -165,21 +187,13 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 			dRxNum=0;
 			Len = 0;
 			return 1;
-		}else{
+		}else{	//CRC 校验出错
 			Clear_CMD_Buffer(dRxBuff,dRxNum);
 			dRxNum=0;
 			Len = 0;
 			return -2;
 		}
-
-		// SensorStatusBuff[0] = SensorStatus_H;
-		// SensorStatusBuff[1] = SensorStatus_L;
-		// AppDataPointer->TerminalInfoData.SensorStatus = (uint16_t)SensorStatus_H*256 + (uint16_t)SensorStatus_L;
-
-		// Clear_CMD_Buffer(dRxBuff,dRxNum);
-		// dRxNum=0;
-		// Len = 0;
-	}else{
+	}else{//CRC Len 不对
 		Clear_CMD_Buffer(dRxBuff,dRxNum);
 		dRxNum=0;
 		Len = 0;
@@ -230,7 +244,7 @@ static int SimulationSensorData(void)
 					  {
 					 	SimulationSensorFloatCahe = 10.21;
 					   }
-					 AppDataPointer->FlowmeterData.Depth1Vlaue = SimulationSensorFloatCahe;
+					 AppDataPointer->FlowmeterData.DepthValue = SimulationSensorFloatCahe;
 					 hal_SetBit(SensorStatus_H, 3);             //传感器状态位置1
                      hal_SetBit(SensorSimulationStatus_H, 3);   //传感器模拟状态位置1
 					 Send_Buffer[7] = (uint32_t)(SimulationSensorFloatCahe*100) / 256;
@@ -243,43 +257,11 @@ static int SimulationSensorData(void)
 					{
 					    SimulationSensorFloatCahe = 0.31;
 					}
-					AppDataPointer->FlowmeterData.Speed1Vlaue = SimulationSensorFloatCahe;
+					AppDataPointer->FlowmeterData.SpeedValue = SimulationSensorFloatCahe;
 					hal_SetBit(SensorStatus_H, 2);             //传感器状态位置1
 					hal_SetBit(SensorSimulationStatus_H, 2);   //传感器模拟状态位置1
 					Send_Buffer[9] = (uint32_t)(SimulationSensorFloatCahe*100) / 256;
 					Send_Buffer[10] = (uint32_t)(SimulationSensorFloatCahe*100) % 256;
-					break;
-				case 3:
-
-					break;
-				case 4:
-					/**************CO2**************///
-					break;
-				case 5:
-					/**************H2S**************///
-					break;
-				case 6:
-					break;
-				case 7:
-					break;
-				case 8:
-				    /**************PH**************///7.21~7.61
-					// SimulationSensorFloatCahe = 7.21 + (float)(rand()%4)/10;
-					// AppDataPointer->WaterData.PHValue = SimulationSensorFloatCahe;
-					// hal_SetBit(SensorStatus_L, 4);             //传感器状态位置1
-					// hal_SetBit(SensorSimulationStatus_L, 4);   //传感器模拟状态位置1
-					// Send_Buffer[21] = (uint32_t)(SimulationSensorFloatCahe*100) / 256;
-					// Send_Buffer[22] = (uint32_t)(SimulationSensorFloatCahe*100) % 256;
-					break;
-				case 9:
-					/**************CHL************/
-					break;
-				case 10:
-					break;
-				case 11:
-					/**************光照**************///
-					break;
-				case 12:
 					break;
 				default:
 					break;
@@ -291,34 +273,6 @@ static int SimulationSensorData(void)
 	return 1;
 }
 
-
-/*******************************************************************************
-* 函数名		: InqureSensor
-* 描述	    	: 采集传感器数据；分析数据值
-* 输入参数  	: 无
-* 返回参数  	: 无
-*******************************************************************************/
-void FilteringSensor(void)   //wj20200215 这个只能保证传感器都能读取到数据后，解析后，有滤波的功能。压根就没读取到这个传感器数据的情况不在这里处理
-{
-	  uint8_t i=0;
-//平均法
-		for (i=0; i<FlowDtimes; i++)
-		{
-			wq_FlowD_sum += WQ_FlowD[i];
-		}
-		wq_FlowD = wq_FlowD_sum / (float)(FlowDtimes);
-		AppDataPointer->FlowmeterData.Depth1Vlaue = wq_FlowD;
-
-		for (i=0; i<FlowStimes; i++)
-		{
-			wq_FlowS_sum += WQ_FlowS[i];
-		}
-			wq_FlowS = wq_FlowS_sum / (float)(FlowStimes);
-			AppDataPointer->FlowmeterData.Speed1Vlaue = wq_FlowS;
-
-
-}
-
 /*******************************************************************************
 * 函数名		: InqureSensor
 * 描述	    	: 采集传感器数据；分析数据值
@@ -327,7 +281,6 @@ void FilteringSensor(void)   //wj20200215 这个只能保证传感器都能读�
 *******************************************************************************/
 void InqureSensor(void)
 {
-	//COD EC DO NH4 | Temp ORP ZS PH | CHL WL WS XX
 	volatile char scadaIndex;
 	volatile uint16_t sensorExistStatus = 0;
 	volatile uint8_t sensorSN = 0;    //传感器编号，按照协议顺序排列
@@ -346,12 +299,8 @@ void InqureSensor(void)
 	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {
 		SensorStatus_H = 0;
 		SensorStatus_L = 0;
-		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)  //SensorNum = 12
+		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)  //SensorNum = 2
 		{
-			// sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0001;
-			// AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) >> 1;
-			// if(sensorExistStatus == 1)
-
 			memset(dRxBuff,0x0,dRxLength);
 			dRxNum=0;
 			sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0800;
@@ -364,62 +313,17 @@ void InqureSensor(void)
 				{
 					case 1:
 						sensorSN = 1;
-						// hal_ResetBit(SensorStatus_H, 3);
 						OSBsp.Device.Usart3.WriteNData(ScadaFlow1,CMDLength);
 						break;
 					case 2:
 						sensorSN = 2;
-						// hal_ResetBit(SensorStatus_H, 2);
-						OSBsp.Device.Usart3.WriteNData(ScadaFlow1,CMDLength);
-						break;
-					case 3:
-						sensorSN = 3;
-						// hal_ResetBit(SensorStatus_H, 1);
-						break;
-					case 4:
-						sensorSN = 4;
-						// hal_ResetBit(SensorStatus_H, 0);
-						break;
-					case 5:
-						sensorSN = 5;
-						// hal_ResetBit(SensorStatus_L, 7);
-						break;
-					case 6:
-						sensorSN = 6;
-						// hal_ResetBit(SensorStatus_L, 6);
-						break;
-					case 7:
-						sensorSN = 7;
-						// hal_ResetBit(SensorStatus_L, 5);
-						break;
-					case 8:
-						sensorSN = 8;
-						// hal_ResetBit(SensorStatus_L, 4);
-						break;
-					case 9:
-						sensorSN = 9;
-						// hal_ResetBit(SensorStatus_L, 3);
-						break;
-					case 10:
-						sensorSN = 10;
-						// hal_ResetBit(SensorStatus_L, 2);
-						break;
-					case 11:
-						sensorSN = 11;
-						// hal_ResetBit(SensorStatus_L, 1);
-						break;
-					case 12:
-						sensorSN = 12;
-						// hal_ResetBit(SensorStatus_L, 0);
+						OSBsp.Device.Usart3.WriteNData(ScadaSS,CMDLength);
 						break;
 					default:
 						break;
 				}
 				hal_Delay_ms(2);//高波特率降低延时为1-2ms，否则容易丢包；低波特率增加延时，如4800延时10ms，否则容易丢包
-				// OSTimeDly(2);//高波特率降低延时为1-2ms，否则容易丢包；低波特率增加延时，如4800延时10ms，否则容易丢包
 				Recive_485_Enable;
-				// LED_ON;
-				// OSTimeDly(500);  //任务挂起
 				OSTimeDly(400);     //任务挂起
 				int ret = AnalyzeComand(dRxBuff,dRxNum);
 				OSTimeDly(100);     //LED指示灯延时
@@ -442,11 +346,6 @@ void InqureSensor(void)
 		if(AppDataPointer->TerminalInfoData.SensorFlashWriteStatus == SENSOR_STATUS_WRITEFLASH_NOTYET)
 		{
 			AppDataPointer->TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_ALREADY;
-			//++++测试专用+++if+++++++//
-			// infor_ChargeAddrBuff[21] = 0b00000011;       //0000 0011 1100 0000     Do,氨氮，温度，ORP               //++++++
-			// infor_ChargeAddrBuff[22] = 0b11000000;                                                                 //++++++
-			// OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);     //++++++
-			//++++实际专用+++else+++++++//
 			if(OSBsp.Device.InnerFlash.innerFLASHRead(20,infor_ChargeAddr) == 0x01) //0x01才允许修改Flash
 			{
 				infor_ChargeAddrBuff[21] = SensorStatus_H;
@@ -461,7 +360,6 @@ void InqureSensor(void)
 		if (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK)
 		{
 			if(OSBsp.Device.InnerFlash.innerFLASHRead(23,infor_ChargeAddr) == 0x01)
-			// if(OSBsp.Device.InnerFlash.innerFLASHRead(23,infor_ChargeAddr) == 0xFF)
 			{
 				AppDataPointer->TerminalInfoData.SensorStatusSimulation = (AppDataPointer->TerminalInfoData.SensorStatus) ^ (AppDataPointer->TerminalInfoData.SensorFlashStatus);
 				//传感器损坏，无数据才支持补发
@@ -524,27 +422,17 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
       return NULL;
     }
 
-	if(hal_GetBit(SensorStatus_H, 3)) {
-		cJSON_AddNumberToObject(pSubJson, "Flowl",DataPointer->FlowmeterData.Depth1Vlaue);
+	//if(hal_GetBit(SensorStatus_H, 1)) 
+	{
+		cJSON_AddNumberToObject(pSubJson, "Flowl",DataPointer->FlowmeterData.DepthValue);
+		cJSON_AddNumberToObject(pSubJson, "Temp",DataPointer->FlowmeterData.TempValue);
+		cJSON_AddNumberToObject(pSubJson, "Flows",DataPointer->FlowmeterData.FlowValue);
 	}
-	if(hal_GetBit(SensorStatus_H, 2)) {
-		cJSON_AddNumberToObject(pSubJson, "Flows",DataPointer->FlowmeterData.Speed1Vlaue);
+//	if(hal_GetBit(SensorStatus_H, 2)) 
+	{
+		cJSON_AddNumberToObject(pSubJson, "SS",DataPointer->FlowmeterData.SSValue);
 	}
-	if(hal_GetBit(SensorStatus_H, 1)) {
-	}
-	if(hal_GetBit(SensorStatus_H, 0)) {
-
-	}
-	if(hal_GetBit(SensorStatus_L, 7)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 6)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 5)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 4)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 3)) {
-	}
+	
 	if( (hal_GetBit(SensorStatus_L, 2))&&(hal_GetBit(SensorStatus_L, 1)) )
 	{
 	}
@@ -650,6 +538,7 @@ void ScadaData_base_Init(void)
 void Terminal_Para_Init(void)
 {
 	int i = 0;
+	uint8_t tempBuff[7] = {0};
 	Hex2Double TransferData;
 
 	/*********************设备当前运行状态****************************************/
@@ -665,14 +554,43 @@ void Terminal_Para_Init(void)
 	}
 	App.Data.TerminalInfoData.Longitude = TransferData.Data;
 	for(i=0;i<8;i++){
-		TransferData.Hex[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i+40,infor_ChargeAddr);
+		TransferData.Hex[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i+36,infor_ChargeAddr);
 	}
 	App.Data.TerminalInfoData.Latitude = TransferData.Data;
 	for(i=0;i<8;i++){
-		TransferData.Hex[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i+48,infor_ChargeAddr);
+		TransferData.Hex[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i+40,infor_ChargeAddr);
 	}
 	App.Data.TerminalInfoData.Altitude = TransferData.Data;
 
+	/************************管道参数信息*******************************************/
+	for(i=0;i<7;i++){
+		tempBuff[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i+48,infor_ChargeAddr);
+	}
+	if(tempBuff[0] <3)	//有效数据
+	{
+		shape.type = tempBuff[0];
+		shape.width = ((float)tempBuff[1]*256+tempBuff[2])/100;		//单位换算成m
+		if(shape.width == 0)
+		{
+			shape.width = 1;		//不可以为0
+			g_Printf_info("width set err!!!\r\n");
+		}
+		shape.height = ((float)tempBuff[3]*256+tempBuff[4])/100;		//单位换算成m
+		shape.high = ((float)tempBuff[5]*256+tempBuff[6])/100;		//单位换算成m
+		g_Printf_info("shape type %d\r\n",(int)shape.type);
+		g_Printf_info("shape width %f\r\n", (float)shape.width);
+		g_Printf_info("shape height %f\r\n", (float)shape.height);
+		g_Printf_info("shape high %f\r\n", (float)shape.high);
+	}
+	else
+	{
+		shape.type = 0;
+		shape.width = 1.0;		
+		shape.height = 1.0;		
+		shape.high = 0.1;
+		g_Printf_info("no shape data!!!\r\n");
+	}
+	
 
 	/************************DeviceID******************************************/
 	App.Data.TerminalInfoData.DeviceID = Hal_getDeviceID();
@@ -796,9 +714,109 @@ void Teminal_Data_Init(void)
 	Send_Buffer[58] = 0x00;
 	App.Data.TerminalInfoData.ReviseSimulationCode = 0;
 
-	AppDataPointer->FlowmeterData.Depth1Vlaue = 0.0;
-	AppDataPointer->FlowmeterData.Speed1Vlaue = 0.0;
+	AppDataPointer->FlowmeterData.DepthValue = 0.0;
+	AppDataPointer->FlowmeterData.SpeedValue = 0.0;
+	AppDataPointer->FlowmeterData.TempValue = 0.0;
+	AppDataPointer->FlowmeterData.SSValue = 0.0;
+}
 
+/*******************************************************************************
+* 函数名		: CalcFlow
+* 描述	    	: 计算流量，根据传感器测试水深和流速，以及系统配置管道参数、安装高度计算流量
+				  目前支持圆形和矩形
+* 输入参数  	: sl--传感器测试水深，speed--传感器测试流速
+* 返回参数 		: 流量
+*******************************************************************************/
+float CalcFlow(float sl, float speed)
+{
+//	float wl = 0.0;		//水高度
+	float s = 0.0;		//流量
+	float hu = 0.0;		//弧度
+	float dis = 0.0;		//液面与圆心距离
+	
+//	wl = sl + shape.high;	//计算管道水深度
+
+	if(shape.type==1)//矩形直接计算流量
+	{
+		s = sl * shape.width * speed;
+	}
+	else if(shape.type==2)	//圆形
+	{
+		if(sl>shape.width)	//水位高于圆半径
+		{
+			dis = sl - shape.width;		//计算页面-圆心距离
+			hu = 2 * PI - 2 * acos(dis / shape.width);//计算弧度
+			s = pow(shape.width, 2) * (hu / 2) + dis * shape.width * sin(hu / 2);//计算截面积
+			s = s * speed;	//计算流量
+		}
+		else//水位低于圆半径
+		{
+			dis = shape.width - sl;//计算页面-圆心距离			
+			hu = 2*acos(dis / shape.width);//计算弧度			
+			s = pow(shape.width,2) * (hu / 2) - dis*shape.width * sin(hu / 2);//计算截面积
+			s = s * speed;	//计算流量
+		}
+	}
+	else	//其他
+	{
+		s = 0;
+	}
+	return s;
+}
+
+/*******************************************************************************
+* 函数名		: CalcData
+* 描述	    	: 处理流速，液位，流量
+* 输入参数  	: 无
+* 返回参数 		: 无
+*******************************************************************************/
+void CalcData(void)
+{
+	uint8_t i;
+	float temp;
+	//采集完毕后刷一下刷子，避免长时间附着
+	Send_485_Enable;
+	hal_Delay_ms(5);
+	OSBsp.Device.Usart3.WriteNData(CleanSS,CMDLength);
+	hal_Delay_ms(2);//高波特率降低延时为1-2ms，否则容易丢包；低波特率增加延时，如4800延时10ms，否则容易丢包
+	Recive_485_Enable;
+
+	/*定义测试数据*/
+	AppDataPointer->FlowmeterData.DepthValue -= 0.01;
+	if(AppDataPointer->FlowmeterData.DepthValue <= 0)
+		AppDataPointer->FlowmeterData.DepthValue =  2*shape.width;
+		
+	AppDataPointer->FlowmeterData.SpeedValue = 1.0;
+
+	//计算深度均值
+	// for(i=0;i<FlowDtimes;i++)
+	// {
+	// 	temp += WQ_FlowD[i];
+	// }
+	// AppDataPointer->FlowmeterData.DepthValue = temp/FlowDtimes + shape.high;
+
+	// if(AppDataPointer->FlowmeterData.DepthValue < 0)	//判断异常值
+	// 	AppDataPointer->FlowmeterData.DepthValue = 0;
+	// else if(AppDataPointer->FlowmeterData.DepthValue > shape.height)
+	// 	AppDataPointer->FlowmeterData.DepthValue = shape.height;
+	
+	Send_Buffer[13]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)/256;
+	Send_Buffer[14]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)%256;
+	// //计算流速均值
+	// for(i=0;i<FlowStimes;i++)
+	// {
+	// 	temp += WQ_FlowS[i];
+	// }
+	// AppDataPointer->FlowmeterData.SpeedValue = temp/FlowStimes;
+	Send_Buffer[11]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)/256;
+	Send_Buffer[12]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)%256;
+	
+	
+	//计算流量
+	temp = CalcFlow(AppDataPointer->FlowmeterData.DepthValue, AppDataPointer->FlowmeterData.SpeedValue);
+	AppDataPointer->FlowmeterData.FlowValue = temp;
+	Send_Buffer[9]=(int)(AppDataPointer->FlowmeterData.FlowValue*1000)/256;
+	Send_Buffer[10]=(int)(AppDataPointer->FlowmeterData.FlowValue*1000)%256;
 }
 
 
