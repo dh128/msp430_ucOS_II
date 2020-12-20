@@ -540,6 +540,7 @@ void Terminal_Para_Init(void)
 	int i = 0;
 	uint8_t tempBuff[7] = {0};
 	Hex2Double TransferData;
+	char temp[20];			//打印数据buffer
 
 	/*********************设备当前运行状态****************************************/
 	App.Data.TerminalInfoData.DeviceFirstRunStatus = DEVICE_STATUS_FIRSTRUN_BEGIN;
@@ -577,10 +578,14 @@ void Terminal_Para_Init(void)
 		}
 		shape.height = ((float)tempBuff[3]*256+tempBuff[4])/100;		//单位换算成m
 		shape.high = ((float)tempBuff[5]*256+tempBuff[6])/100;		//单位换算成m
-		g_Printf_info("shape type %d\r\n",(int)shape.type);
-		g_Printf_info("shape width %f\r\n", (float)shape.width);
-		g_Printf_info("shape height %f\r\n", (float)shape.height);
-		g_Printf_info("shape high %f\r\n", (float)shape.high);
+		sprintf(temp,"type %d\t",shape.type);
+		g_Printf_info(temp);
+		sprintf(temp,"type %.2f\t",shape.width);
+		g_Printf_info(temp);
+		sprintf(temp,"type %.2f\t",shape.height);
+		g_Printf_info(temp);
+		sprintf(temp,"type %.2f\r\n",shape.high);
+		g_Printf_info(temp);
 	}
 	else
 	{
