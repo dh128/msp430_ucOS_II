@@ -76,8 +76,8 @@ uint8_t reportCommand[63]="AT+NMGS=25,FFFE0113164700110056322E313000000000000000
 uint8_t getCommand[65]="AT+NMGS=26,FFFE0115CFC00012310000000000000000000000000000000000\r\n";
 unsigned char Receive_data[1024]={0};
 
-static long addr_write = FOTA_ADDR_START;
-unsigned long readAddr = 0;     //SPI_Flash 读写地址
+long addr_write = FOTA_ADDR_START;
+// unsigned long readAddr = 0;     //SPI_Flash 读写地址
 // static unsigned char ECL_data=0;
 
 //static char TimeString[20] = "20170804 16:00:00";
@@ -577,6 +577,8 @@ void ProcessCommand()
 		if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
 		{
 			App.Data.TerminalInfoData.SendPeriod = (unsigned char)(Temp_SendPeriod & 0x00FF);
+			Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
+			Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
 			g_Printf_info("NB Set SendPeriod OK\r\n");
 			//将发送周期的信息存入Flash
 			// delay_ms(10);
@@ -638,7 +640,8 @@ void GetCode(int num)
 {
 	uint16_t temp1=0;	
 	uint16_t ii = 0;
-	
+	// long m = 0;
+	// uint32_t sumTemp = 0;
 	if(num < fota.PackageLen)	//分包获取数据包
 	{
 		//CRC
@@ -659,7 +662,31 @@ void GetCode(int num)
 	}
 	else		//上报下载完成
 	{
-		User_Printf("AT+NMGS=9,FFFE0116850E000100\r\n");
+		//重新上电flash，读取校验
+		// W25Q16_OFF;
+		// hal_Delay_sec(1);
+		// W25Q16_ON;
+		// hal_Delay_ms(200);
+		// W25Q16_Init();
+		// hal_Delay_ms(200);
+		// sumTemp = 0;
+		// for(m=FOTA_ADDR_START;m<addr_write;m++)
+		// {
+		// 	sumTemp += SPI_Flash_ReadByte(m);
+		// 	// sumTemp &= 0x00FF;
+		// }	
+		// if((sumTemp & 0xFF) == fota.CheckSum){
+		// 	g_Printf_dbg("Check code OK\r\n");
+			User_Printf("AT+NMGS=9,FFFE0116850E000100\r\n");
+		// }else{			
+		// 	g_Printf_dbg("Check code Err,checkSum=%x,sumTemp=%x\r\n",fota.CheckSum,sumTemp);
+		// 	for(m=FOTA_ADDR_START;m<addr_write;m++)		//输出错误固件查看
+		// 	{
+		// 		OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
+		// 	}	
+		// 	ReportUpErr(0x16, CheckErr);
+		// 	NB_Fota = 0;
+		// }
 	}
 }
 /*******************************************************************************
@@ -697,12 +724,14 @@ void ProcessPCP(unsigned char *p)
 {
 	OS_CPU_SR   cpu_sr = 0u;
 	uint8_t PCPData[512];
+	uint8_t readData[512];
 	uint16_t CRCtemp;
 	long addTemp = 0;
 	uint16_t ret = 0;	
 	long ii;
 	long m;
-	long length;
+	uint8_t checkTimes = 0;
+	uint16_t length;
 	uint8_t TestData[3]={0};
 	uint8_t Flash_Tmp[3];					//flash操作中间变量
 	HexStrToByte(p,PCPData);
@@ -713,7 +742,7 @@ void ProcessPCP(unsigned char *p)
 		//version 获取
 		report[9]=App.Data.TerminalInfoData.Version/100 +0x30;
 		report[10]=App.Data.TerminalInfoData.Version%100/10 +0x30;
-		report[11]=(App.Data.TerminalInfoData.Version-1)%10 +0x30;	//测试用，否则固件版本相同
+		report[11]=(App.Data.TerminalInfoData.Version)%10 +0x30;	//测试用，否则固件版本相同
 		//CRC
 		report[3]= 0x13;
 		report[4] = report[5] = 0;
@@ -745,7 +774,9 @@ void ProcessPCP(unsigned char *p)
 		//获取总包数
 		fota.PackageLen = PCPData[26];
 		fota.PackageLen = fota.PackageLen*256 + PCPData[27];
-		Base_3V3_OFF;
+		//关闭其他电源
+		OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
+		OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
 		W25Q16_ON;
 		OSTimeDly(100);
 		//擦除SPI
@@ -754,21 +785,24 @@ void ProcessPCP(unsigned char *p)
 		hal_Delay_ms(100);
 		// P4OUT |= BIT0;
 		W25Q16_Init();
-		readAddr = FOTA_ADDR_START;
+		OS_ENTER_CRITICAL();
+		addr_write = FOTA_ADDR_START;
 		for (ii=0;ii<6;ii++)
 		{
-			SPI_Flash_Erase_Block(readAddr);
-			readAddr += 0x10000;
+			SPI_Flash_Erase_Block(addr_write);
+			addr_write += 0x10000;
 		}
+		OS_EXIT_CRITICAL();
 		g_Printf_info("Erase SPI_Flash\r\n");
+		addr_write = FOTA_ADDR_START;
 		User_Printf("AT+NMGS=9,FFFE0114D768000100\r\n");		//允许升级
 		// System.Device.Timer.Stop(5);
 		// UpdateFlag = 1;
 		// OSTimeDly(100);
 		hal_Delay_ms(200);
-		if(App.Data.TerminalInfoData.PowerQuantity < 50){
+		if(App.Data.TerminalInfoData.PowerQuantity < 30){
 			ReportUpErr(0x14,LowPower);//上报错误
-		}else if(App.Data.TransMethodData.SINR < 0){
+		}else if(App.Data.TransMethodData.SINR < -10){
 			ReportUpErr(0x14,PoorSingal);//上报错误
 		}else{
 			NB_Fota = 1;
@@ -776,6 +810,9 @@ void ProcessPCP(unsigned char *p)
 		}
 	break;
 	case 0x15:			//存储新数据包，请求下一包
+		//关闭其他电源,下载中断，会重新打开电源，这里确保电源关闭，防止干扰写数据
+		OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
+		OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
 	//	byte[9],byte[10]为数据包数，应该等于PackageNum
 		ret = PCPData[9]*256 + PCPData[10];
 		length = strlen(p)/2-11;		//去除包头FFFE等11个字节数据
@@ -792,25 +829,43 @@ void ProcessPCP(unsigned char *p)
 			addTemp = addr_write;
 			fota.PackageNum ++;
 			/*文件和校验*/
-			//
-			for(m=0;m<length;m++)
-			{
-				SPI_Flash_Write_Data(PCPData[m+11],addr_write++);
-			}
-			aRxNum = 0;
+			// Hal_calcFileSum(&fota.CheckSum, PCPData+11, length);
+			//固件写入
+			checkTimes = 0;
+check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 			//检查写入数据
+			// hal_Delay_ms(100);
+			SPI_Flash_Read(readData , addr_write , length);
 			for(m=0;m<length;m++)
 			{
-				if(PCPData[m+11] != SPI_Flash_ReadByte(addTemp++)){
+				if(PCPData[m+11] != readData[m]){
+					checkTimes ++;
 					break;
 				}
 			}
 			if(m < length){		//校验错误
-				g_Printf_info("package check error\r\n");
+				if(checkTimes < 10){		//重复10次失败则放弃
+					hal_Delay_sec(2);
+					g_Printf_dbg("check again\r\n");
+					W25Q16_Init();
+					addTemp = addr_write + m;
+					if(addTemp % 4096 == 0){
+						SPI_Flash_Erase_Sector(addTemp);
+					}
+					goto check;
+				}
+				g_Printf_info("package check error m= %d,addr=%ld,checkaddr=%ld\r\n",m,addr_write,addTemp);
 				ReportUpErr(0x16, CheckErr);
+				for(m=FOTA_ADDR_START;m<(addr_write+500);m++)		//输出错误固件查看
+				{
+					OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
+				}	
 				NB_Fota = 0;
+				OS_EXIT_CRITICAL();		//break前退出临界态
 				break;
 			}
+			aRxNum = 0;
+			addr_write += length;
 			OS_EXIT_CRITICAL();
 			User_Printf("AT+NMGR\r\n");		//防止出现重复缓存
 			// OSTimeDly(100);
@@ -829,7 +884,6 @@ void ProcessPCP(unsigned char *p)
 		g_Printf_info("get 0x17 command\r\n");
 		fota.PackageNum = 0;		//结束下载，清零计数
 		User_Printf("AT+NMGS=9,FFFE0117B725000100\r\n");
-		// OSTimeDly(500);		//上报升级成功
 		hal_Delay_sec(1);
 		//CRC
 		report[3]= 0x18;
@@ -859,9 +913,10 @@ void ProcessPCP(unsigned char *p)
 			// d_t[m]=Read_Byte(m);
 			// OSBsp.Device.Usart2.WriteData(d_t[m]);
 			OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
+			hal_Delay_us(5);
 		}	
 		OS_EXIT_CRITICAL();
-		//判断存储数据头尾是否正确 然后配置启动标志位存放于infor_BootAddr
+
 		TestData[0] = SPI_Flash_ReadByte(addr_write-3);
 		TestData[1] = SPI_Flash_ReadByte(FOTA_ADDR_START+1);
 		if(TestData[0] == 'q' && TestData[1] == 'c')	//确认@c400和q\r\n,存储结束后addr_writer值为\n后面一位
@@ -872,10 +927,12 @@ void ProcessPCP(unsigned char *p)
 				Flash_Tmp[1] = (uint8_t)fota.newVersion;
 				OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 2, infor_BootAddr, 0);
 				hal_Delay_ms(10);
-				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == fota.newVersion)
+				if(OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_BootAddr) == 0x02 && OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_BootAddr) == fota.newVersion){
+					hal_Delay_sec(10);
 					hal_Reboot();			//重启MCU
-				else
+				}else{
 					goto loop8;	
+				}
 		}
 		else
 		{
@@ -1196,6 +1253,10 @@ void  TransmitTaskStart (void *p_arg)
 							g_Device_NB_Send_Str(Data_Backup,60);	
 							OSTimeDly(5000);	//等待10s
 							g_Device_NB_SendCheck();
+							if(NB_Fota){									//升级中断的情况，继续获取下发数据包
+								GetCode(fota.PackageNum);
+								OSTimeDly(200);
+							}
 							if(AppDataPointer->TransMethodData.NBSendStatus == 1)	//确认帧发送成功,发送数据前会置0
 							{
 								// if(ResendData)
@@ -1239,7 +1300,8 @@ void  TransmitTaskStart (void *p_arg)
 				|| (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error)
 				|| (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error))	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
 			{
-				Hal_EnterLowPower_Mode();
+				if( AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER)
+					Hal_EnterLowPower_Mode();
 			}  
 
             OSTimeDlyHMSM(0u, 0u, 0u, 200u);  

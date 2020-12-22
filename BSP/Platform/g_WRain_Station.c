@@ -105,16 +105,33 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 					    sensorCahe = (uint32_t)data[3]*256 + data[4];
 					    AppDataPointer->WRainData.LVValue = (uint16_t)(sensorCahe/10);    //mm单位转化为cm
 					    hal_SetBit(SensorStatus_H, 2);   //传感器状态位置1						
-					    Send_Buffer[9] = (uint32_t)(sensorCahe/10) / 256;
-					    Send_Buffer[10] = (uint32_t)(sensorCahe/10) % 256;
+					    Send_Buffer[7] = (uint32_t)(sensorCahe/10) / 256;
+					    Send_Buffer[8] = (uint32_t)(sensorCahe/10) % 256;
 					break;
 					case 0x08:	  //XPH--雨量
 						hal_SetBit(SensorStatus_H, 3);     //传感器状态位置1
 						RainStatus = 0B100000000000;
 						sensorCahe = (uint32_t)data[3]*256 + data[4];
 						AppDataPointer->WRainData.RainGauge = (float)sensorCahe/10;
-						Send_Buffer[7] = sensorCahe / 256;
-						Send_Buffer[8] = sensorCahe % 256;						
+						AppDataPointer->WRainData.RainGaugeH += AppDataPointer->WRainData.RainGauge;
+						AppDataPointer->WRainData.RainGaugeD += AppDataPointer->WRainData.RainGauge;
+						
+						Send_Buffer[9] = sensorCahe / 256;
+						Send_Buffer[10] = sensorCahe % 256;	
+						if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
+						{
+							g_Printf_dbg("RAINGAUGE_REPORT_HOUR\r\n");
+							//AppDataPointer->WRainData.RainGaugeScadaStatus &=  ~RAINGAUGE_REPORT_HOUR;
+							Send_Buffer[11] = (uint32_t)(AppDataPointer->WRainData.RainGaugeH*10) / 256;
+							Send_Buffer[12] = (uint32_t)(AppDataPointer->WRainData.RainGaugeH*10) % 256;	
+						}
+						if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_REPORT_DAY)//判断发送24小时数据
+						{
+							g_Printf_dbg("RAINGAUGE_REPORT_HOUR\r\n");
+							//AppDataPointer->WRainData.RainGaugeScadaStatus &= ~RAINGAUGE_REPORT_DAY;
+							Send_Buffer[13] = (uint32_t)(AppDataPointer->WRainData.RainGaugeD*10) / 256;
+							Send_Buffer[14] = (uint32_t)(AppDataPointer->WRainData.RainGaugeD*10) % 256;
+						}					
 						break;									
 					default:
 						break;
@@ -283,9 +300,9 @@ void InqureSensor(void)
 					case 1:
 						sensorSN = 1;
 						// hal_ResetBit(SensorStatus_H, 3);
-						if(AppDataPointer->WRainData.RainGaugeScadaStatus == RAINGAUGE_SCADA_ENABLE)
+						if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_SCADA_ENABLE)
 						{
-							AppDataPointer->WRainData.RainGaugeScadaStatus = RAINGAUGE_SCADA_DISABLE;
+							AppDataPointer->WRainData.RainGaugeScadaStatus &= ~RAINGAUGE_SCADA_ENABLE;
 							OSBsp.Device.Usart3.WriteNData(ScadaRainGauge_XPH,CMDLength);
 						}	
 						//雨量一个周期内只读取一次
@@ -670,6 +687,8 @@ void Teminal_Data_Init(void)
 
 	App.Data.WRainData.LVValue = 0;
 	App.Data.WRainData.RainGauge = 0.0;
+	App.Data.WRainData.RainGaugeH = 0.0;
+	App.Data.WRainData.RainGaugeD = 0.0;
 }
 
 

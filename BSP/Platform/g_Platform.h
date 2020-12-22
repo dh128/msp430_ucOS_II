@@ -39,7 +39,8 @@ enum AUTOMATIC_TIME_STATUS {
 
 enum RAINGAUGE_SCADA_STATUS {
 	RAINGAUGE_SCADA_ENABLE = 0x01,     //允许采集雨量
-	RAINGAUGE_SCADA_DISABLE = 0x02     //禁止采集雨量
+	RAINGAUGE_REPORT_HOUR  = 0x02,     //小时上报雨量
+	RAINGAUGE_REPORT_DAY   = 0x04     //24小时上报雨量
 };
 
 // typedef struct
@@ -165,8 +166,10 @@ typedef struct
 
 typedef struct
 {
-	char  RainGaugeScadaStatus;
+	char  RainGaugeScadaStatus;		//bit0--周期采集，bit1--小时上报，bit2--24小时上报
 	float RainGauge;             //雨量                  0~4.0     mm/min
+	float RainGaugeH;			//小时雨量
+	float RainGaugeD;			//24小时雨量
 	uint16_t LVValue;            //液位
 }WRainPlatform;       //水雨情监测平台
 
@@ -210,12 +213,11 @@ typedef struct
 
 typedef struct
 {
-	float Depth1Vlaue; //液位1
-	float Speed1Vlaue; //流速1
-	float Depth2Vlaue; //液位2
-	float Speed2Vlaue; //流速2
-	float Depth3Vlaue; //流速3
-	float Speed3Vlaue; //液位3
+	float TempValue; //温度
+	float DepthValue;	 //水深
+	float SpeedValue; //流速
+	float FlowValue; //流量
+	float SSValue; //悬浮物
 }FlowmeterPlatform;    //流量计监测平台
 
 typedef struct
@@ -386,7 +388,9 @@ char *MakeJsonBodyData(DataStruct *DataPointer);
 void ScadaData_base_Init();
 void Terminal_Para_Init(void);
 void Teminal_Data_Init(void);
-
+#if (PRODUCT_TYPE == Flowmeter_Station)
+void CalcData(void);
+#endif
 #endif
 
 
