@@ -130,11 +130,12 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 							WQ_FlowD[FlowDtimes] = AppDataPointer->FlowmeterData.DepthValue;
 						}
 						FlowDtimes++;
+						AppDataPointer->FlowmeterData.DepthValue = SensorData.Data;
+						// Send_Buffer[13]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)/256;
+						// Send_Buffer[14]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)%256;
 					}
 					
-					AppDataPointer->FlowmeterData.DepthValue = SensorData.Data;
-					Send_Buffer[13]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)/256;
-					Send_Buffer[14]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)%256;
+					
 
 					//水温
 					SensorData.Hex[0] = data[26];      //MCU是小端模式，低位字节存放在低位
@@ -159,10 +160,11 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 							WQ_FlowS[FlowStimes] = AppDataPointer->FlowmeterData.SpeedValue;
 						}
 						FlowStimes++;
+						AppDataPointer->FlowmeterData.SpeedValue = SensorData.Data;
+					// Send_Buffer[11]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)/256;
+					// Send_Buffer[12]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)%256;
 					}
-					AppDataPointer->FlowmeterData.SpeedValue = SensorData.Data;
-					Send_Buffer[11]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)/256;
-					Send_Buffer[12]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)%256;
+					
 					break;
 				case 0x0A:
 					SensorData.Hex[0] = data[4];      //MCU是小端模式，低位字节存放在低位，传感器数据0xCDAB
@@ -172,10 +174,10 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 					
 					hal_SetBit(SensorStatus_H, 2);   //传感器状态位置1
 					AppDataPointer->FlowmeterData.SSValue = SensorData.Data;
-					Send_Buffer[17]=((uint32_t)(AppDataPointer->FlowmeterData.SSValue*1000) & 0xFF000000)>>24;
-					Send_Buffer[18]=((uint32_t)(AppDataPointer->FlowmeterData.SSValue*1000) & 0x00FF0000)>>16;
-					Send_Buffer[19]=((uint32_t)(AppDataPointer->FlowmeterData.SSValue*1000) & 0x0000FF00)>>8;
-					Send_Buffer[20]=(uint32_t)(AppDataPointer->FlowmeterData.SSValue*1000) & 0x000000FF;
+					Send_Buffer[17]=((uint32_t)(AppDataPointer->FlowmeterData.SSValue*100) & 0xFF000000)>>24;
+					Send_Buffer[18]=((uint32_t)(AppDataPointer->FlowmeterData.SSValue*100) & 0x00FF0000)>>16;
+					Send_Buffer[19]=((uint32_t)(AppDataPointer->FlowmeterData.SSValue*100) & 0x0000FF00)>>8;
+					Send_Buffer[20]=(uint32_t)(AppDataPointer->FlowmeterData.SSValue*100) & 0x000000FF;
 					break;
 				default:
 						break;
@@ -422,13 +424,14 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
       return NULL;
     }
 
-	//if(hal_GetBit(SensorStatus_H, 1)) 
+	if(hal_GetBit(SensorStatus_H, 1)) 
 	{
-		cJSON_AddNumberToObject(pSubJson, "Flowl",DataPointer->FlowmeterData.DepthValue);
+		cJSON_AddNumberToObject(pSubJson, "FlowVal",DataPointer->FlowmeterData.FlowValue);
 		cJSON_AddNumberToObject(pSubJson, "Temp",DataPointer->FlowmeterData.TempValue);
-		cJSON_AddNumberToObject(pSubJson, "Flows",DataPointer->FlowmeterData.FlowValue);
+		cJSON_AddNumberToObject(pSubJson, "Flows",DataPointer->FlowmeterData.SpeedValue);
+		cJSON_AddNumberToObject(pSubJson, "Flowl",DataPointer->FlowmeterData.DepthValue);
 	}
-//	if(hal_GetBit(SensorStatus_H, 2)) 
+	if(hal_GetBit(SensorStatus_H, 2)) 
 	{
 		cJSON_AddNumberToObject(pSubJson, "SS",DataPointer->FlowmeterData.SSValue);
 	}
@@ -580,11 +583,11 @@ void Terminal_Para_Init(void)
 		shape.high = ((float)tempBuff[5]*256+tempBuff[6])/100;		//单位换算成m
 		sprintf(temp,"type %d\t",shape.type);
 		g_Printf_info(temp);
-		sprintf(temp,"type %.2f\t",shape.width);
+		sprintf(temp,"width %.2f\t",shape.width);
 		g_Printf_info(temp);
-		sprintf(temp,"type %.2f\t",shape.height);
+		sprintf(temp,"height %.2f\t",shape.height);
 		g_Printf_info(temp);
-		sprintf(temp,"type %.2f\r\n",shape.high);
+		sprintf(temp,"high %.2f\r\n",shape.high);
 		g_Printf_info(temp);
 	}
 	else
@@ -778,7 +781,7 @@ float CalcFlow(float sl, float speed)
 void CalcData(void)
 {
 	uint8_t i;
-	float temp;
+	float temp = 0.0;
 	//采集完毕后刷一下刷子，避免长时间附着
 	Send_485_Enable;
 	hal_Delay_ms(5);
@@ -787,32 +790,52 @@ void CalcData(void)
 	Recive_485_Enable;
 
 	/*定义测试数据*/
-	AppDataPointer->FlowmeterData.DepthValue -= 0.01;
-	if(AppDataPointer->FlowmeterData.DepthValue <= 0)
-		AppDataPointer->FlowmeterData.DepthValue =  2*shape.width;
+	// AppDataPointer->FlowmeterData.DepthValue -= 0.01;
+	// if(AppDataPointer->FlowmeterData.DepthValue <= 0)
+	// 	AppDataPointer->FlowmeterData.DepthValue =  2*shape.width;
 		
-	AppDataPointer->FlowmeterData.SpeedValue = 1.0;
+	// AppDataPointer->FlowmeterData.SpeedValue = 1.0;
 
 	//计算深度均值
-	// for(i=0;i<FlowDtimes;i++)
-	// {
-	// 	temp += WQ_FlowD[i];
-	// }
-	// AppDataPointer->FlowmeterData.DepthValue = temp/FlowDtimes + shape.high;
+	for(i=0;i<FlowDtimes;i++)
+	{
+		temp += WQ_FlowD[i];
+		WQ_FlowD[i] = 0;
+	}
+	if(FlowDtimes > 0)
+	{
+		AppDataPointer->FlowmeterData.DepthValue = temp/FlowDtimes;// + shape.high;
+		FlowDtimes = 0;
+	}
+	
 
-	// if(AppDataPointer->FlowmeterData.DepthValue < 0)	//判断异常值
-	// 	AppDataPointer->FlowmeterData.DepthValue = 0;
-	// else if(AppDataPointer->FlowmeterData.DepthValue > shape.height)
-	// 	AppDataPointer->FlowmeterData.DepthValue = shape.height;
+	if(AppDataPointer->FlowmeterData.DepthValue <= 0.001)	//判断异常值
+	{
+		AppDataPointer->FlowmeterData.DepthValue = 0;
+	}
+	else if(AppDataPointer->FlowmeterData.DepthValue > (shape.height-shape.high))	//超过上限
+	{
+		AppDataPointer->FlowmeterData.DepthValue = shape.height;		
+	}		
+	else		//正常范围+安装高度
+	{
+		AppDataPointer->FlowmeterData.DepthValue += shape.high;
+	}
 	
 	Send_Buffer[13]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)/256;
 	Send_Buffer[14]=(int)(AppDataPointer->FlowmeterData.DepthValue*1000)%256;
 	// //计算流速均值
-	// for(i=0;i<FlowStimes;i++)
-	// {
-	// 	temp += WQ_FlowS[i];
-	// }
-	// AppDataPointer->FlowmeterData.SpeedValue = temp/FlowStimes;
+	temp = 0.0;
+	for(i=0;i<FlowStimes;i++)
+	{
+		temp += WQ_FlowS[i];
+		WQ_FlowS[i] = 0;
+	}
+	if(FlowStimes > 0)
+	{
+		AppDataPointer->FlowmeterData.SpeedValue = temp/FlowStimes;
+		FlowStimes = 0;
+	}
 	Send_Buffer[11]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)/256;
 	Send_Buffer[12]=(int)(AppDataPointer->FlowmeterData.SpeedValue*1000)%256;
 	
