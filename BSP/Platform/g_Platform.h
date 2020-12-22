@@ -213,12 +213,11 @@ typedef struct
 
 typedef struct
 {
-	float Depth1Vlaue; //液位1
-	float Speed1Vlaue; //流速1
-	float Depth2Vlaue; //液位2
-	float Speed2Vlaue; //流速2
-	float Depth3Vlaue; //流速3
-	float Speed3Vlaue; //液位3
+	float TempValue; //温度
+	float DepthValue;	 //水深
+	float SpeedValue; //流速
+	float FlowValue; //流量
+	float SSValue; //悬浮物
 }FlowmeterPlatform;    //流量计监测平台
 
 typedef struct
@@ -389,7 +388,9 @@ char *MakeJsonBodyData(DataStruct *DataPointer);
 void ScadaData_base_Init();
 void Terminal_Para_Init(void);
 void Teminal_Data_Init(void);
-
+#if (PRODUCT_TYPE == Flowmeter_Station)
+void CalcData(void);
+#endif
 #endif
 
 

@@ -181,6 +181,10 @@ static  void  ScadaTaskStart (void *p_arg)
                 g_Printf_info("Scada_timeout_sec = %d\r\n",Scada_timeout_sec);
                 if(Scada_timeout_sec >= SCADATIME){//如果数据上传函数也在激活状态，很有可能上传时间把SCADATIME占用，导致提前结束
                     //if(Scada_timeout_sec >= 20){
+                    #if (PRODUCT_TYPE == Flowmeter_Station)
+                        CalcData();
+                        OSTimeDly(1000);OSTimeDly(1000);OSTimeDly(500);
+                    #endif
                     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCAN_OVER;
                     g_Printf_info("ScadaTask is over\n");
                 }

@@ -374,17 +374,6 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 			return 0;	
 		}else if(RxBuff[1] == 0xF0){		//终端信息查询指令
 			g_Printf_info("Enter %s and Check device Info now\r\n",__func__);
-			//GetADCValue();         //获取电池电量%
-			// OSBsp.Device.InnerFlash.FlashRsvWrite(infor_ChargeAddrBuff, 32, infor_ChargeAddr, 0);//把终端信息写入FLASH
-			// Send_Tmp[0] = 0xFF;
-			// for(i=1;i<33;i++){
-			// 	Send_Tmp[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i-1,infor_ChargeAddr);
-			// }
-			// Send_Tmp[33] = 0xFF;
-			// //OSBsp.Device.Usart2.WriteNData(Send_Tmp, 17);
-			//  Hex2Str(Send_Tmp_String,Send_Tmp,34,0); //将16进制转化成字符串
-			//  OSTimeDly(50);
-			//  g_Printf_info("InfoData:%s\r\n",Send_Tmp_String);    //直接吐给上位机，上位机解析字符串
 			OSTimeDly(100); 
 			f_tmp[0] = 0xFF;
 			f_tmp[1] = OSBsp.Device.InnerFlash.innerFLASHRead(1,infor_BootAddr);
@@ -434,6 +423,29 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 					return 0;
 				}else
 					goto loop6;
+		}else if(RxBuff[1] == 0xFB){		//设置管道参数
+			loop4:
+				g_Printf_info("Enter %s and Set flow para\r\n",__func__);
+				Flash_Tmp[0] = RxBuff[2];  //类型
+				Flash_Tmp[1] = RxBuff[3]; //高度/半径_H
+				Flash_Tmp[2] = RxBuff[4]; //高度/半径_L
+				Flash_Tmp[3] = RxBuff[5]; //宽度_H
+				Flash_Tmp[4] = RxBuff[6]; //宽度_L
+				Flash_Tmp[5] = RxBuff[7]; //安装宽度_H
+				Flash_Tmp[6] = RxBuff[8]; //安装宽度_L
+				OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[0], 7, infor_ChargeAddr, 48);//把终端信息写入FLASH
+				hal_Delay_ms(10);
+
+				if( OSBsp.Device.InnerFlash.innerFLASHRead(48, infor_ChargeAddr) == RxBuff[2] && 
+					OSBsp.Device.InnerFlash.innerFLASHRead(49, infor_ChargeAddr) == RxBuff[3] && 
+					OSBsp.Device.InnerFlash.innerFLASHRead(50, infor_ChargeAddr) == RxBuff[4] && 
+					OSBsp.Device.InnerFlash.innerFLASHRead(51, infor_ChargeAddr) == RxBuff[5] && 
+					OSBsp.Device.InnerFlash.innerFLASHRead(52, infor_ChargeAddr) == RxBuff[6] && 
+					OSBsp.Device.InnerFlash.innerFLASHRead(53, infor_ChargeAddr) == RxBuff[7] && 
+					OSBsp.Device.InnerFlash.innerFLASHRead(54, infor_ChargeAddr) == RxBuff[8]) {
+					return 0;
+				}else
+					goto loop4;
 		}else if(RxBuff[1] == 0xFE){	    //设置出厂信息
 			loop7:
 				g_Printf_info("Enter %s and Set device product date\r\n",__func__);
@@ -466,7 +478,7 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 			hal_Reboot();
 			return 0;
 		}
-	}else if((RxNum > 10)&&(RxNum == (RxBuff[2]+4))&&(RxBuff[RxNum-1]==0x0D)){
+	}else if((RxNum > 12)&&(RxNum == (RxBuff[2]+4))&&(RxBuff[RxNum-1]==0x0D)){
 		if(RxBuff[1] == 0x01){
 			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, infor_ChargeAddr, 64);//把终端信息写入FLASH
 		}else if(RxBuff[1] == 0x02){

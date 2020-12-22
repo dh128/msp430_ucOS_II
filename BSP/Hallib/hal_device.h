@@ -62,8 +62,8 @@
 #define Weather_Station        		0x05	 //气象监测仪
 #define Water_Station	      		0x06	 //水质水况监测仪
 #define Soil_Station          		0x07	 //土壤墒情监测仪
-#define Agriculture_Station   		0x08	 //农业监测仪
-#define Flowmeter_Station     		0x09	 //流量计监测仪
+#define Agriculture_Station   		0x09	 //农业监测仪
+#define Flowmeter_Station     		0x08	 //流量计监测仪
 #define Seeper_Station        		0x11	 //易涝点液位监测仪
 #define Flow_Station          		0x12	 //窨井管道流量监测仪
 #define Rain_Station          		0x13	 //雨量监测仪
@@ -84,8 +84,8 @@
 //  #define PRODUCT_TYPE                Weather_Station
 // #define PRODUCT_TYPE                Soil_Station
 //#define PRODUCT_TYPE 	            Voc_Station
-//#define PRODUCT_TYPE	             Flowmeter_Station
-#define PRODUCT_TYPE	             WRain_Station
+#define PRODUCT_TYPE	             Flowmeter_Station
+//#define PRODUCT_TYPE	             WRain_Station
 
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
