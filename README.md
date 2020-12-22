@@ -182,6 +182,15 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2020-11-03	dingh	WRain
 1、取消退出低功耗时串口2恢复功能，测试7天正常。
 
+2020-11-27	dingh	Cat1
+1、从WRain程序中checkout到Cat1分支，开发cat1模组上报数据功能,打开Debug串口，用于接收log；
+2、cat1模组采用上海合宙公司的Air724UG，修改GPRS程序中的部分指令配置，时钟读、存；
+3、修改水质程序，删除GPS信息组包，取消外部时钟读取，直接采用内部时钟，天机默认WL字段上报，不然平台不显示；
+4、修改GPRS程序中入网，校时，上报功能。
+
+2020-11-30	dingh	Cat1
+1、修改GPRS程序中cat1模组入网失败处理，CGATT？失败后，手动入网无效，所有失败均须重启模组。
+
 2020-12-15	dingh	WRain
 1、取消hal_layer_api.c文件中退出低功耗时使能雨量采集；
 2、在RTC中断中增加min==0时，使能雨量采集，实现雨量整点采集上报。
@@ -194,3 +203,4 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2、添加流量计安装参数配置，使用0xFB指令配置流量计管道参数（目前只支持圆和矩形）；
 3、添加流量计算算法，根据配置参数计读取的流速、液位信息，计算流量（目前只支持圆和矩形）；
 4、添加NB初始化失败后进低功耗前判断设备状态是否处于采集完，防止串口唤醒后立即又进低功耗。
+
