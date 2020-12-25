@@ -86,7 +86,7 @@ void  BSP_Init(void)
 {
     uint8_t hwclock[8];
     __disable_interrupt();                                      /* Disable all int. until we are ready to accept them   */
-    
+    // PMM_disableSvsLSvmL();          //关闭SVS
     // BSP_OSCloseWatchDog();
     InitWatchDog();
     BSP_OSClockInit();

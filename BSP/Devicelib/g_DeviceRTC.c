@@ -437,6 +437,17 @@ __interrupt void RTC_ISR(void)
 				min = BCDToHEX(RTCMIN);
 				if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //上传频率大于5min才具备低功耗模式
 				{
+					
+					#if (PRODUCT_TYPE == WRain_Station)    
+					if(min == 0)  //水雨情设备上报整点和24小时雨量
+					{
+						AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_HOUR;    
+						if(RTCHOUR == 0)
+						{
+							AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_DAY;
+						}
+					}
+					#endif
 					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
 						__bic_SR_register_on_exit(LPM0_bits);
 						Hal_ExitLowPower_Mode(Rtc_Int);
@@ -467,11 +478,11 @@ __interrupt void RTC_ISR(void)
 				{
 					g_MinuteTimeTick = 0;
 					g_HourTimeTick ++;
+					App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步,每小时校准一次
 					if(g_HourTimeTick == 24)//TEST
 					{
 						g_HourTimeTick = 0;
 						App.Data.TransMethodData.SeqNumber = 0;
-						App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步
 						//复位前把模块电源控制都关闭
 						#if (TRANSMIT_TYPE == GPRS_Mode)
 							OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);

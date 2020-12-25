@@ -45,13 +45,16 @@ void g_Device_SendByte_SPI2(uint8_t chr)
 * Input para     : data,len
 * Output para    : None
 *******************************************************************************/
-void g_Device_SendNByte_SPI2(uint8_t *data,uint8_t len)
+void g_Device_SendNByte_SPI2(uint8_t *data,uint16_t len)
 {
-	static uint8_t m = 0;
+	uint16_t m = 0;
+	uint8_t delayVar;
 	for(m=0;m<len;m++)
 	{
-		UCB2TXBUF = data[m];
 		while(!(UCB2IFG & UCTXIFG));
+		UCB2TXBUF = data[m];
+		while(!(UCB2IFG & UCRXIFG));
+		delayVar = UCB2RXBUF;
 	}
 }
 /*******************************************************************************
@@ -98,7 +101,7 @@ void g_Device_SPI2_Init(void)
 	                                        	//UCCKPH(SD CARD需要在上升沿读写数据且UCCKPL==0）
 												//8位数据SPI主机，不活动状态为高电平，高位在前
 	UCB2CTL1 |= UCSSEL__SMCLK;                  //选择参考时钟为SCMLK=16MHz
-	UCB2BR0 = 6;								//6分频
+	UCB2BR0 = 8;								//8分频==2M
 	UCB2BR1 = 0;
 	UCB2CTL1 &= ~UCSWRST;						//完成寄存器设置
 	//UCB2IE |= UCRXIE;							//使能中断

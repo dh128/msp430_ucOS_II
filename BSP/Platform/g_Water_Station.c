@@ -1175,7 +1175,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 		Send_Buffer[23] = (uint8_t)((TempCahe & 0xFF00) >> 8);
 		Send_Buffer[24] = (uint8_t)(TempCahe & 0xFF); //=%256
 	}
-	if (hal_GetBit(SensorStatus_L, 2))
+	//if (hal_GetBit(SensorStatus_L, 2))
 	{
 		cJSON_AddNumberToObject(pSubJson, "WL", DataPointer->WaterData.LVValue);
 	}
@@ -1196,10 +1196,10 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 #endif
 
 #if (ACCESSORY_TYPR == GPS_Mode)
-	sprintf((char *)gpsBuffer, (const char *)"%lf", DataPointer->TransMethodData.GPSLat_Point);
-	cJSON_AddStringToObject(pJsonRoot, (const char *)"latitude", (const char *)gpsBuffer);
-	sprintf((char *)gpsBuffer, (const char *)"%lf", DataPointer->TransMethodData.GPSLng_Point);
-	cJSON_AddStringToObject(pJsonRoot, (const char *)"longitude", (const char *)gpsBuffer);
+	// sprintf((char *)gpsBuffer, (const char *)"%lf", DataPointer->TransMethodData.GPSLat_Point);
+	// cJSON_AddStringToObject(pJsonRoot, (const char *)"latitude", (const char *)gpsBuffer);
+	// sprintf((char *)gpsBuffer, (const char *)"%lf", DataPointer->TransMethodData.GPSLng_Point);
+	// cJSON_AddStringToObject(pJsonRoot, (const char *)"longitude", (const char *)gpsBuffer);
 #endif
 
 	cJSON_AddNumberToObject(pJsonRoot, "SendPeriod", DataPointer->TerminalInfoData.SendPeriod);
@@ -1222,11 +1222,11 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	memset(date, 0x0, 8);
 	memset(Uptime, 0x0, 19);
 	memset(filestore, 0x0, 19);
-	OSBsp.Device.RTC.ReadExtTime(date, RealTime);
-	if ((date[4] > 0x59) || (date[5] > 0x59) || (date[6] > 0x59))
-	{
+	// OSBsp.Device.RTC.ReadExtTime(date, RealTime);
+	// if ((date[4] > 0x59) || (date[5] > 0x59) || (date[6] > 0x59))
+	// {
 		Read_info_RTC(date);
-	}
+	// }
 	g_Device_RTCstring_Creat(date, Uptime);
 	g_Printf_info("Uptime:%s\r\n", Uptime);
 	cJSON_AddStringToObject(pJsonRoot, "Uptime", Uptime);

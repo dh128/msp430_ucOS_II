@@ -111,6 +111,7 @@ uint32_t Hal_getSensorFlashStatus(void);
 uint16_t Hal_getBackupIndex(void);
 uint16_t Hal_getStartFile(void);
 uint8_t Hal_getFullFlag(void);
+void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num);
 #ifdef AIR202
 int Hal_getProductKey(char *produckey);
 int Hal_getDeviceName(char *devName);

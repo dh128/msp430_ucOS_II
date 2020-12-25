@@ -628,7 +628,17 @@ uint8_t Hal_getFullFlag(void)
     g_Printf_info("%s %d\n",__func__,temp);
     return (uint8_t)temp;
 }
-
+void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num)
+{
+    uint16_t j;
+    uint32_t result = *sum;
+    for(j=0;j<num;j++)
+    {
+      result += *data;
+      data ++;
+    }
+    *sum = result & 0xff;
+}
 #ifdef AIR202
 int Hal_getProductKey(char *produckey)
 {
@@ -706,6 +716,20 @@ void Hal_EnterLowPower_Mode(void)
     OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
     OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
+    if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
+    {
+        AppDataPointer->WRainData.RainGaugeScadaStatus &=  ~RAINGAUGE_REPORT_HOUR;
+        App.Data.WRainData.RainGaugeH = 0.0;
+        Send_Buffer[11] = 0x7F;
+        Send_Buffer[12] = 0xFF;	
+    }
+    if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_REPORT_DAY)//判断发送24小时数据
+    {
+        AppDataPointer->WRainData.RainGaugeScadaStatus &= ~RAINGAUGE_REPORT_DAY;
+	    App.Data.WRainData.RainGaugeD = 0.0;
+        Send_Buffer[13] = 0x7F;
+        Send_Buffer[14] = 0xFF;	
+    }
 #else
     OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
@@ -744,9 +768,11 @@ void Hal_EnterLowPower_Mode(void)
 	P4DIR |= BIT4;
 #endif
     //关闭串口2，Debug口
-    P7SEL &= 0xFC;
-    P7OUT = 0x00;
-    P7DIR |= 0x03;
+    // P7SEL &= 0xFC;
+    // P7OUT = 0x00;
+    // P7DIR |= 0x03;
+    // //关闭串口2 接收中断
+    // UCA2IE &= ~UCRXIE;
     //关闭串口3接收中断
     UCA3IE &= ~UCRXIE;
     gManager.systemLowpower = 1;
@@ -773,7 +799,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
        AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     
     #endif
     #if (PRODUCT_TYPE == WRain_Station)      
-        AppDataPointer->WRainData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;       
+        AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;       
     #endif
     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
         
@@ -784,7 +810,11 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
         AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
     }else{
-        AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+        if(App.Data.TransMethodData.SeqNumber == 0){        //seq==0重启模组，避免校时偏差
+            AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
+        }else{
+            AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+        }
     }
 #endif
 #if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
@@ -831,7 +861,8 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     g_Device_Usart1_Init(9600);
 #endif
     TBCTL |= MC_1;     //start timerB
-    P7SEL |= BIT0+BIT1;
+    // P7SEL |= BIT0+BIT1; //修改串口2 IO 功能
+    // UCA2IE |= UCRXIE;   //打开串口2 接收中断使能
     UCA3IE |= UCRXIE;   //打开串口3 接收中断使能
     g_Printf_info("Exit Low Power!\r\n");
 }
