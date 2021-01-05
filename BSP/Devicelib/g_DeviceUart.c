@@ -477,7 +477,7 @@ __interrupt void USCI_A0_ISR(void)
 			{
 				OSBsp.Device.Usart2.WriteData(UCA0RXBUF);  //GLZ测试屏蔽+++++++++++++++++++++++++++++++++++
 				aRxBuff[aRxNum++] = UCA0RXBUF;
-#if(TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#if(TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_MQTT_Ali)
 				if(aRxNum >= 1050){
 					aRxNum = 0;
 				}

@@ -204,3 +204,8 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 3、添加流量计算算法，根据配置参数计读取的流速、液位信息，计算流量（目前只支持圆和矩形）；
 4、添加NB初始化失败后进低功耗前判断设备状态是否处于采集完，防止串口唤醒后立即又进低功耗。
 
+2021-1-5	dingh	mqtt
+1、添加NBIoT_MQTT_Ali 传输类型，用于NB对接阿里云平台
+2、添加易涝点检测站，检测水位数据；
+3、修改Flash存储数据区阿里云三元组位置为0x1939开始；
+4、修改配置程序，将阿里云配置优先判断，避免数据长度一致冲突；
