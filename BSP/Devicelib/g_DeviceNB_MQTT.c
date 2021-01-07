@@ -729,7 +729,7 @@ char *MakeAliJsonBody(DataStruct *DataPointer)
         cJSON_Delete(pJsonRoot);
         return NULL;
     }
-	cJSON_AddStringToObject(pJsonRoot,"id",SeqNum);
+	cJSON_AddStringToObject(pJsonRoot,"id","0");
 	cJSON_AddStringToObject(pJsonRoot,"version","1.0");
 
 	pSubJson = NULL;
@@ -740,8 +740,10 @@ char *MakeAliJsonBody(DataStruct *DataPointer)
 	  cJSON_Delete(pJsonRoot);
 	  return NULL;
 	}
-	cJSON_AddNumberToObject(pSubJson, "Status",(int)(DataPointer->SeeperData.LVValue));     //水深
-	cJSON_AddNumberToObject(pSubJson, "Data",DataPointer->TerminalInfoData.BATVoltage);
+	cJSON_AddStringToObject(pSubJson, "DeviceType","SeeperStation"); 
+	cJSON_AddNumberToObject(pSubJson, "SeqNum",DataPointer->TransMethodData.SeqNumber);
+	cJSON_AddNumberToObject(pSubJson, "Level",(int)(DataPointer->SeeperData.LVValue));     //水深
+	cJSON_AddNumberToObject(pSubJson, "Bat",(int)(DataPointer->TerminalInfoData.PowerQuantity));	//电量
 	
 	cJSON_AddItemToObject(pJsonRoot, "params", pSubJson);
 	cJSON_AddStringToObject(pJsonRoot, "method","thing.event.property.post");

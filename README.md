@@ -209,3 +209,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2、添加易涝点检测站，检测水位数据；
 3、修改Flash存储数据区阿里云三元组位置为0x1939开始；
 4、修改配置程序，将阿里云配置优先判断，避免数据长度一致冲突；
+
+2020-1-6	dingh	mqtt
+1、修改上报数据字段类型
