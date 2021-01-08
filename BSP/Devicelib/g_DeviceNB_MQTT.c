@@ -740,7 +740,7 @@ char *MakeAliJsonBody(DataStruct *DataPointer)
 	  cJSON_Delete(pJsonRoot);
 	  return NULL;
 	}
-	cJSON_AddStringToObject(pSubJson, "DeviceType","SeeperStation"); 
+	cJSON_AddStringToObject(pSubJson, "DeviceType","SeeperData"); 
 	cJSON_AddNumberToObject(pSubJson, "SeqNum",DataPointer->TransMethodData.SeqNumber);
 	cJSON_AddNumberToObject(pSubJson, "Level",(int)(DataPointer->SeeperData.LVValue));     //水深
 	cJSON_AddNumberToObject(pSubJson, "Bat",(int)(DataPointer->TerminalInfoData.PowerQuantity));	//电量
