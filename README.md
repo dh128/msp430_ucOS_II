@@ -211,4 +211,7 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 4、修改配置程序，将阿里云配置优先判断，避免数据长度一致冲突；
 
 2020-1-8	dingh	mqtt
-1、修改上报数据字段类型
+1、修改上报数据字段类型。
+
+2020-1-11	dingh	develop
+1、修改MQTT客户对接地址。

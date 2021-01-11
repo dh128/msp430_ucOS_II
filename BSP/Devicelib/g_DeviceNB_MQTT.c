@@ -336,7 +336,8 @@ uint8_t g_Device_NB_register()
 	App.Data.TerminalInfoData.ProductKey,App.Data.TerminalInfoData.DeviceName,App.Data.TerminalInfoData.DeviceSecret);
 	NB_Config((unsigned char*)temp,5,5);	//配置参数，回复OK
 	OSTimeDly(100);
-	NB_MQTT_Config("AT+QMTOPEN=0,\"iot-as-mqtt.cn-shanghai.aliyuncs.com\",1883\r\n",5,5,"+QMTOPEN: 0,0");//创建客户端 回OK +QMTOPEN: 0,0
+	// NB_MQTT_Config("AT+QMTOPEN=0,\"iot-as-mqtt.cn-shanghai.aliyuncs.com\",1883\r\n",5,5,"+QMTOPEN: 0,0");//创建客户端 回OK +QMTOPEN: 0,0
+	NB_MQTT_Config("AT+QMTOPEN=0,\"mqtt.future-mxxz.com\",1883\r\n",5,5,"+QMTOPEN: 0,0");
 	OSTimeDly(100);
 	NB_MQTT_Config("AT+QMTCONN=0,\"SeeperIoT\"\r\n",5,5,"+QMTCONN: 0,0,0");	//连接服务器 回OK +QMTCONN: 0,0,0
 	OSTimeDly(100);
