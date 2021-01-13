@@ -80,13 +80,13 @@
 #define Custom_Station	      		0x55	 //定制需求监测站
 
 
- #define PRODUCT_TYPE                Water_Station
-//  #define PRODUCT_TYPE                Weather_Station
-// #define PRODUCT_TYPE                Soil_Station
+//#define PRODUCT_TYPE                Water_Station
+//#define PRODUCT_TYPE                Weather_Station
+//#define PRODUCT_TYPE                Soil_Station
 //#define PRODUCT_TYPE 	            Voc_Station
 //#define PRODUCT_TYPE	             Flowmeter_Station
 //#define PRODUCT_TYPE	             WRain_Station
-
+#define PRODUCT_TYPE	             Seeper_Station
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
 #define NBIoT_BC95_Mode	      		0x02
@@ -96,11 +96,13 @@
 #define LoRa_OM402_Mode		  		0x06
 #define GPRS_AIR202_Mode      		0x07
 #define LoRa_M100C_Mode      		0x08
+#define NBIoT_MQTT_Ali	      		0x09
 
-#define TRANSMIT_TYPE 			    GPRS_Mode
+//#define TRANSMIT_TYPE 			    GPRS_Mode
 //#define TRANSMIT_TYPE 			    NBIoT_BC95_Mode
 // #define TRANSMIT_TYPE 			    LoRa_M100C_Mode
 //#define TRANSMIT_TYPE 			    LoRa_F8L10D_Mode
+#define TRANSMIT_TYPE 			    NBIoT_MQTT_Ali
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
 	//这俩预定义只能选一个

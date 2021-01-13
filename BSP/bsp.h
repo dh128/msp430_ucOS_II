@@ -75,7 +75,7 @@
 #include <g_DeviceGprs.h>
 #include <g_DeviceNB.h>
 #include <g_DeviceLoRa.h>
-
+#include <g_DeviceNB_MQTT.h>
 #include <g_Platform.h>
 
 

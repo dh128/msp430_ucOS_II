@@ -639,12 +639,12 @@ void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num)
     }
     *sum = result & 0xff;
 }
-#ifdef AIR202
+#if (TRANSMIT_TYPE == NBIoT_MQTT_Ali)
 int Hal_getProductKey(char *produckey)
 {
     uint32_t keyLen =0;
-    keyLen = OSBsp.Device.InnerFlash.innerFLASHRead(64,infor_ChargeAddr);
-	if(keyLen == 0xff){
+    keyLen = OSBsp.Device.InnerFlash.innerFLASHRead(ProductKey_Addr,Infor_AliAddr);
+	if(keyLen > 32){
         g_Printf_info(("please set aliIot ProductKey first\r\n"));
 		return -1;
 	}
@@ -653,7 +653,7 @@ int Hal_getProductKey(char *produckey)
 	memset(produckey,0x0,sizeof(produckey));
 	memset(midTem,0x0,PRODUCT_KEY_LEN);
 	for(i=0;i<keyLen;i++)
-		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(65+i,infor_ChargeAddr);
+		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(ProductKey_Addr+1+i,Infor_AliAddr);
     
     strncpy(produckey, midTem, keyLen);
     
@@ -663,8 +663,8 @@ int Hal_getProductKey(char *produckey)
 int Hal_getDeviceName(char *devName)
 {
     uint32_t nameLen =0;
-    nameLen = OSBsp.Device.InnerFlash.innerFLASHRead(80,infor_ChargeAddr);
-	if(nameLen == 0xff){
+    nameLen = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceName_Addr,Infor_AliAddr);
+	if(nameLen > 32){
         g_Printf_info("please set aliIot DeviceName first\r\n");
 		return -1;
 	}
@@ -673,7 +673,7 @@ int Hal_getDeviceName(char *devName)
 	memset(devName,0x0,sizeof(devName));
 	memset(midTem,0x0,DEVICE_NAME_LEN);
 	for(i=0;i<nameLen;i++)
-		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(81+i,infor_ChargeAddr);
+		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceName_Addr+1+i,Infor_AliAddr);
     
     strncpy(devName, midTem, nameLen);
     
@@ -683,8 +683,8 @@ int Hal_getDeviceName(char *devName)
 int Hal_getDeviceSecret(char *devSecret)
 {
     uint32_t SecretLen =0;
-    SecretLen = OSBsp.Device.InnerFlash.innerFLASHRead(100,infor_ChargeAddr);
-	if(SecretLen == 0xff){
+    SecretLen = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceSecret_Addr,Infor_AliAddr);
+	if(SecretLen > 32){
         g_Printf_info("please set aliIot DeviceSecret first\r\n");
 		return -1;
 	}
@@ -693,7 +693,7 @@ int Hal_getDeviceSecret(char *devSecret)
 	memset(devSecret,0x0,sizeof(devSecret));
 	memset(midTem,0x0,DEVICE_SECRET_LEN);
 	for(i=0;i<SecretLen;i++)
-		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(101+i,infor_ChargeAddr);
+		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceSecret_Addr+1+i,Infor_AliAddr);
     
     strncpy(devSecret, midTem, SecretLen);
     
@@ -748,7 +748,7 @@ void Hal_EnterLowPower_Mode(void)
     AppDataPointer->TransMethodData.GPRSAttached = 0;
 	AppDataPointer->TransMethodData.GPRSATStatus = 0;
 #endif
-#if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
+#if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_MQTT_Ali || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
     if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
         OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);	//关闭NB电源
     }
@@ -803,10 +803,10 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
     #endif
     AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
         
-#if (TRANSMIT_TYPE == GPRS_Mode)
+    #if (TRANSMIT_TYPE == GPRS_Mode)
     AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
-#endif
-#if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+    #endif
+    #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
     if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
         AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
     }else{
@@ -816,15 +816,26 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
             AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
         }
     }
-#endif
-#if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
+    #endif
+    #if (TRANSMIT_TYPE == NBIoT_MQTT_Ali)
+    if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
+        AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
+    }else{
+        if(App.Data.TransMethodData.SeqNumber == 0){        //seq==0重启模组，避免校时偏差
+            AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
+        }else{
+            AppDataPointer->TransMethodData.NBStatus = NB_Registered;
+        }
+    }
+    #endif
+    #if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
     if(AppDataPointer->TransMethodData.LoRaNet)
         AppDataPointer->TransMethodData.LoRaStatus = LoRa_Join_Over;
     else    //进低功耗前入网失败，出低功耗后继续入网
     {
         AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
     }
-#endif
+    #endif
     #if (TRANSMIT_TYPE == LoRa_M100C_Mode)
         if(AppDataPointer->TransMethodData.LoRaNet)
         {

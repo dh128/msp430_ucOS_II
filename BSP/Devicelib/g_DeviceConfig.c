@@ -357,7 +357,17 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 //	uint8_t Send_Tmp_String[70];
 	int i;
 	__disable_interrupt();
-	if((RxNum==12)&& (RxBuff[0]==0x0D) && (RxBuff[RxNum-1]==0x0D)){
+	if((RxNum > 10)&&(RxNum == (RxBuff[2]+4))&&(RxBuff[RxNum-1]==0x0D)){
+		if(RxBuff[1] == 0x01){
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, Infor_AliAddr, ProductKey_Addr);//把终端信息写入FLASH
+		}else if(RxBuff[1] == 0x02){
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, Infor_AliAddr, DeviceName_Addr);//把终端信息写入FLASH
+		}else if(RxBuff[1] == 0x03){
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, Infor_AliAddr, DeviceSecret_Addr);//把终端信息写入FLASH
+		}
+		g_Printf_info("Enter %s Set OK\r\n",__func__);
+		return 0;
+	}else if((RxNum==12)&& (RxBuff[0]==0x0D) && (RxBuff[RxNum-1]==0x0D)){
 		for(i=0;i<RxNum;i++)
 			g_Printf_info("0x%x ",RxBuff[i]);
 		hal_Delay_ms(10);
@@ -478,16 +488,6 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 			hal_Reboot();
 			return 0;
 		}
-	}else if((RxNum > 12)&&(RxNum == (RxBuff[2]+4))&&(RxBuff[RxNum-1]==0x0D)){
-		if(RxBuff[1] == 0x01){
-			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, infor_ChargeAddr, 64);//把终端信息写入FLASH
-		}else if(RxBuff[1] == 0x02){
-			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, infor_ChargeAddr, 80);//把终端信息写入FLASH
-		}else if(RxBuff[1] == 0x03){
-			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, infor_ChargeAddr, 100);//把终端信息写入FLASH
-		}
-		g_Printf_info("Enter %s Set OK\r\n",__func__);
-		return 0;
 	}else if((RxNum == 27)&&(RxBuff[1] == 0xD1)&&(RxBuff[RxNum-1]==0x0D)){
 		g_Printf_info("Enter %s Set OK\r\n",__func__);
 		return 0;
