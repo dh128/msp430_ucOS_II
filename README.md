@@ -215,3 +215,7 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 
 2020-1-11	dingh	develop
 1、修改MQTT客户对接地址。
+
+2020-1-13	dingh	develop
+1、修改阿里云三元组存放位置为0x1880,每个长度32+1字节；
+2、读取三元组时判断长度超过32则认为时非法数据。

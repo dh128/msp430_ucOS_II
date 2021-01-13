@@ -359,11 +359,11 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 	__disable_interrupt();
 	if((RxNum > 10)&&(RxNum == (RxBuff[2]+4))&&(RxBuff[RxNum-1]==0x0D)){
 		if(RxBuff[1] == 0x01){
-			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, infor_ChargeAddr, ProductKey_Addr);//把终端信息写入FLASH
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, Infor_AliAddr, ProductKey_Addr);//把终端信息写入FLASH
 		}else if(RxBuff[1] == 0x02){
-			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, infor_ChargeAddr, DeviceName_Addr);//把终端信息写入FLASH
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, Infor_AliAddr, DeviceName_Addr);//把终端信息写入FLASH
 		}else if(RxBuff[1] == 0x03){
-			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, infor_ChargeAddr, DeviceSecret_Addr);//把终端信息写入FLASH
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&RxBuff[2], RxBuff[2]+1, Infor_AliAddr, DeviceSecret_Addr);//把终端信息写入FLASH
 		}
 		g_Printf_info("Enter %s Set OK\r\n",__func__);
 		return 0;

@@ -9,11 +9,10 @@
 
 #define infor_BootAddr		0x1800
 #define infor_ChargeAddr	0x1900
-
-#define ProductKey_Addr         0x39
-#define DeviceName_Addr         0x49
-#define DeviceSecret_Addr       0x59
-
+#define Infor_AliAddr       0X1880  
+#define ProductKey_Addr     0x00
+#define DeviceName_Addr     0x21
+#define DeviceSecret_Addr   0x42
 // 0x1800——升级标志位    01
 // 0x1801——当前版本号
 // 0x1802——版本号缓存

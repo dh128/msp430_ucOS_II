@@ -643,8 +643,8 @@ void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num)
 int Hal_getProductKey(char *produckey)
 {
     uint32_t keyLen =0;
-    keyLen = OSBsp.Device.InnerFlash.innerFLASHRead(ProductKey_Addr,infor_ChargeAddr);
-	if(keyLen == 0xff){
+    keyLen = OSBsp.Device.InnerFlash.innerFLASHRead(ProductKey_Addr,Infor_AliAddr);
+	if(keyLen > 32){
         g_Printf_info(("please set aliIot ProductKey first\r\n"));
 		return -1;
 	}
@@ -653,7 +653,7 @@ int Hal_getProductKey(char *produckey)
 	memset(produckey,0x0,sizeof(produckey));
 	memset(midTem,0x0,PRODUCT_KEY_LEN);
 	for(i=0;i<keyLen;i++)
-		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(ProductKey_Addr+1+i,infor_ChargeAddr);
+		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(ProductKey_Addr+1+i,Infor_AliAddr);
     
     strncpy(produckey, midTem, keyLen);
     
@@ -663,8 +663,8 @@ int Hal_getProductKey(char *produckey)
 int Hal_getDeviceName(char *devName)
 {
     uint32_t nameLen =0;
-    nameLen = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceName_Addr,infor_ChargeAddr);
-	if(nameLen == 0xff){
+    nameLen = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceName_Addr,Infor_AliAddr);
+	if(nameLen > 32){
         g_Printf_info("please set aliIot DeviceName first\r\n");
 		return -1;
 	}
@@ -673,7 +673,7 @@ int Hal_getDeviceName(char *devName)
 	memset(devName,0x0,sizeof(devName));
 	memset(midTem,0x0,DEVICE_NAME_LEN);
 	for(i=0;i<nameLen;i++)
-		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceName_Addr+1+i,infor_ChargeAddr);
+		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceName_Addr+1+i,Infor_AliAddr);
     
     strncpy(devName, midTem, nameLen);
     
@@ -683,8 +683,8 @@ int Hal_getDeviceName(char *devName)
 int Hal_getDeviceSecret(char *devSecret)
 {
     uint32_t SecretLen =0;
-    SecretLen = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceSecret_Addr,infor_ChargeAddr);
-	if(SecretLen == 0xff){
+    SecretLen = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceSecret_Addr,Infor_AliAddr);
+	if(SecretLen > 32){
         g_Printf_info("please set aliIot DeviceSecret first\r\n");
 		return -1;
 	}
@@ -693,7 +693,7 @@ int Hal_getDeviceSecret(char *devSecret)
 	memset(devSecret,0x0,sizeof(devSecret));
 	memset(midTem,0x0,DEVICE_SECRET_LEN);
 	for(i=0;i<SecretLen;i++)
-		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceSecret_Addr+1+i,infor_ChargeAddr);
+		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceSecret_Addr+1+i,Infor_AliAddr);
     
     strncpy(devSecret, midTem, SecretLen);
     
