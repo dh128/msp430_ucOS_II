@@ -21,9 +21,9 @@
 *                                          MSP-EXP430F5259LP
 *                                          Evaluation Board
 *
-* Filename      : g_Voc_Station.c
+* Filename      : g_Flowmeter_Station.c
 * Version       : V1.00
-* Programmer(s) : GLZ
+* Programmer(s) : Dingh
 *********************************************************************************************************
 */
 #include  <hal_layer_api.h>
