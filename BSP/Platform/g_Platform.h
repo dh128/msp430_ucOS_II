@@ -191,6 +191,17 @@ typedef struct
 
 typedef struct
 {
+	float CODValue;
+	float ECValue;
+	float DOValue;
+	float NH4Value;
+	float WaterTemp;
+	float ORPValue;
+	float ZSValue;
+	float PHValue;
+}MagicPlatform;       //水质监测平台
+typedef struct
+{
 	float SoilTemp;				 //土壤温度                -40~80.00   ℃
 	float SoilHum;		         //土壤水分（湿度）        0~100.00   %
 	uint16_t SoilCond;	         //土壤电导率              0~20000   us/cm  SoilConductivity
@@ -344,6 +355,8 @@ typedef struct
 	FlowPlatform               FlowData;
 #elif (PRODUCT_TYPE == Rain_Station)    
 	RainPlatform               RainData;
+#elif (PRODUCT_TYPE == MagicSTICK_Station)    
+	MagicPlatform               MagicData;
 #endif
 	PitWellPlatform            PitWellData;
 	InputmodeWellPlatform      InputmodeWellData;

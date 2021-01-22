@@ -789,67 +789,71 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
 {
     hal_Delay_ms(100);
     gManager.systemLowpower = 0;
-    // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
-    // OSBsp.Device.IOControl.PowerSet(Sensor_Power_On);
-    // OSBsp.Device.IOControl.PowerSet(Max485_Power_On);
 
     if(int_Src == Rtc_Int)
     {
-    #if (PRODUCT_TYPE == Weather_Station)      
-       AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     
-    #endif
-    #if (PRODUCT_TYPE == WRain_Station)      
-        AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;       
-    #endif
-    AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
-        
-    #if (TRANSMIT_TYPE == GPRS_Mode)
-    AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
-    #endif
-    #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-    if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
-        AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
-    }else{
-        if(App.Data.TransMethodData.SeqNumber == 0){        //seq==0重启模组，避免校时偏差
-            AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
+        #if (PRODUCT_TYPE == MagicSTICK_Station)   
+            g_Printf_info("Sensor power on ahead 100s\r\n");
+            OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
+            OSBsp.Device.IOControl.PowerSet(Sensor_Power_On);
+            // OSBsp.Device.IOControl.PowerSet(Max485_Power_On);
+            hal_Delay_sec(90);     //延时120s
+        #endif
+        #if (PRODUCT_TYPE == Weather_Station)      
+        AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     
+        #endif
+        #if (PRODUCT_TYPE == WRain_Station)      
+            AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;       
+        #endif
+        AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
+            
+        #if (TRANSMIT_TYPE == GPRS_Mode)
+        AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
+        #endif
+        #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+        if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
+            AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
         }else{
-            AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+            if(App.Data.TransMethodData.SeqNumber == 0){        //seq==0重启模组，避免校时偏差
+                AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
+            }else{
+                AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+            }
         }
-    }
-    #endif
-    #if (TRANSMIT_TYPE == NBIoT_MQTT_Ali)
-    if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
-        AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
-    }else{
-        if(App.Data.TransMethodData.SeqNumber == 0){        //seq==0重启模组，避免校时偏差
-            AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
+        #endif
+        #if (TRANSMIT_TYPE == NBIoT_MQTT_Ali)
+        if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
+            AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
         }else{
-            AppDataPointer->TransMethodData.NBStatus = NB_Registered;
+            if(App.Data.TransMethodData.SeqNumber == 0){        //seq==0重启模组，避免校时偏差
+                AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
+            }else{
+                AppDataPointer->TransMethodData.NBStatus = NB_Registered;
+            }
         }
-    }
-    #endif
-    #if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
-    if(AppDataPointer->TransMethodData.LoRaNet)
-        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Join_Over;
-    else    //进低功耗前入网失败，出低功耗后继续入网
-    {
-        AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
-    }
-    #endif
-    #if (TRANSMIT_TYPE == LoRa_M100C_Mode)
+        #endif
+        #if (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
         if(AppDataPointer->TransMethodData.LoRaNet)
-        {
-            AppDataPointer->TransMethodData.LoRaNet = 0;
-            AppDataPointer->TransMethodData.LoRaStatus = LoRa_Init_Done;    
-            #if (PRODUCT_TYPE == Weather_Station)              
-            AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
-            #endif            
-        }
+            AppDataPointer->TransMethodData.LoRaStatus = LoRa_Join_Over;
         else    //进低功耗前入网失败，出低功耗后继续入网
         {
             AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
         }
-    #endif
+        #endif
+        #if (TRANSMIT_TYPE == LoRa_M100C_Mode)
+            if(AppDataPointer->TransMethodData.LoRaNet)
+            {
+                AppDataPointer->TransMethodData.LoRaNet = 0;
+                AppDataPointer->TransMethodData.LoRaStatus = LoRa_Init_Done;    
+                #if (PRODUCT_TYPE == Weather_Station)              
+                AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
+                #endif            
+            }
+            else    //进低功耗前入网失败，出低功耗后继续入网
+            {
+                AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
+            }
+        #endif
     }
     else if(int_Src == Uart_Int){
         AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_IDLE;
