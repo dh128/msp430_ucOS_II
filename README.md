@@ -232,3 +232,8 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、添加MAGICSTCK设备类型；
 2、修改NB对接电信IoT前发送自动注册指令；
 3、添加定时器退出低功耗时设备等待120s再运行功能。
+
+2021-1-25	dingh	magic
+1、取消COD解析中数据值判断;
+2、修改magic和water中COD数值NB上报精度为2位小数；
+3、修复magic和water中ORP数据上报错误；

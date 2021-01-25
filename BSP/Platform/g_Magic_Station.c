@@ -117,7 +117,7 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						WQ_ValueTemp.DOValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 1);			 //传感器状态位置1
 
-						//溶解氧
+						//浊度
 						SensorData.Hex[0] = data[15]; //小端模式，高位字节存放在前面
 						SensorData.Hex[1] = data[16];
 						SensorData.Hex[2] = data[17];
@@ -125,18 +125,14 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						WQ_ValueTemp.ZSValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 2);			 //传感器状态位置2
 
-						//溶解氧
+						//电导率
 						SensorData.Hex[0] = data[19]; //小端模式，高位字节存放在前面
 						SensorData.Hex[1] = data[20];
 						SensorData.Hex[2] = data[21];
 						SensorData.Hex[3] = data[22];						
-						WQ_ValueTemp.ECValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
+						WQ_ValueTemp.ECValue = (uint16_t)SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 3);			 //传感器状态位置3
 
-						// if ((WQ_ValueTemp.NH4Value <= 0.0) || (WQ_ValueTemp.NH4Value >= 50.0)) //输值根据实际水情而定，作为参考
-						// {
-						// 	WQ_ValueTemp.NH4Value = AppDataPointer->MagicData.NH4Value;
-						// }
 					}
 					break;
 				case 0x02:	//COD
@@ -147,12 +143,7 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 					SensorData.Hex[2] = data[5];
 					SensorData.Hex[3] = data[6];
 					WQ_ValueTemp.CODValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
-						hal_SetBit(SensorStatus_H, 4);			 //传感器状态位置4
-
-					if ((WQ_ValueTemp.CODValue <= 5.0) || (WQ_ValueTemp.CODValue >= 60.0)) //输值根据实际水情而定，作为参考
-					{
-						WQ_ValueTemp.CODValue = AppDataPointer->MagicData.CODValue;
-					}
+					hal_SetBit(SensorStatus_H, 4);			 //传感器状态位置4
 					
 					break;
 				case 0x03:	//PH  ORP  NH4+ 
@@ -171,7 +162,7 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[1] = data[8];
 						SensorData.Hex[2] = data[9];
 						SensorData.Hex[3] = data[10];
-						WQ_ValueTemp.ORPValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
+						WQ_ValueTemp.ORPValue = (int16_t)SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 6);			 //传感器状态位置6
 						
 						//NH4+
@@ -181,12 +172,7 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[3] = data[14];
 						WQ_ValueTemp.NH4Value = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 7);			 //传感器状态位置7
-
-						// if ((WQ_ValueTemp.ORPValue <= -200) || (WQ_ValueTemp.ORPValue >= 300)) //输值根据实际水情而定，作为参考
-						// {
-						// 	WQ_ValueTemp.ORPValue = AppDataPointer->MagicData.ORPValue;
-						// }
-						
+											
 					}
 					break;
 				
@@ -208,14 +194,6 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 			Len = 0;
 			return -2;
 		}
-
-		// SensorStatusBuff[0] = SensorStatus_H;
-		// SensorStatusBuff[1] = SensorStatus_L;
-		// AppDataPointer->TerminalInfoData.SensorStatus = (uint16_t)SensorStatus_H*256 + (uint16_t)SensorStatus_L;
-
-		// Clear_CMD_Buffer(dRxBuff,dRxNum);
-		// dRxNum=0;
-		// Len = 0;
 	}
 	else
 	{
@@ -287,7 +265,7 @@ static int SimulationSensorData(void)
 				Send_Buffer[20] = (uint32_t)(SimulationSensorFloatCahe * 100) % 256;
 				/**************EC****************/ //321~341
 				SimulationSensorFloatCahe = (float)(541 + rand() % 20 - rand() % 20);
-				AppDataPointer->MagicData.ECValue = SimulationSensorFloatCahe;
+				AppDataPointer->MagicData.ECValue = (uint16_t)SimulationSensorFloatCahe;
 				hal_SetBit(SensorStatus_H, 3);			 //传感器状态位置1
 				hal_SetBit(SensorSimulationStatus_H, 3); //传感器模拟状态位置1
 				Send_Buffer[9] = (uint32_t)(SimulationSensorFloatCahe) / 256;
@@ -299,8 +277,8 @@ static int SimulationSensorData(void)
 				AppDataPointer->MagicData.CODValue = SimulationSensorFloatCahe;
 				hal_SetBit(SensorStatus_H, 4);			 //传感器状态位置1
 				hal_SetBit(SensorSimulationStatus_H, 4); //传感器模拟状态位置1
-				Send_Buffer[7] = (uint32_t)(SimulationSensorFloatCahe * 10) / 256;
-				Send_Buffer[8] = (uint32_t)(SimulationSensorFloatCahe * 10) % 256;
+				Send_Buffer[7] = (uint32_t)(SimulationSensorFloatCahe * 100) / 256;
+				Send_Buffer[8] = (uint32_t)(SimulationSensorFloatCahe * 100) % 256;
 				break;
 			case 3:
 				/**************PH**************/ //7.21~7.61
@@ -312,7 +290,7 @@ static int SimulationSensorData(void)
 				Send_Buffer[22] = (uint32_t)(SimulationSensorFloatCahe * 100) % 256;
 				/**************ORP**************/ //71~101
 				SimulationSensorFloatCahe = (float)(91 + rand() % 30 - rand() % 30);
-				AppDataPointer->MagicData.ORPValue = SimulationSensorFloatCahe;
+				AppDataPointer->MagicData.ORPValue = (int16_t)SimulationSensorFloatCahe;
 				hal_SetBit(SensorStatus_H, 6);			 //传感器状态位置1
 				hal_SetBit(SensorSimulationStatus_H, 6); //传感器模拟状态位置1
 				if (AppDataPointer->MagicData.ORPValue >= 0)
@@ -416,7 +394,7 @@ void FilteringSensor(void)
 		}
 		if (AppDataPointer->MagicData.ECValue == 0)
 		{
-			AppDataPointer->MagicData.ECValue = 321.0; //电导率在空气中可能出现0；
+			AppDataPointer->MagicData.ECValue = 321; //电导率在空气中可能出现0；
 			hal_ResetBit(SensorStatus_H, 3);
 		}
 		if (AppDataPointer->MagicData.CODValue == 0.0)
@@ -669,7 +647,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	{
 		cJSON_AddNumberToObject(pSubJson, "COD", DataPointer->MagicData.CODValue);
 
-		TempCahe = (uint32_t)(DataPointer->MagicData.CODValue * 10);
+		TempCahe = (uint32_t)(DataPointer->MagicData.CODValue * 100);
 		Send_Buffer[7] = (uint8_t)((TempCahe & 0xFF00) >> 8);
 		Send_Buffer[8] = (uint8_t)(TempCahe & 0xFF);
 	}
@@ -685,11 +663,11 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	{
 		cJSON_AddNumberToObject(pSubJson, "ORP", DataPointer->MagicData.ORPValue);
 
-		TempIntCahe = (uint32_t)(DataPointer->MagicData.ORPValue);
+		TempIntCahe = (int32_t)(DataPointer->MagicData.ORPValue);
 		if (TempIntCahe >= 0)
 		{														   //ORP为正数
-			Send_Buffer[17] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-			Send_Buffer[18] = (uint8_t)(TempCahe & 0xFF);		   //=%256
+			Send_Buffer[17] = (uint8_t)((TempIntCahe & 0xFF00) >> 8); //=/256
+			Send_Buffer[18] = (uint8_t)(TempIntCahe & 0xFF);		   //=%256
 		}
 		else
 		{																	   //ORP为负数
@@ -963,20 +941,20 @@ void Teminal_Data_Init(void)
 	App.Data.TerminalInfoData.ReviseSimulationCode = 0;
 
 	App.Data.MagicData.CODValue = 0.0;
-	App.Data.MagicData.ECValue = 0.0;
+	App.Data.MagicData.ECValue = 0;
 	App.Data.MagicData.DOValue = 0.0;
 	App.Data.MagicData.NH4Value = 0.0;
 	App.Data.MagicData.WaterTemp = 0.0;
-	App.Data.MagicData.ORPValue = 0.0;
+	App.Data.MagicData.ORPValue = 0;
 	App.Data.MagicData.ZSValue = 0.0;
 	App.Data.MagicData.PHValue = 0.0;
 
 	WQ_ValueTemp.CODValue = 0.0;
-	WQ_ValueTemp.ECValue = 0.0;
+	WQ_ValueTemp.ECValue = 0;
 	WQ_ValueTemp.DOValue = 0.0;
 	WQ_ValueTemp.NH4Value = 0.0;
 	WQ_ValueTemp.WaterTemp = 0.0;
-	WQ_ValueTemp.ORPValue = 0.0;
+	WQ_ValueTemp.ORPValue = 0;
 	WQ_ValueTemp.ZSValue = 0.0;
 	WQ_ValueTemp.PHValue = 0.0;
 }

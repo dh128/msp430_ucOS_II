@@ -359,8 +359,8 @@ static int SimulationSensorData(void)
 				AppDataPointer->WaterData.CODValue = SimulationSensorFloatCahe;
 				hal_SetBit(SensorStatus_H, 3);			 //传感器状态位置1
 				hal_SetBit(SensorSimulationStatus_H, 3); //传感器模拟状态位置1
-				Send_Buffer[7] = (uint32_t)(SimulationSensorFloatCahe * 10) / 256;
-				Send_Buffer[8] = (uint32_t)(SimulationSensorFloatCahe * 10) % 256;
+				Send_Buffer[7] = (uint32_t)(SimulationSensorFloatCahe * 100) / 256;
+				Send_Buffer[8] = (uint32_t)(SimulationSensorFloatCahe * 100) % 256;
 				break;
 			case 2:
 				/**************EC****************/ //321~341
@@ -818,7 +818,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	{
 		cJSON_AddNumberToObject(pSubJson, "COD", DataPointer->WaterData.CODValue);
 
-		TempCahe = (uint32_t)(DataPointer->WaterData.CODValue * 10);
+		TempCahe = (uint32_t)(DataPointer->WaterData.CODValue * 100);
 		Send_Buffer[7] = (uint8_t)((TempCahe & 0xFF00) >> 8);
 		Send_Buffer[8] = (uint8_t)(TempCahe & 0xFF);
 	}
@@ -869,8 +869,8 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 		TempIntCahe = (uint32_t)(DataPointer->WaterData.ORPValue);
 		if (TempIntCahe >= 0)
 		{														   //ORP为正数
-			Send_Buffer[17] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-			Send_Buffer[18] = (uint8_t)(TempCahe & 0xFF);		   //=%256
+			Send_Buffer[17] = (uint8_t)((TempIntCahe & 0xFF00) >> 8); //=/256
+			Send_Buffer[18] = (uint8_t)(TempIntCahe & 0xFF);		   //=%256
 		}
 		else
 		{																	   //ORP为负数

@@ -192,11 +192,11 @@ typedef struct
 typedef struct
 {
 	float CODValue;
-	float ECValue;
+	uint16_t ECValue;
 	float DOValue;
 	float NH4Value;
 	float WaterTemp;
-	float ORPValue;
+	int16_t ORPValue;
 	float ZSValue;
 	float PHValue;
 }MagicPlatform;       //水质监测平台
