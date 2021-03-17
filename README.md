@@ -237,3 +237,7 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、取消COD解析中数据值判断;
 2、修改magic和water中COD数值NB上报精度为2位小数；
 3、修复magic和water中ORP数据上报错误；
+
+2021-1-26	dingh	magic
+1、cond的值解析乘以1000，单位换算成是us/cm;
+2、COD的延时需要增加到150s，避免出现0的问题。

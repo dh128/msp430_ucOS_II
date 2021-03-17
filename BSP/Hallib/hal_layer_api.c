@@ -797,7 +797,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
             OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
             OSBsp.Device.IOControl.PowerSet(Sensor_Power_On);
             // OSBsp.Device.IOControl.PowerSet(Max485_Power_On);
-            hal_Delay_sec(90);     //延时120s
+            hal_Delay_sec(150);     //延时150s
         #endif
         #if (PRODUCT_TYPE == Weather_Station)      
         AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     

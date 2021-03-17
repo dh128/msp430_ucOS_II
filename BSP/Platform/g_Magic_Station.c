@@ -130,7 +130,7 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[1] = data[20];
 						SensorData.Hex[2] = data[21];
 						SensorData.Hex[3] = data[22];						
-						WQ_ValueTemp.ECValue = (uint16_t)SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
+						WQ_ValueTemp.ECValue = (uint16_t)(SensorData.Data * 1000); //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 3);			 //传感器状态位置3
 
 					}
