@@ -244,5 +244,5 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 
 2021-4-20	dingh	develop
 1、修改气象设备多参数传感器采集程序，改用一次性读取全部数据；
-2、雨量采用雨量桶传感器；
+2、雨量采用雨量桶传感器，添加小时雨量，日降雨量变量；
 3、修改气象设备上报数据协议位置；
