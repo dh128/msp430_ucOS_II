@@ -448,6 +448,16 @@ __interrupt void RTC_ISR(void)
 						}
 					}
 					#endif
+					#if (PRODUCT_TYPE == Weather_Station)    
+					if(min == 0)  //水雨情设备上报整点和24小时雨量
+					{
+						AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_HOUR;    
+						if(RTCHOUR == 0)
+						{
+							AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_DAY;
+						}
+					}
+					#endif
 					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
 						__bic_SR_register_on_exit(LPM0_bits);
 						Hal_ExitLowPower_Mode(Rtc_Int);
@@ -479,7 +489,7 @@ __interrupt void RTC_ISR(void)
 					g_MinuteTimeTick = 0;
 					g_HourTimeTick ++;
 					App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步,每小时校准一次
-					if(g_HourTimeTick == 24)//TEST
+					if(g_HourTimeTick == 24)
 					{
 						g_HourTimeTick = 0;
 						App.Data.TransMethodData.SeqNumber = 0;

@@ -8,7 +8,7 @@
  msp430_ucOS_II
 ## Note : ##
 ### 1. The branch of "master" is the original branch, so you can't upload code at will. You can test your own code in the branch of "develop" and Refer to the following steps: ###
-### 2. git clone https://github.com/lz-kwok/msp430_ucOS_II.git ###
+### 2. git clone https://github.com/dh128/msp430_ucOS_II.git ###
 ### 3. git checkout develop ###
 ### 4. git branch ###
 to check if your local branch is "develop"
@@ -241,3 +241,8 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2021-1-26	dingh	magic
 1、cond的值解析乘以1000，单位换算成是us/cm;
 2、COD的延时需要增加到150s，避免出现0的问题。
+
+2021-4-20	dingh	develop
+1、修改气象设备多参数传感器采集程序，改用一次性读取全部数据；
+2、雨量采用雨量桶传感器；
+3、修改气象设备上报数据协议位置；

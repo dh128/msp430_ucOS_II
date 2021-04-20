@@ -711,7 +711,7 @@ void Hal_EnterLowPower_Mode(void)
 
 
 
-#if (PRODUCT_TYPE == Weather_Station ||PRODUCT_TYPE == WRain_Station)
+#if (PRODUCT_TYPE == WRain_Station)
     // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
     OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
     OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
@@ -729,6 +729,24 @@ void Hal_EnterLowPower_Mode(void)
 	    App.Data.WRainData.RainGaugeD = 0.0;
         Send_Buffer[13] = 0x7F;
         Send_Buffer[14] = 0xFF;	
+    }
+#elif(PRODUCT_TYPE == Weather_Station)
+    OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
+    OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
+    if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
+    {
+        AppDataPointer->MeteorologyData.RainGaugeScadaStatus &=  ~RAINGAUGE_REPORT_HOUR;
+        App.Data.MeteorologyData.RainGaugeH = 0.0;
+        Send_Buffer[17] = 0x7F;
+        Send_Buffer[18] = 0xFF;	
+    }
+    if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_REPORT_DAY)//判断发送24小时数据
+    {
+        AppDataPointer->MeteorologyData.RainGaugeScadaStatus &= ~RAINGAUGE_REPORT_DAY;
+	    App.Data.MeteorologyData.RainGaugeD = 0.0;
+        Send_Buffer[19] = 0x7F;
+        Send_Buffer[20] = 0xFF;	
     }
 #else
     OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);

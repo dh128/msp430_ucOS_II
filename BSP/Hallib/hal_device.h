@@ -53,7 +53,7 @@
 // 定义是否具备log存储功能
 #define HAVE_LOG_STORE_SERVICE
 // 定义是否具备SD存储功能
-#define HAVE_SDCARD_SERVICE 			           	1
+#define HAVE_SDCARD_SERVICE 			           	0
 //*****************终端类型*********************//
 #define Air_Station           		0x01	 //空气监测仪
 #define Voc_Station           		0x02	 //VOC监测仪
@@ -80,8 +80,8 @@
 #define Custom_Station	      		0x55	 //定制需求监测站
 
 
-#define PRODUCT_TYPE                MagicSTICK_Station
-//#define PRODUCT_TYPE                Weather_Station
+//#define PRODUCT_TYPE                MagicSTICK_Station
+#define PRODUCT_TYPE                Weather_Station
 //#define PRODUCT_TYPE                Soil_Station
 //#define PRODUCT_TYPE 	            Voc_Station
 //#define PRODUCT_TYPE	             Flowmeter_Station
