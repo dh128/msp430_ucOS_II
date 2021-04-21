@@ -54,8 +54,8 @@ uint32_t sensorCahe = 0;
 uint32_t ssensorCahe = 0;
 float SimulationSensorFloatCahe = 0.0;
 uint32_t SimulationSensorIntCahe = 0;
-static uint8_t SensorStatus_H;
-static uint8_t SensorStatus_L;
+static uint8_t SensorStatus_H = 0;
+static uint8_t SensorStatus_L = 0;
 static uint8_t SensorReviseStatus_H;      //修正
 static uint8_t SensorReviseStatus_L;
 static uint8_t SensorSimulationStatus_H;  //模拟
@@ -399,9 +399,7 @@ void InqureSensor(void)
 		AppDataPointer->TerminalInfoData.SensorStatus = Hal_getSensorFlashStatus(); 
 		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; 
 	}
-	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {	
-		SensorStatus_H = 0;
-		SensorStatus_L = 0;
+	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {
 		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)  //SensorNum = 2
 		{
 			memset(dRxBuff,0x0,dRxLength); //dRxLength=50，清空，接收Usart3即传感器数据
@@ -549,6 +547,8 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 		cJSON_AddNumberToObject(pSubJson,"Rain",DataPointer->MeteorologyData.RainGauge);
 	}
 	cJSON_AddItemToObject(pJsonRoot,"WeatherData", pSubJson);
+
+	SensorStatus_L = 0;		//传感器状态位清零
 #if (TRANSMIT_TYPE == GPRS_Mode)
 	cJSON_AddStringToObject(pJsonRoot, "CSQ",CSQBuffer);
 #endif

@@ -736,6 +736,7 @@ void Hal_EnterLowPower_Mode(void)
     OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
     if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
     {
+        g_Printf_dbg("RAIN_HOUR Cancle\r\n");
         AppDataPointer->MeteorologyData.RainGaugeScadaStatus &=  ~RAINGAUGE_REPORT_HOUR;
         App.Data.MeteorologyData.RainGaugeH = 0.0;
         Send_Buffer[17] = 0x7F;
@@ -743,6 +744,7 @@ void Hal_EnterLowPower_Mode(void)
     }
     if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_REPORT_DAY)//判断发送24小时数据
     {
+        g_Printf_dbg("RAIN_DAY Cancle\r\n");
         AppDataPointer->MeteorologyData.RainGaugeScadaStatus &= ~RAINGAUGE_REPORT_DAY;
 	    App.Data.MeteorologyData.RainGaugeD = 0.0;
         Send_Buffer[19] = 0x7F;
