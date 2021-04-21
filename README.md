@@ -8,7 +8,7 @@
  msp430_ucOS_II
 ## Note : ##
 ### 1. The branch of "master" is the original branch, so you can't upload code at will. You can test your own code in the branch of "develop" and Refer to the following steps: ###
-### 2. git clone https://github.com/lz-kwok/msp430_ucOS_II.git ###
+### 2. git clone https://github.com/dh128/msp430_ucOS_II.git ###
 ### 3. git checkout develop ###
 ### 4. git branch ###
 to check if your local branch is "develop"
@@ -210,12 +210,39 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 3、修改Flash存储数据区阿里云三元组位置为0x1939开始；
 4、修改配置程序，将阿里云配置优先判断，避免数据长度一致冲突；
 
-2020-1-8	dingh	mqtt
+2021-1-8	dingh	mqtt
 1、修改上报数据字段类型。
 
-2020-1-11	dingh	develop
+2021-1-11	dingh	develop
 1、修改MQTT客户对接地址。
 
-2020-1-13	dingh	develop
+2021-1-13	dingh	develop
 1、修改阿里云三元组存放位置为0x1880,每个长度32+1字节；
 2、读取三元组时判断长度超过32则认为时非法数据。
+
+2021-1-17	dingh	develop
+1、修改设备温度取值方法：
+	修改前：
+		原先程序每次读取所有设备的温度值，每一轮读取完毕后使用读取的温度值去平均数；
+	修改后:
+		读取温度后修改温度标志位，低标志位的被高标志位替换。每一轮值留一个设备的温度值，最后通过滤波处理；
+2、删除水质代码中无用、注释掉的代码；
+
+2021-1-19	dingh	magic
+1、添加MAGICSTCK设备类型；
+2、修改NB对接电信IoT前发送自动注册指令；
+3、添加定时器退出低功耗时设备等待120s再运行功能。
+
+2021-1-25	dingh	magic
+1、取消COD解析中数据值判断;
+2、修改magic和water中COD数值NB上报精度为2位小数；
+3、修复magic和water中ORP数据上报错误；
+
+2021-1-26	dingh	magic
+1、cond的值解析乘以1000，单位换算成是us/cm;
+2、COD的延时需要增加到150s，避免出现0的问题。
+
+2021-4-20	dingh	develop
+1、修改气象设备多参数传感器采集程序，改用一次性读取全部数据；
+2、雨量采用雨量桶传感器，添加小时雨量，日降雨量变量；
+3、修改气象设备上报数据协议位置；

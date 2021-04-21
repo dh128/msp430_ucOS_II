@@ -154,13 +154,15 @@ typedef struct
 	char      RainGaugeScadaStatus;
 	float WindSpeed;			 //风速                  0~30.0    m/s
 	int   WindDirection;		 //风向                  0~360     °
-	float     AirTemperature;		 //室外温度             -40~60.0    ℃
-	float     AirHumidity;		     //室外湿度              0~100.0    %
-	float     AirPressure;           //大气压
-	float     RainGauge;             //雨量                  0~4.0     mm/min
+	float AirTemperature;		 //室外温度             -40~60.0    ℃
+	float AirHumidity;		     //室外湿度              0~100.0    %
+	float AirPressure;           //大气压
+	float RainGauge;             //雨量                  0~4.0     mm/min
+	float RainGaugeH;			//小时雨量
+	float RainGaugeD;			//24小时雨量
 	float PM25;			         //PM2.5     0~6000     ug/m3
 	float PM10;			      	 //PM10      0~6000     ug/m3
-	uint32_t Illumination;       //光照                  0~200000  Lux
+	uint16_t Illumination;       //光照                  0~200KLux
 	uint16_t  Radiation;             //总辐射                 0~2000    W/m2
 }MeteorologyPlatform;//气象检测平台
 
@@ -189,6 +191,17 @@ typedef struct
 	uint16_t LVValue;
 }WaterPlatform;       //水质监测平台
 
+typedef struct
+{
+	float CODValue;
+	uint16_t ECValue;
+	float DOValue;
+	float NH4Value;
+	float WaterTemp;
+	int16_t ORPValue;
+	float ZSValue;
+	float PHValue;
+}MagicPlatform;       //水质监测平台
 typedef struct
 {
 	float SoilTemp;				 //土壤温度                -40~80.00   ℃
@@ -344,6 +357,8 @@ typedef struct
 	FlowPlatform               FlowData;
 #elif (PRODUCT_TYPE == Rain_Station)    
 	RainPlatform               RainData;
+#elif (PRODUCT_TYPE == MagicSTICK_Station)    
+	MagicPlatform               MagicData;
 #endif
 	PitWellPlatform            PitWellData;
 	InputmodeWellPlatform      InputmodeWellData;

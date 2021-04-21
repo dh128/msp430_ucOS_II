@@ -53,7 +53,7 @@
 // 定义是否具备log存储功能
 #define HAVE_LOG_STORE_SERVICE
 // 定义是否具备SD存储功能
-#define HAVE_SDCARD_SERVICE 			           	1
+#define HAVE_SDCARD_SERVICE 			           	0
 //*****************终端类型*********************//
 #define Air_Station           		0x01	 //空气监测仪
 #define Voc_Station           		0x02	 //VOC监测仪
@@ -80,13 +80,13 @@
 #define Custom_Station	      		0x55	 //定制需求监测站
 
 
-//#define PRODUCT_TYPE                Water_Station
-//#define PRODUCT_TYPE                Weather_Station
+//#define PRODUCT_TYPE                MagicSTICK_Station
+#define PRODUCT_TYPE                Weather_Station
 //#define PRODUCT_TYPE                Soil_Station
 //#define PRODUCT_TYPE 	            Voc_Station
 //#define PRODUCT_TYPE	             Flowmeter_Station
 //#define PRODUCT_TYPE	             WRain_Station
-#define PRODUCT_TYPE	             Seeper_Station
+//#define PRODUCT_TYPE	             Seeper_Station
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
 #define NBIoT_BC95_Mode	      		0x02
@@ -99,10 +99,10 @@
 #define NBIoT_MQTT_Ali	      		0x09
 
 //#define TRANSMIT_TYPE 			    GPRS_Mode
-//#define TRANSMIT_TYPE 			    NBIoT_BC95_Mode
+#define TRANSMIT_TYPE 			    NBIoT_BC95_Mode
 // #define TRANSMIT_TYPE 			    LoRa_M100C_Mode
 //#define TRANSMIT_TYPE 			    LoRa_F8L10D_Mode
-#define TRANSMIT_TYPE 			    NBIoT_MQTT_Ali
+//#define TRANSMIT_TYPE 			    NBIoT_MQTT_Ali
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
 	//这俩预定义只能选一个

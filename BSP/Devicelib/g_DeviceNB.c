@@ -159,6 +159,9 @@ void g_Device_NB_Restart(void)
 	NB_Config("AT+NCONFIG=AUTOCONNECT,FALSE\r\n",2,5); //关闭自动连接
 	OSTimeDly(200);
 
+	NB_Config("AT+QREGSWT=1\r\n",2,5); //自动IoT平台注册功能
+	OSTimeDly(200);
+
 	User_Printf("AT+NRB\r\n");
 	OSTimeDly(5000);
 	
@@ -1221,8 +1224,10 @@ void  TransmitTaskStart (void *p_arg)
 						Send_Buffer[6] = AppDataPointer->TransMethodData.SeqNumber%256;
 						
 						if(REGRST != 0){
+						#if(PRODUCT_TYPE != MagicSTICK_Station)
 							Send_Buffer[29] = REGRST / 256; 	//添加reboot参数上报传感器数据最后一位
 							Send_Buffer[30] = REGRST % 256; 
+						#endif
 						}
 						
 						//Voltage
