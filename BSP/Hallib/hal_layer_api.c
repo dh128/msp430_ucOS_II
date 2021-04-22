@@ -820,7 +820,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
             hal_Delay_sec(150);     //延时150s
         #endif
         #if (PRODUCT_TYPE == Weather_Station)      
-        AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     
+            AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;     
         #endif
         #if (PRODUCT_TYPE == WRain_Station)      
             AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;       
