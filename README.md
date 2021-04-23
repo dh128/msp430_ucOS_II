@@ -250,4 +250,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、修改传感器标志位清零位置；
 2、添加气象设备雨量数据清零log。
 2021-4-22	dingh	develop
-1、修改气象设备退出低功耗赋值雨量监测标志位，解决没有雨量小时、天数据问题
+1、修改气象设备退出低功耗赋值雨量监测标志位，解决没有雨量小时、天数据问题。
+2021-4-23	dingh	develop
+1、修改日降雨量上报时间为8点。
