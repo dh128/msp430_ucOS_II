@@ -639,7 +639,7 @@ void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num)
     }
     *sum = result & 0xff;
 }
-#if (TRANSMIT_TYPE == NBIoT_MQTT_Ali)
+#if (TRANSMIT_TYPE == NBIoT_MQTT_Ali || TRANSMIT_TYPE == GPRS_Mode)
 int Hal_getProductKey(char *produckey)
 {
     uint32_t keyLen =0;

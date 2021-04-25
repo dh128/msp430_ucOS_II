@@ -112,7 +112,7 @@ uint16_t Hal_getBackupIndex(void);
 uint16_t Hal_getStartFile(void);
 uint8_t Hal_getFullFlag(void);
 void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num);
-#if (TRANSMIT_TYPE == NBIoT_MQTT_Ali)
+#if (TRANSMIT_TYPE == NBIoT_MQTT_Ali || TRANSMIT_TYPE == GPRS_Mode)
 int Hal_getProductKey(char *produckey);
 int Hal_getDeviceName(char *devName);
 int Hal_getDeviceSecret(char *devSecret);
