@@ -639,7 +639,7 @@ void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num)
     }
     *sum = result & 0xff;
 }
-#if (TRANSMIT_TYPE == NBIoT_MQTT_Ali)
+#if (TRANSMIT_TYPE == NBIoT_MQTT_Ali || TRANSMIT_TYPE == GPRS_Mode)
 int Hal_getProductKey(char *produckey)
 {
     uint32_t keyLen =0;
@@ -736,6 +736,7 @@ void Hal_EnterLowPower_Mode(void)
     OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
     if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
     {
+        g_Printf_dbg("RAIN_HOUR Cancle\r\n");
         AppDataPointer->MeteorologyData.RainGaugeScadaStatus &=  ~RAINGAUGE_REPORT_HOUR;
         App.Data.MeteorologyData.RainGaugeH = 0.0;
         Send_Buffer[17] = 0x7F;
@@ -743,6 +744,7 @@ void Hal_EnterLowPower_Mode(void)
     }
     if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_REPORT_DAY)//判断发送24小时数据
     {
+        g_Printf_dbg("RAIN_DAY Cancle\r\n");
         AppDataPointer->MeteorologyData.RainGaugeScadaStatus &= ~RAINGAUGE_REPORT_DAY;
 	    App.Data.MeteorologyData.RainGaugeD = 0.0;
         Send_Buffer[19] = 0x7F;
@@ -818,7 +820,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
             hal_Delay_sec(150);     //延时150s
         #endif
         #if (PRODUCT_TYPE == Weather_Station)      
-        AppDataPointer->MeteorologyData.RainGaugeScadaStatus = RAINGAUGE_SCADA_ENABLE;     
+            AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;     
         #endif
         #if (PRODUCT_TYPE == WRain_Station)      
             AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;       

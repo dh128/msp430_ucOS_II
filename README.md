@@ -246,3 +246,12 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、修改气象设备多参数传感器采集程序，改用一次性读取全部数据；
 2、雨量采用雨量桶传感器，添加小时雨量，日降雨量变量；
 3、修改气象设备上报数据协议位置；
+2021-4-21	dingh	develop
+1、修改传感器标志位清零位置；
+2、添加气象设备雨量数据清零log。
+2021-4-22	dingh	develop
+1、修改气象设备退出低功耗赋值雨量监测标志位，解决没有雨量小时、天数据问题。
+2021-4-23	dingh	develop
+1、修改日降雨量上报时间为8点。
+2021-4-25
+1、修改hal_layer_api.c中MQTT参数获取函数条件编译，GPRS_MODE参加编译。

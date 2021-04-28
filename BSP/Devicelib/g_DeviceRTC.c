@@ -449,10 +449,10 @@ __interrupt void RTC_ISR(void)
 					}
 					#endif
 					#if (PRODUCT_TYPE == Weather_Station)    
-					if(min == 0)  //水雨情设备上报整点和24小时雨量
+					if(min == 0)  //雨量设备上报整点和24小时雨量
 					{
 						AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_HOUR;    
-						if(RTCHOUR == 0)
+						if(RTCHOUR == 8)
 						{
 							AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_DAY;
 						}
