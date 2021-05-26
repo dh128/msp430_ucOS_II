@@ -31,6 +31,8 @@
 #if (TRANSMIT_TYPE == GPRS_Mode)
  const char *g_30000IoT_HOST = "172.17.1.109:8082";
  const char *g_30000IoT_PATH = "";
+#define FORMAT_HTTP 	"SendData:{\"DeviceID\":%d,\"WaterData\":{\"DoVal\":%.2f,\"Temp\":%.2f,\"ZS\":%.2f},\
+\"Quanity\":%d,\"Version\":%d,\"Uptime\":\"20%02d-%02d-%02d %02d:%02d:%02d\"}"
 //const char *g_30000IoT_HOST = "30000iot.cn:9001";
 //const char *g_30000IoT_PATH = "/api/Upload/data/";
 //const char *g_30000IoT_HOST = "47.111.88.91:6096";
@@ -276,25 +278,19 @@ int16_t g_Device_http_post(const char *host,const char* path,const char *apikey,
 	User_Printf("Host:172.17.1.109:8082\r\n");
 	User_Printf("Accept:*/*\r\n");
 	User_Printf("Content-Length:%d\r\n",datalen);
-	User_Printf("SendData:");
+	// User_Printf("SendData:");
 	User_Printf("%s\r\n",data);
 	User_Printf("Connection:close\r\n");
 	User_Printf("\r\n");
-
+	memset(aRxBuff,0,1050);		//清除串口buf
 	hal_Delay_ms(100);
 	OSBsp.Device.Usart0.WriteData(0x1A);      //发送数据完成结束符0x1A,16进制发送
 	hal_Delay_ms(100);
-	g_Printf_dbg("AT+HTTPREAD\r\n");
-	User_Printf("AT+HTTPREAD\r\n");
 //	User_Printf("\r\n");
-	hal_Delay_ms(100);
-	hal_Delay_ms(100);
-	hal_Delay_ms(100);
-	hal_Delay_ms(100);
-	hal_Delay_ms(100);
-	hal_Delay_ms(100);
-	hal_Delay_ms(100);
-
+	OSTimeDly(10000);
+	//memcpy(response,aRxBuff,strlen(aRxBuff));
+	//response = aRxBuff;
+	return 200;
 //    OSBsp.Device.Usart2.WriteString(data);
 }
 
@@ -730,8 +726,20 @@ void  TransmitTaskStart (void *p_arg)
 
 					char response[512];
 					char data[512];
-					uint32_t datalen = snprintf(data,512,MakeJsonBodyData(AppDataPointer));
-					g_Printf_info("datalen:%d\ndata:%s\r\n",datalen,data);
+					uint8_t date[8];
+					char Uptime[19] = "2019-09-01 00:00:00";
+					// memset(date, 0x0, 8);
+					// memset(Uptime, 0x0, 19);
+					Read_info_RTC(date);
+					// g_Device_RTCstring_Creat(date, Uptime);
+					// g_Printf_info("Uptime:\"%s\"\r\n", Uptime);
+					uint32_t datalen = snprintf(data,512,FORMAT_HTTP,\
+						AppDataPointer->TerminalInfoData.DeviceID,AppDataPointer->WaterData.DOValue,\
+						AppDataPointer->WaterData.WaterTemp,AppDataPointer->WaterData.ZSValue,\
+						AppDataPointer->TerminalInfoData.PowerQuantity,AppDataPointer->TerminalInfoData.Version,\
+						date[1],date[2],date[3],date[4],date[5],date[6]);
+					
+					g_Printf_info("datalen:%d\n%s\r\n",datalen,data);
 				
                    
                 	memset(response,0x0,512);
@@ -739,7 +747,7 @@ void  TransmitTaskStart (void *p_arg)
                     code = g_Device_http_post(g_30000IoT_HOST,g_30000IoT_PATH,null,data,response,30);//时间延长至30s
 
                     if(code == 200){
-                        g_Printf_info("response : %s \r\n",response);   //对response解析，可以执行配置或ota操作
+                        //g_Printf_info("response : %s \r\n",response);   //对response解析，可以执行配置或ota操作
 						AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;
                     }else{    //这里可以做失败重发操作
 					    //AppDataPointer->TransMethodData.GPRSStatus = GPRS_Http_Post_Done;  //ML 20190828

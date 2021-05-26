@@ -786,9 +786,8 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 
 	cJSON *pJsonRoot = mymalloc(512 * sizeof(cJSON *));
 	cJSON *pSubJson = mymalloc(128 * sizeof(cJSON *));
-	;
 	char *p;
-
+	
 	pJsonRoot = cJSON_CreateObject();
 	if (NULL == pJsonRoot)
 	{
@@ -949,17 +948,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	cJSON_Delete(pJsonRoot);
 	cJSON_Delete(pSubJson);
 
-#if HAVE_SDCARD_SERVICE
-	if (SD_Status == 0) //只是一个示例
-	{
-		OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
-		OSTimeDly(500);
-		g_SD_FileName_Creat("0:/", date, filestore);
-		g_SD_File_Write(filestore, p);
-		g_SD_File_Write(filestore, "\r\n"); //数据换行
-	}
-#endif
-	// OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);  //++++++++++++++++++++++++
+
 
 	return p;
 }
