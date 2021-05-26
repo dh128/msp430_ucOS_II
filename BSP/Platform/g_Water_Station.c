@@ -796,12 +796,13 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 		return NULL;
 	}
 
-	cJSON_AddNumberToObject(pJsonRoot, "SN", DataPointer->TerminalInfoData.SerialNumber);
-	cJSON_AddNumberToObject(pJsonRoot, "DeviceID", DataPointer->TerminalInfoData.DeviceID);
-	cJSON_AddNumberToObject(pJsonRoot, "SeqNum", DataPointer->TransMethodData.SeqNumber);
+//	cJSON_AddNumberToObject(pJsonRoot, "SN", DataPointer->TerminalInfoData.SerialNumber);
+//	cJSON_AddNumberToObject(pJsonRoot, "DeviceID", DataPointer->TerminalInfoData.DeviceID);
+	cJSON_AddNumberToObject(pJsonRoot, "DeviceID", 12426);
+//	cJSON_AddNumberToObject(pJsonRoot, "SeqNum", DataPointer->TransMethodData.SeqNumber);
 	if (REGRST != 0)
 	{
-		cJSON_AddNumberToObject(pJsonRoot, "reboot", REGRST);
+//		cJSON_AddNumberToObject(pJsonRoot, "reboot", REGRST);
 		REGRST = 0;
 	}
 
@@ -814,98 +815,74 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 		return NULL;
 	}
 
-	if (hal_GetBit(SensorStatus_H, 3))
-	{
-		cJSON_AddNumberToObject(pSubJson, "COD", DataPointer->WaterData.CODValue);
+//	if (hal_GetBit(SensorStatus_H, 3))
+//	{
+//		cJSON_AddNumberToObject(pSubJson, "COD", DataPointer->WaterData.CODValue);
+//
+//		TempCahe = (uint32_t)(DataPointer->WaterData.CODValue * 100);
+//		Send_Buffer[7] = (uint8_t)((TempCahe & 0xFF00) >> 8);
+//		Send_Buffer[8] = (uint8_t)(TempCahe & 0xFF);
+//	}
+//	if (hal_GetBit(SensorStatus_H, 2))
+//	{
+//		cJSON_AddNumberToObject(pSubJson, "Cond", DataPointer->WaterData.ECValue);
+//
+//		TempCahe = (uint32_t)(DataPointer->WaterData.ECValue);
+//		Send_Buffer[9] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
+//		Send_Buffer[10] = (uint8_t)(TempCahe & 0xFF);		  //=%256
+//	}
+//*********************************//
+//	if (hal_GetBit(SensorStatus_H, 1))
+//	{
+//		cJSON_AddNumberToObject(pSubJson, "DoVal", DataPointer->WaterData.DOValue);
+//
+//		TempCahe = (uint32_t)(DataPointer->WaterData.DOValue * 100);
+//		Send_Buffer[11] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
+//		Send_Buffer[12] = (uint8_t)(TempCahe & 0xFF);		   //=%256
+//	}
+//
+//	if (hal_GetBit(SensorStatus_L, 7))
+//	{
+//		cJSON_AddNumberToObject(pSubJson, "Temp", DataPointer->WaterData.WaterTemp);
+//		//需要组hex包
+//		TempCahe = (uint32_t)(DataPointer->WaterData.WaterTemp * 10);
+//		if (TempIntCahe >= 0)
+//		{														   //temp为正数
+//			Send_Buffer[15] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
+//			Send_Buffer[16] = (uint8_t)(TempCahe & 0xFF);		   //=%256
+//		}
+//		else
+//		{																	   //temp为负数
+//			Send_Buffer[15] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) / 256; //负数先不用
+//			Send_Buffer[16] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) % 256;
+//		}
+//	}
+//
+//	if (hal_GetBit(SensorStatus_L, 5))
+//	{
+//		cJSON_AddNumberToObject(pSubJson, "ZS", DataPointer->WaterData.ZSValue);
+//
+//		TempCahe = (uint32_t)(DataPointer->WaterData.ZSValue * 100);
+//		Send_Buffer[19] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
+//		Send_Buffer[20] = (uint8_t)(TempCahe & 0xFF);		   //=%256
+//	}
+	//*********************************//
+	cJSON_AddNumberToObject(pSubJson, "DoVal", 0.49);
+	cJSON_AddNumberToObject(pSubJson, "Temp", 23.5);
+	cJSON_AddNumberToObject(pSubJson, "ZS", 200.2);
 
-		TempCahe = (uint32_t)(DataPointer->WaterData.CODValue * 100);
-		Send_Buffer[7] = (uint8_t)((TempCahe & 0xFF00) >> 8);
-		Send_Buffer[8] = (uint8_t)(TempCahe & 0xFF);
-	}
-	if (hal_GetBit(SensorStatus_H, 2))
-	{
-		cJSON_AddNumberToObject(pSubJson, "Cond", DataPointer->WaterData.ECValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.ECValue);
-		Send_Buffer[9] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-		Send_Buffer[10] = (uint8_t)(TempCahe & 0xFF);		  //=%256
-	}
-	if (hal_GetBit(SensorStatus_H, 1))
-	{
-		cJSON_AddNumberToObject(pSubJson, "DoVal", DataPointer->WaterData.DOValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.DOValue * 100);
-		Send_Buffer[11] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-		Send_Buffer[12] = (uint8_t)(TempCahe & 0xFF);		   //=%256
-	}
-	if (hal_GetBit(SensorStatus_H, 0))
-	{
-		cJSON_AddNumberToObject(pSubJson, "NH4", DataPointer->WaterData.NH4Value);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.NH4Value * 100);
-		Send_Buffer[13] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-		Send_Buffer[14] = (uint8_t)(TempCahe & 0xFF);		   //=%256
-	}
-	if (hal_GetBit(SensorStatus_L, 7))
-	{
-		cJSON_AddNumberToObject(pSubJson, "Temp", DataPointer->WaterData.WaterTemp);
-		//需要组hex包
-		TempCahe = (uint32_t)(DataPointer->WaterData.WaterTemp * 10);
-		if (TempIntCahe >= 0)
-		{														   //temp为正数
-			Send_Buffer[15] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-			Send_Buffer[16] = (uint8_t)(TempCahe & 0xFF);		   //=%256
-		}
-		else
-		{																	   //temp为负数
-			Send_Buffer[15] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) / 256; //负数先不用
-			Send_Buffer[16] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) % 256;
-		}
-	}
-	if (hal_GetBit(SensorStatus_L, 6))
-	{
-		cJSON_AddNumberToObject(pSubJson, "ORP", DataPointer->WaterData.ORPValue);
-
-		TempIntCahe = (uint32_t)(DataPointer->WaterData.ORPValue);
-		if (TempIntCahe >= 0)
-		{														   //ORP为正数
-			Send_Buffer[17] = (uint8_t)((TempIntCahe & 0xFF00) >> 8); //=/256
-			Send_Buffer[18] = (uint8_t)(TempIntCahe & 0xFF);		   //=%256
-		}
-		else
-		{																	   //ORP为负数
-			Send_Buffer[17] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) / 256; //负数先不用
-			Send_Buffer[18] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) % 256;
-		}
-	}
-	if (hal_GetBit(SensorStatus_L, 5))
-	{
-		cJSON_AddNumberToObject(pSubJson, "ZS", DataPointer->WaterData.ZSValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.ZSValue * 100);
-		Send_Buffer[19] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-		Send_Buffer[20] = (uint8_t)(TempCahe & 0xFF);		   //=%256
-	}
-	if (hal_GetBit(SensorStatus_L, 4))
-	{
-		cJSON_AddNumberToObject(pSubJson, "PH", DataPointer->WaterData.PHValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.PHValue * 100);
-		Send_Buffer[21] = (uint8_t)((TempCahe & 0xFF00) >> 8);
-		Send_Buffer[22] = (uint8_t)(TempCahe & 0xFF);
-	}
-	if (hal_GetBit(SensorStatus_L, 3))
-	{
-		cJSON_AddNumberToObject(pSubJson, "Chla", DataPointer->WaterData.CHLValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.CHLValue * 100);
-		Send_Buffer[23] = (uint8_t)((TempCahe & 0xFF00) >> 8);
-		Send_Buffer[24] = (uint8_t)(TempCahe & 0xFF); //=%256
-	}
+//	if (hal_GetBit(SensorStatus_L, 3))
+//	{
+//		cJSON_AddNumberToObject(pSubJson, "Chla", DataPointer->WaterData.CHLValue);
+//
+//		TempCahe = (uint32_t)(DataPointer->WaterData.CHLValue * 100);
+//		Send_Buffer[23] = (uint8_t)((TempCahe & 0xFF00) >> 8);
+//		Send_Buffer[24] = (uint8_t)(TempCahe & 0xFF); //=%256
+//	}
 	//if (hal_GetBit(SensorStatus_L, 2))
-	{
-		cJSON_AddNumberToObject(pSubJson, "WL", DataPointer->WaterData.LVValue);
-	}
+//	{
+//		cJSON_AddNumberToObject(pSubJson, "WL", DataPointer->WaterData.LVValue);
+//	}
 	if (hal_GetBit(SensorStatus_L, 1))
 	{
 	}
@@ -914,7 +891,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	}
 	cJSON_AddItemToObject(pJsonRoot, "WaterData", pSubJson);
 #if (TRANSMIT_TYPE == GPRS_Mode)
-	cJSON_AddStringToObject(pJsonRoot, "CSQ", CSQBuffer);
+//	cJSON_AddStringToObject(pJsonRoot, "CSQ", CSQBuffer);
 #endif
 #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
 	cJSON_AddNumberToObject(pJsonRoot, "RSRP", DataPointer->TransMethodData.RSRP);
@@ -929,7 +906,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	// cJSON_AddStringToObject(pJsonRoot, (const char *)"longitude", (const char *)gpsBuffer);
 #endif
 
-	cJSON_AddNumberToObject(pJsonRoot, "SendPeriod", DataPointer->TerminalInfoData.SendPeriod);
+//	cJSON_AddNumberToObject(pJsonRoot, "SendPeriod", DataPointer->TerminalInfoData.SendPeriod);
 	cJSON_AddNumberToObject(pJsonRoot, "Quanity", DataPointer->TerminalInfoData.PowerQuantity);
 	cJSON_AddNumberToObject(pJsonRoot, "Version", DataPointer->TerminalInfoData.Version);
 
@@ -957,8 +934,8 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	g_Device_RTCstring_Creat(date, Uptime);
 	g_Printf_info("Uptime:%s\r\n", Uptime);
 	cJSON_AddStringToObject(pJsonRoot, "Uptime", Uptime);
-	cJSON_AddNumberToObject(pJsonRoot, "UnixTimeStamp", UnixTimeStamp);
-	cJSON_AddNumberToObject(pJsonRoot, "ReSiC", DataPointer->TerminalInfoData.ReviseSimulationCode);
+//	cJSON_AddNumberToObject(pJsonRoot, "UnixTimeStamp", UnixTimeStamp);
+//	cJSON_AddNumberToObject(pJsonRoot, "ReSiC", DataPointer->TerminalInfoData.ReviseSimulationCode);
 
 	p = cJSON_Print(pJsonRoot);
 	if (NULL == p)

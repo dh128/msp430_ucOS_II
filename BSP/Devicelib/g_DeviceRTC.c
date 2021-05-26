@@ -488,7 +488,7 @@ __interrupt void RTC_ISR(void)
 				{
 					g_MinuteTimeTick = 0;
 					g_HourTimeTick ++;
-					App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步,每小时校准一次
+//					App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;  //允许时间同步,每小时校准一次
 					if(g_HourTimeTick == 24)
 					{
 						g_HourTimeTick = 0;

@@ -403,6 +403,7 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 				time_buf[i]=RxBuff[i+1];	//存“年月日时分秒周”
 			}
 			OSBsp.Device.RTC.ConfigExtTime(time_buf,RealTime);
+			Write_info_RTC(time_buf);
 			g_Printf_info("Enter %s and Time config done\r\n",__func__);
 			return 0;
 		}else if(RxBuff[1] == 0xFA){		//设置终端信息

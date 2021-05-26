@@ -560,20 +560,7 @@ __interrupt void USCI_A1_ISR(void)
 					// bRxNum = 0;
 					// Uart_1_Flag=1;
 				}
-				// if(UCA1RXBUF == '$'){
-				// 	memset(&bRxBuff,0x0,sizeof(g_Device_Config_CMD));
-				// }
-				// bRxBuff.strcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
-				// if( (bRxBuff.strcmd[0] == '$')&&(bRxBuff.strcmd[3] == 'G')&&
-				// 		(bRxBuff.strcmd[4] == 'L')&&(bRxBuff.strcmd[5] == 'L') )
-				// {
-				// 	if(UCA1RXBUF == '\n')
-				// 	{
-				// 		OSIntEnter();
-				// 		g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");	
-				// 		OSIntExit();
-				// 	}
-				// }
+
 #else 	
 				// if(bRxBuff.cmdLenth<bRxLength){
 				// 	bRxBuff.hexcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
