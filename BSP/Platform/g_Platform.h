@@ -162,6 +162,14 @@ typedef struct
 	float RainGaugeD;			//24小时雨量
 	float PM25;			         //PM2.5     0~6000     ug/m3
 	float PM10;			      	 //PM10      0~6000     ug/m3
+	float COD;					//--ph 模拟土壤数据
+	float Cond;
+	float DoVal;
+	float NH4;
+	float Flows;
+	float ORP;
+	float ZS;
+	float PH;
 	uint16_t Illumination;       //光照                  0~200KLux
 	uint16_t  Radiation;             //总辐射                 0~2000    W/m2
 }MeteorologyPlatform;//气象检测平台

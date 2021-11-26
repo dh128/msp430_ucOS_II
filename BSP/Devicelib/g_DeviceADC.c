@@ -184,7 +184,7 @@ void GetADCValue(void)
 	App.Data.TerminalInfoData.PowerQuantity = (uint8_t)(SUMPowerQuantity >> 2); ///4
 	//App.Data.TerminalInfoData.PowerQuantity = (uint8_t)((PowerQuantity[0]+PowerQuantity[1])/2);     //电量    3.4 10% 3.5 20% ———— 4.0 70%  4.2 90%
 	infor_ChargeAddrBuff[13] = App.Data.TerminalInfoData.PowerQuantity ;                    //电池电量
-	Send_Buffer[33] = App.Data.TerminalInfoData.PowerQuantity;        
+	Send_Buffer[37] = App.Data.TerminalInfoData.PowerQuantity;        
 }
 
 

@@ -1,0 +1,11 @@
+/App/
+/BSP/
+/FatFs/
+/sources.mk
+/subdir_rules.mk
+/subdir_vars.mk
+/uC-CPU/
+/uC-LIB/
+/uCOS-II/
+/makefile
+/objects.mk

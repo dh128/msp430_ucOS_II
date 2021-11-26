@@ -580,8 +580,8 @@ void ProcessCommand()
 		if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
 		{
 			App.Data.TerminalInfoData.SendPeriod = (unsigned char)(Temp_SendPeriod & 0x00FF);
-			Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
-			Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
+			// Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
+			// Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
 			g_Printf_info("NB Set SendPeriod OK\r\n");
 			//将发送周期的信息存入Flash
 			// delay_ms(10);
@@ -1223,12 +1223,12 @@ void  TransmitTaskStart (void *p_arg)
 						Send_Buffer[5] = AppDataPointer->TransMethodData.SeqNumber/256;
 						Send_Buffer[6] = AppDataPointer->TransMethodData.SeqNumber%256;
 						
-						if(REGRST != 0){
-						#if(PRODUCT_TYPE != MagicSTICK_Station)
-							Send_Buffer[29] = REGRST / 256; 	//添加reboot参数上报传感器数据最后一位
-							Send_Buffer[30] = REGRST % 256; 
-						#endif
-						}
+						// if(REGRST != 0){
+						// #if(PRODUCT_TYPE != MagicSTICK_Station)
+						// 	Send_Buffer[29] = REGRST / 256; 	//添加reboot参数上报传感器数据最后一位
+						// 	Send_Buffer[30] = REGRST % 256; 
+						// #endif
+						// }
 						
 						//Voltage
 						GetADCValue();

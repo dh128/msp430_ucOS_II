@@ -238,10 +238,10 @@ void g_Device_RTCstring_Creat(uint8_t *datetime,char *t_str)
 	Rtctime.Second = ((datetime[6]>>4)&0x0f)*10 + (datetime[6]&0x0f);
 
 	UnixTimeStamp = covBeijing2UnixTimeStp(&Rtctime);
-	Send_Buffer[35] = (UnixTimeStamp>>24) & 0xFF;
-	Send_Buffer[36] = (UnixTimeStamp>>16) & 0xFF;
-	Send_Buffer[37] = (UnixTimeStamp>>8) & 0xFF;
-	Send_Buffer[38] = UnixTimeStamp & 0xFF;
+	// Send_Buffer[35] = (UnixTimeStamp>>24) & 0xFF;
+	// Send_Buffer[36] = (UnixTimeStamp>>16) & 0xFF;
+	// Send_Buffer[37] = (UnixTimeStamp>>8) & 0xFF;
+	// Send_Buffer[38] = UnixTimeStamp & 0xFF;
 }
 
 void g_Device_InnerRTC_Init(uint8_t *date)
@@ -292,7 +292,7 @@ void Read_info_RTC(uint8_t *time)
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 static uint8_t month_day[12]={31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; //平年
 static uint8_t Leap_month_day[12]={31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; //闰年
-const uint16_t dayPerYear[4] = {365, 365, 365, 366};
+const uint16_t dayPerYear[4] = {365, 365, 366, 365};
 uint32_t UnixTimeStamp=0;
 
 
