@@ -106,9 +106,9 @@ static struct hal_timeval mTimeVal;
 // remarks : 将16进制数转化为字符串
 */
 // void Hex2Str(unsigned char *pbDest,uint8_t *pbSrc,unsigned char Len, unsigned char offset)
-void Hex2Str(unsigned char *pbDest,uint32_t *pbSrc,unsigned char Len, unsigned char offset)
+void Hex2Str(unsigned char *pbDest,uint32_t *pbSrc,unsigned int Len, unsigned char offset)
 {
-	unsigned char i;
+	unsigned int i;
 	for(i = 0; i<Len;i++)
 	{
 		pbDest[2*i + offset] = (uint8_t)pbSrc[i]>>4;
@@ -126,6 +126,36 @@ void Hex2Str(unsigned char *pbDest,uint32_t *pbSrc,unsigned char Len, unsigned c
 		}
 	}
 }
+/*
+// C prototype : void StrToHex(unsigned char *pbDest, unsigned char *pbSrc, int nLen)
+// parameter(s): [OUT] pbDest - 输出缓冲区
+// [IN] pbSrc - 字符串
+// [IN] nLen - 16进制数的字节数(字符串的长度/2)
+// return value:
+// remarks : 将字符串转化为16进制数
+*/
+// void StrToHex(unsigned char *pbDest, unsigned char *pbSrc, int nLen)
+// {
+// 	char h1,h2;
+// 	unsigned char s1,s2;
+// 	int i;
+
+// 	for (i=0; i<nLen; i++)
+// 		{
+// 			h1 = pbSrc[2*i];
+// 			h2 = pbSrc[2*i+1];
+
+// 			s1 = toupper(h1) - 0x30;
+// 			if (s1 > 9)
+// 				s1 -= 7;
+
+// 			s2 = toupper(h2) - 0x30;
+// 			if (s2 > 9)
+// 				s2 -= 7;
+
+// 			pbDest[i] = s1*16 + s2;
+// 		}
+// }
 
 
 uint8_t HexToBCD(uint8_t hex)
@@ -768,7 +798,7 @@ void Hal_EnterLowPower_Mode(void)
     AppDataPointer->TransMethodData.GPRSAttached = 0;
 	AppDataPointer->TransMethodData.GPRSATStatus = 0;
 #endif
-#if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_MQTT_Ali || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
+#if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP || TRANSMIT_TYPE == NBIoT_MQTT_Ali || TRANSMIT_TYPE == LoRa_F8L10D_Mode || TRANSMIT_TYPE == LoRa_M100C_Mode)
     if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
         OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);	//关闭NB电源
     }
@@ -830,7 +860,7 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
         #if (TRANSMIT_TYPE == GPRS_Mode)
         AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
         #endif
-        #if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+        #if (TRANSMIT_TYPE == NBIoT_BC95_Mode  || TRANSMIT_TYPE == NBIoT_AEP)
         if((AppDataPointer->TransMethodData.NBStatus == NB_Init_Error) || (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error)){	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
             AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
         }else{

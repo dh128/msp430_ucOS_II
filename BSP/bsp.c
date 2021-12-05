@@ -97,7 +97,11 @@ void  BSP_Init(void)
     g_Device_Usart0_Init(9600);                                //通信模块串口
     g_Device_Usart1_Init(9600);                                //Socket串口
     g_Device_Usart2_Init(115200);                              //Debug串口
+#if (PRODUCT_TYPE == Seeper_Station)
+    g_Device_Usart3_Init(4800);
+#else
     g_Device_Usart3_Init(9600);                                //485串口
+#endif
     g_Device_ADC_Init(); 
     g_Device_SD_Init();
     // g_Device_SPI3_Init();  //++++

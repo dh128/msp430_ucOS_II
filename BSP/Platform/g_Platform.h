@@ -115,6 +115,7 @@ typedef struct
 
 	float    RSRP;
 	float    SINR;
+	float 	 CSQ;
 	uint16_t PCI;
 	uint16_t ECL;
 	uint32_t CELLID;
@@ -235,7 +236,7 @@ typedef struct
 
 typedef struct
 {
-	uint16_t LVValue;      //液位
+	float LVValue;      //液位
 }SeeperPlatform;    //易涝点液位监测平台
 
 typedef struct

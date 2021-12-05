@@ -81,12 +81,12 @@
 
 
 //#define PRODUCT_TYPE                MagicSTICK_Station
-#define PRODUCT_TYPE                Weather_Station
+//#define PRODUCT_TYPE                Weather_Station
 //#define PRODUCT_TYPE                Soil_Station
-//#define PRODUCT_TYPE 	            Voc_Station
+//#define PRODUCT_TYPE 	             Voc_Station
 //#define PRODUCT_TYPE	             Flowmeter_Station
-//#define PRODUCT_TYPE	             WRain_Station
-//#define PRODUCT_TYPE	             Seeper_Station
+// #define PRODUCT_TYPE	             WRain_Station
+#define PRODUCT_TYPE	             Seeper_Station
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
 #define NBIoT_BC95_Mode	      		0x02
@@ -97,12 +97,14 @@
 #define GPRS_AIR202_Mode      		0x07
 #define LoRa_M100C_Mode      		0x08
 #define NBIoT_MQTT_Ali	      		0x09
+#define NBIoT_AEP					0x0A
 
 #define TRANSMIT_TYPE 			    GPRS_Mode
 //#define TRANSMIT_TYPE 			    NBIoT_BC95_Mode
 // #define TRANSMIT_TYPE 			    LoRa_M100C_Mode
 //#define TRANSMIT_TYPE 			    LoRa_F8L10D_Mode
 //#define TRANSMIT_TYPE 			    NBIoT_MQTT_Ali
+#define TRANSMIT_TYPE 			    NBIoT_AEP
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
 	//这俩预定义只能选一个

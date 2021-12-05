@@ -255,3 +255,7 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、修改日降雨量上报时间为8点。
 2021-4-25
 1、修改hal_layer_api.c中MQTT参数获取函数条件编译，GPRS_MODE参加编译。
+
+2021-12-05	dingh	watergague
+1、修改电子水尺传感器解析，读取时间，seeperStation，读取波特率4800；
+2、添加电信AEP平台上报数据对接，物模型，json格式。

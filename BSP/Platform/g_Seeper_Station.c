@@ -94,8 +94,8 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 				{
 					case 0x01:						   //电子水尺
 						hal_SetBit(SensorStatus_H, 1); //传感器状态位置1
-						sensorCahe = (uint32_t)data[3]*256 + data[4];
-						App.Data.SeeperData.LVValue = sensorCahe;
+						sensorCahe = ((uint32_t)BCDToHEX(data[3]))*100 + BCDToHEX(data[4]);//(uint32_t)data[3]*256 + data[4];
+						App.Data.SeeperData.LVValue = (float)sensorCahe/100;
 						break;				
 					default:
 						break;
@@ -198,7 +198,7 @@ void InqureSensor(void)
 				Recive_485_Enable;
 
 				LED_ON;
-				OSTimeDly(400); //任务挂起 800ms,等待传感器回复，接收完毕
+				OSTimeDly(1500); //任务挂起 3000ms,等待传感器回复，接收完毕
 				int ret = AnalyzeComand(dRxBuff, dRxNum);
 				OSTimeDly(50); //挂起 100ms
 				uint32_t times = sensorSN;
@@ -269,7 +269,102 @@ void InqureSensor(void)
 		OSTimeDly(10);
 	}
 }
+/*******************************************************************************
+* 函数名		: *MakeJsonBodyData
+* 描述	    	: 组建json包
+* 输入参数  	: 无
+* 返回参数  	: 无
+*******************************************************************************/
+char *MakeJsonBodyData(DataStruct *DataPointer)
+{
+	uint32_t TempCahe = 0;
+	int32_t TempIntCahe = 0;
+	uint8_t gpsBuffer[15];
 
+	mallco_dev.init();
+
+	cJSON *pJsonRoot = mymalloc(512 * sizeof(cJSON *));
+	cJSON *pSubJson = mymalloc(128 * sizeof(cJSON *));
+	char *p;
+
+	pJsonRoot = cJSON_CreateObject();
+	if (NULL == pJsonRoot)
+	{
+		cJSON_Delete(pJsonRoot);
+		return NULL;
+	}
+
+	cJSON_AddNumberToObject(pJsonRoot, "DeviceID", DataPointer->TerminalInfoData.SerialNumber);
+	// cJSON_AddNumberToObject(pJsonRoot, "DeviceID", DataPointer->TerminalInfoData.DeviceID);
+	cJSON_AddNumberToObject(pJsonRoot, "SeqNum", DataPointer->TransMethodData.SeqNumber);
+	// if (REGRST != 0)
+	// {
+	// 	cJSON_AddNumberToObject(pJsonRoot, "reboot", REGRST);
+	// 	REGRST = 0;
+	// }
+
+	pSubJson = NULL;
+	pSubJson = cJSON_CreateObject();
+	if (NULL == pSubJson)
+	{
+		//create object faild, exit
+		cJSON_Delete(pSubJson);
+		return NULL;
+	}
+
+	// if (hal_GetBit(SensorStatus_H, 1))
+	{
+		cJSON_AddNumberToObject(pJsonRoot, "LVValue", DataPointer->SeeperData.LVValue);
+	}
+	cJSON_AddNumberToObject(pJsonRoot, "serviceId", 12);
+	// cJSON_AddItemToObject(pJsonRoot, "WaterData", pSubJson);
+#if (TRANSMIT_TYPE == GPRS_Mode)
+	cJSON_AddStringToObject(pJsonRoot, "CSQ", CSQBuffer);
+#endif
+// #if (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
+// 	cJSON_AddNumberToObject(pJsonRoot, "RSRP", DataPointer->TransMethodData.RSRP);
+// 	cJSON_AddNumberToObject(pJsonRoot, "SINR", DataPointer->TransMethodData.SINR);
+	cJSON_AddNumberToObject(pJsonRoot, "CSQ", DataPointer->TransMethodData.CSQ);
+// #endif
+
+
+
+	cJSON_AddNumberToObject(pJsonRoot, "Period", DataPointer->TerminalInfoData.SendPeriod);
+	cJSON_AddNumberToObject(pJsonRoot, "BatteryPercentage", DataPointer->TerminalInfoData.PowerQuantity);
+	cJSON_AddNumberToObject(pJsonRoot, "Version", DataPointer->TerminalInfoData.Version);
+
+	
+	uint8_t date[8];
+	char Uptime[19] = "2019-09-01 00:00:00";
+	char filestore[19];
+	memset(date, 0x0, 8);
+	memset(Uptime, 0x0, 19);
+	memset(filestore, 0x0, 19);
+	// OSBsp.Device.RTC.ReadExtTime(date, RealTime);
+	// if ((date[4] > 0x59) || (date[5] > 0x59) || (date[6] > 0x59))
+	// {
+		Read_info_RTC(date);
+	// }
+	g_Device_RTCstring_Creat(date, Uptime);
+	g_Printf_info("Uptime:%s\r\n", Uptime);
+	cJSON_AddStringToObject(pJsonRoot, "Uptime", Uptime);
+	// cJSON_AddNumberToObject(pJsonRoot, "UnixTimeStamp", UnixTimeStamp);
+	//cJSON_AddNumberToObject(pJsonRoot, "ReSiC", DataPointer->TerminalInfoData.ReviseSimulationCode);
+
+	p = cJSON_Print(pJsonRoot);
+	if (NULL == p)
+	{
+		//convert json list to string faild, exit
+		//because sub json pSubJson han been add to pJsonRoot, so just delete pJsonRoot, if you also delete pSubJson, it will coredump, and error is : double free
+		cJSON_Delete(pJsonRoot);
+		return NULL;
+	}
+
+	cJSON_Delete(pJsonRoot);
+	cJSON_Delete(pSubJson);
+
+	return p;
+}
 /*******************************************************************************
 * 函数名		: ScadaData_base_Init
 * 描述	    	: 初始化采集的数据大小
@@ -288,7 +383,7 @@ void ScadaData_base_Init(void)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 	AppDataPointer->TransMethodData.GPRSNet = 0;
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
 #elif (TRANSMIT_TYPE == NBIoT_MQTT_Ali)
@@ -407,7 +502,7 @@ void Terminal_Para_Init(void)
 	// HashValueSet();
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Waitfor_SMSReady;
 #endif
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	// OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);	  // PowerON-P4.3 //传输板上插LoRa模块时供电
 	// OSTimeDly(500);  //节拍2ms
 	// ResetCommunication();    		      	//模块复位管脚复位

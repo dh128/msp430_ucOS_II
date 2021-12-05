@@ -517,7 +517,7 @@ void ScadaData_base_Init(void)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 	AppDataPointer->TransMethodData.GPRSNet = 0;
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
 #elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
@@ -624,7 +624,7 @@ void Terminal_Para_Init(void)
 	// HashValueSet();
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Waitfor_SMSReady;
 	#endif
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	// OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);	  // PowerON-P4.3 //传输板上插LoRa模块时供电
     // OSTimeDly(500);  //节拍2ms
 	// ResetCommunication();    		      	//模块复位管脚复位

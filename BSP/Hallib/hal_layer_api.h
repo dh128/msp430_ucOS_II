@@ -75,7 +75,7 @@ enum Int_Src{                 //GLZ
 
 
 // void Hex2Str(unsigned char *d,uint8_t *p,unsigned char Len, unsigned char offset);
-void Hex2Str(unsigned char *d,uint32_t *p,unsigned char Len, unsigned char offset);
+void Hex2Str(unsigned char *d,uint32_t *p,unsigned int Len, unsigned char offset);
 uint8_t HexToBCD(uint8_t hex);
 uint8_t BCDToHEX(uint8_t bcd_data);
 char* Itoa(int val,char* dst,int radix);
