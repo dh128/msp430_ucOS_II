@@ -292,7 +292,7 @@ void Read_info_RTC(uint8_t *time)
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++//
 static uint8_t month_day[12]={31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; //平年
 static uint8_t Leap_month_day[12]={31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}; //闰年
-const uint16_t dayPerYear[4] = {365, 365, 365, 366};
+const uint16_t dayPerYear[4] = {365, 365, 366, 365};
 uint32_t UnixTimeStamp=0;
 
 
