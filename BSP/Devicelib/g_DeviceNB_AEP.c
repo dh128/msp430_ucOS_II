@@ -58,10 +58,10 @@ uint8_t cacheBuf[7];
 
 
 static unsigned char Singal_data[6]={0};
-static unsigned char SINR_data[5]={0};
-static unsigned char PCI_data[5]={0};
-static unsigned char ECL_data[5]={0};
-static unsigned char CellID_data[10]={0};
+//static unsigned char SINR_data[5]={0};
+//static unsigned char PCI_data[5]={0};
+//static unsigned char ECL_data[5]={0};
+//static unsigned char CellID_data[10]={0};
 
 //PCP测试
 char NB_Fota = 0;		//Fota状态，开始时置1，结束时置0
@@ -415,8 +415,8 @@ void g_Device_NBSignal(void)
 	char *a;
 	unsigned char i=0,n=0;
 	int32_t dataTemp=0;
-	int32_t dataTemp2=0;
-	static uint16_t complement=0;
+//	int32_t dataTemp2=0;
+//	static uint16_t complement=0;
 	static uint8_t Singal_Less=0;
 	Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 
@@ -539,6 +539,68 @@ void ProcessCommand()
 
 	}
 	else if(Hal_CheckString(aRxBuff,"FF0301")) //复位设备
+	{
+		g_Printf_info("NB Reset Device OK!\r\n");
+		OSTimeDly(500);
+		hal_Reboot(); //******软件复位*******//
+	}
+	else
+	{
+		g_Printf_info("Unknown command\r\n");
+	}
+}
+/*******************************************************************************
+* 函数名    : ProcessJsonCommand
+* 描述	  	: 处理JsonCommand指令数据,下发指令
+* 输入参数  : unsigned char *p -- 接收到的指令
+* 返回参数  : 无
+*******************************************************************************/
+void ProcessJsonCommand(unsigned char *p)
+{
+	char *CommandBuff;
+	uint8_t CommandBuffData[6]={0};
+	uint8_t CommandBuffNum = 0;;
+	uint8_t cmdData[50];
+	uint16_t Temp_SendPeriod;
+	unsigned char Flash_Tmp[14];  //flash操作中间变量
+//	unsigned char TimebuffNum=0;
+//	unsigned char TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16进制的时间Buffer  2018年3月15号 20时50分00秒 星期4
+	HexStrToByte(p,cmdData);
+	if(Hal_CheckString(cmdData,"\"Period\":")) //修改上报周期
+	{
+		CommandBuff = strstr(cmdData,"\"Period\":");         //判断接收到的数据是否有效
+		while(*(CommandBuff+9) != '}')
+		{
+			CommandBuffData[CommandBuffNum] = *(CommandBuff+9);
+			CommandBuffNum++;
+			CommandBuff++;
+			if(CommandBuffNum > 4)		/* 超出范围 */
+				break;
+		}
+		CommandBuffData[CommandBuffNum] = '\0';
+		if(CommandBuffNum < 5){
+			Temp_SendPeriod = (uint16_t)atoi(CommandBuffData);
+		}
+	
+		if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
+		{
+			App.Data.TerminalInfoData.SendPeriod = (unsigned char)(Temp_SendPeriod & 0x00FF);
+			// Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
+			// Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
+			g_Printf_info("NB Set SendPeriod as %d OK\r\n",(uint32_t)Temp_SendPeriod);
+			//将发送周期的信息存入Flash
+			// delay_ms(10);
+			OSTimeDly(5);
+			Flash_Tmp[11] = (Temp_SendPeriod & 0xFF00)>>8;	//修改周期存储值（min）
+			Flash_Tmp[12] = Temp_SendPeriod & 0x00FF;		
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[11], 2, infor_ChargeAddr, 11);//把周期信息写入FLASH
+		}
+		else
+		{
+			g_Printf_info("NB Set SendPeriod Failed！\r\n");
+		}
+	}
+	else if(Hal_CheckString(cmdData,"\"reset\":true")) //复位设备
 	{
 		g_Printf_info("NB Reset Device OK!\r\n");
 		OSTimeDly(500);
@@ -924,10 +986,20 @@ void g_Device_NB_GetReceive(void)
 		//处理PCP消息
 		ProcessPCP(Receive_data);
 	}
-	else if(Hal_CheckString(aRxBuff,"FF") & Hal_CheckString(aRxBuff,"AA"))  //获取到用户下发指令
+	else if(Hal_CheckString(aRxBuff,"7B") & Hal_CheckString(aRxBuff,"7D"))  //获取到用户下发指令
 	{
 		g_Printf_info("Get Command data!\r\n");
-		ProcessCommand();
+		Uart0_RxBuff = strstr(aRxBuff,",7B");         //判断接收到的数据是否有效
+		i = 0;		//清零用于存储下行数据包
+		while(*(Uart0_RxBuff+1)!='\r')
+		{
+			Receive_data[i]=*(Uart0_RxBuff+1);
+			i++;
+			Uart0_RxBuff++;
+		}
+		Receive_data[i] = '\0';
+		hal_Delay_ms(200);
+		ProcessJsonCommand(Receive_data);
 		aRxNum = 0;
 	}
 	else														//无下发数据
@@ -1094,7 +1166,7 @@ void  TransmitTaskStart (void *p_arg)
 	char data[512];
 	char *str=NULL;
 	char response[128];
-	uint8_t testData[]="{\"SeqNum\":1,\"SN\":1,\"DO\":0.07}";
+//	uint8_t testData[]="{\"SeqNum\":1,\"SN\":1,\"DO\":0.07}";
 	(void)p_arg;   
     OSTimeDlyHMSM(0u, 0u, 0u, 100u);      
     g_Printf_info("%s ... ...\n",__func__);           

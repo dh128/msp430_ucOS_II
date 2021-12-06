@@ -259,3 +259,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2021-12-05	dingh	watergague
 1、修改电子水尺传感器解析，读取时间，seeperStation，读取波特率4800；
 2、添加电信AEP平台上报数据对接，物模型，json格式。
+2021-12-07	dingh	watergague
+1、添加AEP平台json下发解析；
+2、seeperStation 添加json组包判断。

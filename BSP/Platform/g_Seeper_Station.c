@@ -312,7 +312,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 		return NULL;
 	}
 
-	// if (hal_GetBit(SensorStatus_H, 1))
+	if (hal_GetBit(SensorStatus_H, 1))
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "LVValue", DataPointer->SeeperData.LVValue);
 	}
