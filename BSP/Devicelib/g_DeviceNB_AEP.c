@@ -958,7 +958,7 @@ void g_Device_NB_GetReceive(void)
 	aRxNum = 0;
 	if(NB_Fota)				//进入Fota后每次获取PCP数据延时，避免数据下发不及时
 	{
-		while(i < 40)
+		while(i < 120)
 		{
 			i++;
 			OSTimeDly(250);		//500ms

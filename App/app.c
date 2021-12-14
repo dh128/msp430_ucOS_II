@@ -196,7 +196,7 @@ static  void  ScadaTaskStart (void *p_arg)
                 if (scada_over_times == 60)  //120+120s 空跑4min
                 {
                     scada_over_times = 0;
-#if(TRANSMIT_TYPE == NBIoT_BC95_Mode)                    
+#if(TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)                    
                     if(NB_Fota == 0){
                         g_Printf_dbg("DeviceStatus always scan_over, enter low_power!\r\n");
                         Hal_EnterLowPower_Mode();
