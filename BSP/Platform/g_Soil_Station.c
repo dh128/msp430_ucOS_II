@@ -31,7 +31,7 @@
 
 #if (PRODUCT_TYPE == Soil_Station)
 
-#define SensorNum			12 
+#define SensorNum			1 
 #define CMDLength        	8
 #define SensorKind          0b111111111111
 
@@ -56,9 +56,9 @@ uint32_t Send_Buffer[60] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x00,
 					//        period  电量  Ver       timestamp            Lng经度             lat纬度          海拔
 
 
-const uint8_t ScadaSoilTempHumiCond_RK[CMDLength] = {0x0C,0x03,0x00,0x00,0x00,0x03,0x04,0xD6};  //土壤温度、水分、电导率_RK
-const uint8_t ScadaSoilTempHumi_RK[CMDLength] = {0x0C,0x03,0x00,0x00,0x00,0x02,0xC5,0x16};  //土壤温度、水分_RK
-const uint8_t ScadaSoilPH_QJ[CMDLength] = {0x09,0x03,0x00,0x00,0x00,0x06,0xC4,0x80};	        //土壤PH_QJ
+const uint8_t ScadaSoilTempHumiCond_RK[CMDLength] = {0x04,0x03,0x00,0x00,0x00,0x03,0x05,0x9E};  //土壤温度、水分、电导率_RK
+// const uint8_t ScadaSoilTempHumi_RK[CMDLength] = {0x0C,0x03,0x00,0x00,0x00,0x02,0xC5,0x16};  //土壤温度、水分_RK
+// const uint8_t ScadaSoilPH_QJ[CMDLength] = {0x09,0x03,0x00,0x00,0x00,0x06,0xC4,0x80};	        //土壤PH_QJ
 
 
 
@@ -114,80 +114,28 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 			{
 				switch(data[0])
 				{
-					case 0x0C:		//土壤温湿度电导率_RK
+					case 0x04:		//土壤温湿度电导率_RK
 						/**************土壤温度**************/
-						hal_SetBit(SensorStatus_H, 3);      //传感器状态位置1
+						hal_SetBit(SensorStatus_H, 1);      //传感器状态位置1
 						if(data[5]>=0xF0) //温度为负数，取补码
 						{
 							sensorCahe = 0XFFFF-((uint32_t)data[5]*256 + data[6])+0X01;
 							AppDataPointer->SoilData.SoilTemp = (float)sensorCahe/10*(-1);
-							sensorCahe = (uint32_t)data[5]*256 + data[6]; //原始数据存放到发送字节中
-							if(AppDataPointer->SoilData.SoilTemp < -40) 
-							{
-								hal_SetBit(SensorReviseStatus_H, 3);    //传感器修正状态位置1
-								AppDataPointer->SoilData.SoilTemp = -18.01 + (float)(rand()%13)/10;	     //    -15.01~-13.81
-								sensorCahe = 0XFFFF-(uint32_t)(abs(AppDataPointer->SoilData.SoilTemp)*10)+0X01;
-							}
 						}
 						else              //温度为正数
 						{
 							sensorCahe = (uint32_t)data[5]*256 + data[6];
 							AppDataPointer->SoilData.SoilTemp = (float)sensorCahe/10;
-							if(AppDataPointer->SoilData.SoilTemp > 80) 
-							{
-								hal_SetBit(SensorReviseStatus_H, 3);    //传感器修正状态位置1
-								AppDataPointer->SoilData.SoilTemp = 18.01 + (float)(rand()%13)/10;	     //    15.01~16.21
-								sensorCahe = (uint32_t)((AppDataPointer->SoilData.SoilTemp)*10);
-							}
 						}
-						Send_Buffer[7] = sensorCahe / 256;
-						Send_Buffer[8] = sensorCahe % 256;
 						/**************土壤湿度**************/
-						hal_SetBit(SensorStatus_H, 2);      //传感器状态位置1
+						// hal_SetBit(SensorStatus_H, 2);      //传感器状态位置1
 						sensorCahe = (uint32_t)data[3]*256 + data[4];
 						AppDataPointer->SoilData.SoilHum = (float)sensorCahe/10;
-						if(AppDataPointer->SoilData.SoilHum > 100) 
-						{
-							hal_SetBit(SensorReviseStatus_H, 2);    //传感器修正状态位置1
-							AppDataPointer->SoilData.SoilHum = 42.01 + (float)(rand()%16)/10;	     //    42.01~43.51
-							sensorCahe = (uint32_t)((AppDataPointer->SoilData.SoilHum)*10);
-						}
-						Send_Buffer[9] = sensorCahe / 256;
-						Send_Buffer[10] = sensorCahe % 256;
+						
 						/**************土壤电导率*************/
-//						hal_SetBit(SensorStatus_H, 1);       //传感器状态位置1
-//						sensorCahe = (uint32_t)data[7]*256 + data[8];
-//						AppDataPointer->SoilData.SoilCond = sensorCahe;
-//						if(AppDataPointer->SoilData.SoilCond > 20000)
-//						{
-//							hal_SetBit(SensorReviseStatus_H, 1);    //传感器修正状态位置1
-//							AppDataPointer->SoilData.SoilCond = 351 + (rand()%2)*10;	     //    351~361
-//							sensorCahe = AppDataPointer->SoilData.SoilCond;
-//						}
-//						Send_Buffer[11] = sensorCahe / 256;
-//						Send_Buffer[12] = sensorCahe % 256;
-						break;
-					case 0x09:    //PH+温度
-						if(data[2] == 0x0C)  //数据长度是0C，代表QJ PH
-						{
-							//PH值
-							hal_SetBit(SensorStatus_H, 0);    //传感器状态位置1
-							SensorData.Hex[0] = data[6];      //大端模式，高位字节存放在后面
-							SensorData.Hex[1] = data[5];
-							SensorData.Hex[2] = data[4];
-							SensorData.Hex[3] = data[3];
-							AppDataPointer->SoilData.SoilPH = SensorData.Data;
-							sensorFloatCahe = AppDataPointer->SoilData.SoilPH;
-							if((AppDataPointer->SoilData.SoilPH <= 2)||(AppDataPointer->SoilData.SoilPH >= 12)) 
-							{
-								hal_SetBit(SensorReviseStatus_H, 0);    //传感器修正状态位置1
-								AppDataPointer->SoilData.SoilPH = 6.31 + (float)(rand()%3)/10;	     //    6.31~6.51
-								sensorFloatCahe = AppDataPointer->SoilData.SoilPH;					
-							}
-							Send_Buffer[13] = (uint32_t)(sensorFloatCahe*100)/256;
-							Send_Buffer[14] = (uint32_t)(sensorFloatCahe*100)%256;
-						}
-						break;						
+						sensorCahe = (uint32_t)data[7]*256 + data[8];
+						AppDataPointer->SoilData.SoilCond = sensorCahe;
+						break;					
 					default:
 						break;
 				}//switch(data[0]) END	
@@ -370,53 +318,7 @@ void InqureSensor(void)
 					case 1:
 						sensorSN = 1;
 						// hal_ResetBit(SensorStatus_H, 3);
-						OSBsp.Device.Usart3.WriteNData(ScadaSoilTempHumi_RK,CMDLength);
-						break;
-					case 2:
-						sensorSN = 2;
-						// hal_ResetBit(SensorStatus_H, 2);
-						OSBsp.Device.Usart3.WriteNData(ScadaSoilTempHumi_RK,CMDLength);
-						break;
-					case 3:
-						sensorSN = 3;
-						// hal_ResetBit(SensorStatus_H, 1);
-						break;
-					case 4:
-						sensorSN = 4;
-						// hal_ResetBit(SensorStatus_H, 0);
-//						OSBsp.Device.Usart3.WriteNData(ScadaSoilPH_QJ,CMDLength);
-						break;
-					case 5:
-						sensorSN = 5;
-						// hal_ResetBit(SensorStatus_L, 7);
-						break;
-					case 6:
-						sensorSN = 6;
-						// hal_ResetBit(SensorStatus_L, 6);
-						break;
-					case 7:
-						sensorSN = 7;
-						// hal_ResetBit(SensorStatus_L, 5);
-						break;						
-					case 8:
-						sensorSN = 8;
-						// hal_ResetBit(SensorStatus_L, 4);				
-						break;
-					case 9:
-						sensorSN = 9;
-						// hal_ResetBit(SensorStatus_L, 3);
-						break;						
-					case 10:
-						sensorSN = 10;
-						// hal_ResetBit(SensorStatus_L, 2);						
-						break;
-					case 11:
-						sensorSN = 11;
-						// hal_ResetBit(SensorStatus_L, 1);
-						break;
-					case 12:
-						sensorSN = 12;
-						// hal_ResetBit(SensorStatus_L, 0);
+						OSBsp.Device.Usart3.WriteNData(ScadaSoilTempHumiCond_RK,CMDLength);
 						break;
 					default:
 						break;
@@ -503,7 +405,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
     mallco_dev.init();
 
     cJSON *pJsonRoot = mymalloc(512*sizeof(cJSON *));
-	cJSON *pSubJson = mymalloc(128*sizeof(cJSON *));;
 	char *p;
 
     pJsonRoot = cJSON_CreateObject();
@@ -513,78 +414,19 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
         return NULL;
     }
 
-    cJSON_AddNumberToObject(pJsonRoot, "SN",DataPointer->TerminalInfoData.SerialNumber);
     cJSON_AddNumberToObject(pJsonRoot, "DeviceID",DataPointer->TerminalInfoData.DeviceID);
     cJSON_AddNumberToObject(pJsonRoot, "SeqNum",DataPointer->TransMethodData.SeqNumber);
-	if(REGRST != 0 ){
-		cJSON_AddNumberToObject(pJsonRoot, "reboot",REGRST);
-		REGRST = 0;
-	}
+	cJSON_AddNumberToObject(pJsonRoot, "serviceId", 12);
 
-    pSubJson = NULL;
-    pSubJson = cJSON_CreateObject();
-    if(NULL == pSubJson)
-    {
-      //create object faild, exit
-      cJSON_Delete(pSubJson);
-      return NULL;
-    }
-
-//	if(hal_GetBit(SensorStatus_H, 3))
+	if(hal_GetBit(SensorStatus_H, 1))
 	{
-		AppDataPointer->SoilData.SoilTemp = 20.01 + (float)(rand()%2) - (float)(rand()%2);
-		if ((AppDataPointer->SoilData.SoilTemp < 18.50) || (AppDataPointer->SoilData.SoilHum > 25.01))
-		{
-			AppDataPointer->SoilData.SoilTemp = 20.01;
-		}
-		cJSON_AddNumberToObject(pSubJson,"SoilTemp",DataPointer->SoilData.SoilTemp);
-		SimulationSensorFloatTemp =0;
-		SimulationSensorFloatTemp = DataPointer->SoilData.SoilTemp;
+		cJSON_AddNumberToObject(pJsonRoot,"SoilTemp",DataPointer->SoilData.SoilTemp);
+		cJSON_AddNumberToObject(pJsonRoot,"SoilHumi",DataPointer->SoilData.SoilHum);
+		cJSON_AddNumberToObject(pJsonRoot,"SoilCond",DataPointer->SoilData.SoilCond);
 	}
-//	if(hal_GetBit(SensorStatus_H, 2))
-	{
-		AppDataPointer->SoilData.SoilHum = 28.01 + (float)(rand()%5) - (float)(rand()%5);
-		if ((AppDataPointer->SoilData.SoilHum < 25.50) || (AppDataPointer->SoilData.SoilHum > 35.01))
-		{
-			AppDataPointer->SoilData.SoilHum = 28.01;
-		}
-		cJSON_AddNumberToObject(pSubJson,"SoilHumi",DataPointer->SoilData.SoilHum);
-		SimulationSensorFloatHumi = 0;
-		SimulationSensorFloatHumi = DataPointer->SoilData.SoilHum;
-	}
-	if(hal_GetBit(SensorStatus_H, 1)) {
-		cJSON_AddNumberToObject(pSubJson,"SoilCond",DataPointer->SoilData.SoilCond);
-	}
-	if(hal_GetBit(SensorStatus_H, 0)) {
-		cJSON_AddNumberToObject(pSubJson,"SoilPH",DataPointer->SoilData.SoilPH);
-	}
-	if(hal_GetBit(SensorStatus_L, 7)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 6)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 5)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 4)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 3)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 2)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 1)) {
-	}
-	if(hal_GetBit(SensorStatus_L, 0)) {
-	}
-	cJSON_AddItemToObject(pJsonRoot,"SoilData", pSubJson);
-#if (TRANSMIT_TYPE == GPRS_Mode)
-	cJSON_AddStringToObject(pJsonRoot, "CSQ",CSQBuffer);
-#endif
-#if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-	cJSON_AddNumberToObject(pJsonRoot,"RSRP",DataPointer->TransMethodData.RSRP);
-	cJSON_AddNumberToObject(pJsonRoot,"SINR",DataPointer->TransMethodData.SINR);
-	cJSON_AddNumberToObject(pJsonRoot,"PCI",DataPointer->TransMethodData.PCI);
-#endif
-	cJSON_AddNumberToObject(pJsonRoot,"SendPeriod",DataPointer->TerminalInfoData.SendPeriod);
-	cJSON_AddNumberToObject(pJsonRoot,"Quanity",DataPointer->TerminalInfoData.PowerQuantity);
+	cJSON_AddNumberToObject(pJsonRoot,"CSQ",DataPointer->TransMethodData.CSQ);
+	cJSON_AddNumberToObject(pJsonRoot,"Period",DataPointer->TerminalInfoData.SendPeriod);
+	cJSON_AddNumberToObject(pJsonRoot,"BatteryPercentage",DataPointer->TerminalInfoData.PowerQuantity);
 	cJSON_AddNumberToObject(pJsonRoot,"Version",DataPointer->TerminalInfoData.Version);
 
 	// uint8_t date[8];
@@ -607,9 +449,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	g_Device_RTCstring_Creat(date,Uptime);
 	g_Printf_info("Uptime:%s\r\n",Uptime);
 	cJSON_AddStringToObject(pJsonRoot,"Uptime",Uptime);
-	cJSON_AddNumberToObject(pJsonRoot,"UnixTimeStamp",UnixTimeStamp);
-	cJSON_AddNumberToObject(pJsonRoot,"ReSiC",DataPointer->TerminalInfoData.ReviseSimulationCode);
-
+	
     p = cJSON_Print(pJsonRoot);
     if(NULL == p)
     {
@@ -620,17 +460,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
     }
 
     cJSON_Delete(pJsonRoot);
-	cJSON_Delete(pSubJson);
-
-#if HAVE_SDCARD_SERVICE
-	OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
-	OSTimeDly(500);
-	g_SD_FileName_Creat("0:/",date,filestore);
-	g_SD_File_Write(filestore,p);
-	g_SD_File_Write(filestore,"\r\n");     //数据换行
-#endif  
-	// OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);  //++++++++++++++++++++++++
-
     return p;
 }
 
@@ -653,7 +482,7 @@ void ScadaData_base_Init(void)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 	AppDataPointer->TransMethodData.GPRSNet = 0;
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
 #elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
@@ -760,7 +589,7 @@ void Terminal_Para_Init(void)
 	// HashValueSet();
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Waitfor_SMSReady;
 	#endif
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	// OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);	  // PowerON-P4.3 //传输板上插LoRa模块时供电
     // OSTimeDly(500);  //节拍2ms
 	// ResetCommunication();    		      	//模块复位管脚复位

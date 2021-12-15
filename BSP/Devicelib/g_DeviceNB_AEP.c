@@ -1239,6 +1239,7 @@ void  TransmitTaskStart (void *p_arg)
 						str = MakeJsonBodyData(AppDataPointer);		//组包json并存储SD卡
 						i = 0;
 						j = 0;
+						memset(data, 0, 512);
 						while ((str[i] != '\0') && (i < 512)) {
 							if ((str[i] != 0x0D) && (str[i] != 0x0A) && (str[i] != '\t'))
 								data[j++] = str[i++];

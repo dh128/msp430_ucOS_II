@@ -82,11 +82,11 @@
 
 //#define PRODUCT_TYPE                MagicSTICK_Station
 //#define PRODUCT_TYPE                Weather_Station
-//#define PRODUCT_TYPE                Soil_Station
+#define PRODUCT_TYPE                Soil_Station
 //#define PRODUCT_TYPE 	             Voc_Station
 //#define PRODUCT_TYPE	             Flowmeter_Station
 // #define PRODUCT_TYPE	             WRain_Station
-#define PRODUCT_TYPE	             Seeper_Station
+//#define PRODUCT_TYPE	             Seeper_Station
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
 #define NBIoT_BC95_Mode	      		0x02
