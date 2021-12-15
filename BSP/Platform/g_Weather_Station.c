@@ -31,7 +31,7 @@
 
 #if (PRODUCT_TYPE == Weather_Station)
 
-#define SensorNum			2 
+#define SensorNum			4 
 #define CMDLength        	8
 #define SensorKind          0b11
 
@@ -45,7 +45,11 @@ uint32_t Send_Buffer[60] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x00,
 //                          /-------/ /--/ /-----------------/ /-----------------/ /-----------------/ /-------/ /-------/ /-------/ /-------/ /-------/ /-------/ /--/
 //                            Period   ver		timestamp            Lng经度             lat纬度          海拔      RSRP      SINR       PCI      保留		模拟  	 保留       
 
-const uint8_t ScadaMetOne_YS_HCD6816[CMDLength]={0xFF,0x03,0x00,0x07,0x00,0x0A,0x61,0xD2};        //光照-YS
+const uint8_t Inqure_WindSpeed[CMDLength]={0x01,0x03,0x00,0x00,0x00,0x01,0x84,0x0A};          //风速
+const uint8_t Inqure_WindDirection[CMDLength]={0x02,0x03,0x00,0x01,0x00,0x01,0xD5,0xF9};      //风向
+const uint8_t Inqure_THLP[CMDLength] = {0x03,0x03,0x01,0xF4,0x00,0x08,0x05,0xE0};				  //温湿度光照气压
+
+// const uint8_t ScadaMetOne_YS_HCD6816[CMDLength]={0xFF,0x03,0x00,0x07,0x00,0x0A,0x61,0xD2};        //光照-YS
 const uint8_t ScadaRainGauge_XPH[CMDLength]={0x08,0x03,0x00,0x00,0x00,0x01,0x84,0x93};            //雨量-XPH
 
 
@@ -100,7 +104,7 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 				switch(data[0])
 				{		
 					case 0x08:	  //XPH--雨量
-						hal_SetBit(SensorStatus_L, 1);     //传感器状态位置1
+						hal_SetBit(SensorStatus_H, 3);     //传感器状态位置1
 						sensorCahe = (uint32_t)data[3]*256 + data[4];
 						AppDataPointer->MeteorologyData.RainGauge = (float)sensorCahe/10;
 						AppDataPointer->MeteorologyData.RainGaugeH += AppDataPointer->MeteorologyData.RainGauge;
@@ -121,62 +125,51 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 							Send_Buffer[20] = (uint32_t)(AppDataPointer->MeteorologyData.RainGaugeD*10) % 256;
 						}				
 						break;									
-					case 0xFF:    //YS--多参数
-						//风速
-						hal_SetBit(SensorStatus_L, 0);     //传感器状态位置1
-						sensorCahe = (uint32_t)data[13]*256 + data[14];
-						AppDataPointer->MeteorologyData.WindSpeed = (float)sensorCahe/100;
+					case 0x01:    //风速
+						hal_SetBit(SensorStatus_H, 0);     //传感器状态位置1
+						sensorCahe = (uint32_t)data[3]*256 + data[4];
+						AppDataPointer->MeteorologyData.WindSpeed = (float)sensorCahe/10;
 						Send_Buffer[7] = sensorCahe / 256;
-						Send_Buffer[8] = sensorCahe % 256;	 
-						//风向
-						sensorCahe = (uint32_t)data[15]*256 + data[16];
-						AppDataPointer->MeteorologyData.WindDirection = (float)sensorCahe/10;
+						Send_Buffer[8] = sensorCahe % 256;	
+						break; 
+					case 0x02: //风向
+						hal_SetBit(SensorStatus_H, 1);     //传感器状态位置1
+						sensorCahe = (uint32_t)data[3]*256 + data[4];
+						AppDataPointer->MeteorologyData.WindDirection = sensorCahe;
 						Send_Buffer[9] = sensorCahe / 256;
 						Send_Buffer[10] = sensorCahe % 256;
+						break;
+					case 0x03: //温湿压光照
+						hal_SetBit(SensorStatus_H, 2);     //传感器状态位置1
 						//空气温度
-						sensorCahe = (uint32_t)data[7]*256 + data[8];
-						AppDataPointer->MeteorologyData.AirTemperature = (float)sensorCahe/100-40;
-						if(AppDataPointer->MeteorologyData.AirTemperature >= 0)
+						sensorCahe = (uint32_t)data[5]*256 + data[6];
+						if(data[5]>=0xF0) //温度为负数，取补码
 						{
-							Send_Buffer[11] = (sensorCahe-4000) / 256;
-							Send_Buffer[12] = (sensorCahe-4000) % 256;
+							sensorCahe = 0XFFFF-((uint32_t)data[5]*256 + data[6])+0X01;
+							AppDataPointer->MeteorologyData.AirTemperature = (float)sensorCahe/10*(-1);
 						}
-						else
+						else              //温度为正数
 						{
-							sensorCahe = (uint32_t)(abs(AppDataPointer->MeteorologyData.AirTemperature*100));
-							Send_Buffer[11] = (0xFFFF-sensorCahe+0x01) / 256;
-							Send_Buffer[12] = (0xFFFF-sensorCahe+0x01) % 256;
-						}	
+							sensorCahe = (uint32_t)data[5]*256 + data[6];
+							AppDataPointer->MeteorologyData.AirTemperature = (float)sensorCahe/10;
+						}
 						//空气湿度
-						sensorCahe = (uint32_t)data[9]*256 + data[10];
-						AppDataPointer->MeteorologyData.AirHumidity = (float)sensorCahe/100;
+						sensorCahe = (uint32_t)data[3]*256 + data[4];
+						AppDataPointer->MeteorologyData.AirHumidity = (float)sensorCahe/10;
 						Send_Buffer[13] = sensorCahe / 256;
 						Send_Buffer[14] = sensorCahe % 256;						
 						//气压
-						sensorCahe = (uint32_t)data[11]*256 + data[12];
-						AppDataPointer->MeteorologyData.AirPressure = (float)sensorCahe/10;
+						sensorCahe = (uint32_t)data[13]*256 + data[14];
+						AppDataPointer->MeteorologyData.AirPressure = (float)sensorCahe;
 						Send_Buffer[15] = sensorCahe / 256;
-						Send_Buffer[16] = sensorCahe % 256;		
-						//PM2.5
-						sensorCahe = (uint32_t)data[3]*256 + data[4];
-						AppDataPointer->MeteorologyData.PM25 = sensorCahe;
-						Send_Buffer[21] = sensorCahe / 256;
-						Send_Buffer[22] = sensorCahe % 256;
-						//PM10
-						sensorCahe = (uint32_t)data[5]*256 + data[6];
-						AppDataPointer->MeteorologyData.PM10 = sensorCahe;
-						Send_Buffer[23] = sensorCahe / 256;
-						Send_Buffer[24] = sensorCahe % 256;
-						//辐射
-						sensorCahe = (uint32_t)data[19]*256 + data[20];
-						AppDataPointer->MeteorologyData.Radiation = sensorCahe;
-						Send_Buffer[25] = sensorCahe / 256;
-						Send_Buffer[26] = sensorCahe % 256;
+						Send_Buffer[16] = sensorCahe % 256;	
 						//光照
-						sensorCahe = (uint32_t)data[21]*256 + data[22];
-						AppDataPointer->MeteorologyData.Illumination = sensorCahe;
-						Send_Buffer[27] = sensorCahe / 256;
-						Send_Buffer[28] = sensorCahe % 256;
+						sensorCahe = (uint32_t)data[15]*16777216 + (uint32_t)data[16]*65536 + (uint32_t)data[17]*256 + data[18];
+						AppDataPointer->MeteorologyData.Illumination = (float)sensorCahe/10000;
+						Send_Buffer[39] = data[15];
+						Send_Buffer[40] = data[16];
+						Send_Buffer[41] = data[17];
+						Send_Buffer[42] = data[18];
 						break;
 					default:
 						break;
@@ -411,10 +404,18 @@ void InqureSensor(void)
 			{
 				case 1:
 					sensorSN = 1;
-					OSBsp.Device.Usart3.WriteNData(ScadaMetOne_YS_HCD6816,CMDLength);	
+					OSBsp.Device.Usart3.WriteNData(Inqure_WindSpeed,CMDLength);	
 					break;
 				case 2:
 					sensorSN = 2;
+					OSBsp.Device.Usart3.WriteNData(Inqure_WindDirection,CMDLength);	
+					break;
+				case 3:
+					sensorSN = 3;
+					OSBsp.Device.Usart3.WriteNData(Inqure_THLP,CMDLength);	
+					break;
+				case 4:
+					sensorSN = 4;
 					if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_SCADA_ENABLE)
 					{
 						AppDataPointer->MeteorologyData.RainGaugeScadaStatus &= ~RAINGAUGE_SCADA_ENABLE;;
@@ -506,7 +507,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
     mallco_dev.init();
 
     cJSON *pJsonRoot = mymalloc(512*sizeof(cJSON *));
-	cJSON *pSubJson = mymalloc(128*sizeof(cJSON *));;
 	char *p;
 
     pJsonRoot = cJSON_CreateObject();
@@ -516,49 +516,35 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
         return NULL;
     }
 
-    cJSON_AddNumberToObject(pJsonRoot, "SN",DataPointer->TerminalInfoData.SerialNumber);
     cJSON_AddNumberToObject(pJsonRoot, "DeviceID",DataPointer->TerminalInfoData.DeviceID);
     cJSON_AddNumberToObject(pJsonRoot, "SeqNum",DataPointer->TransMethodData.SeqNumber);
-	if(REGRST != 0 ){
-		cJSON_AddNumberToObject(pJsonRoot, "reboot",REGRST);
-		REGRST = 0;
+	cJSON_AddNumberToObject(pJsonRoot, "serviceId", 12);
+
+	if(hal_GetBit(SensorStatus_H, 0)){
+		cJSON_AddNumberToObject(pJsonRoot,"Winds",DataPointer->MeteorologyData.WindSpeed);
+	}
+	if(hal_GetBit(SensorStatus_H, 1)){
+		cJSON_AddNumberToObject(pJsonRoot,"Windd",DataPointer->MeteorologyData.WindDirection);
+	}
+	if(hal_GetBit(SensorStatus_H, 2)){
+		cJSON_AddNumberToObject(pJsonRoot,"Temp",DataPointer->MeteorologyData.AirTemperature);
+		cJSON_AddNumberToObject(pJsonRoot,"Humi",DataPointer->MeteorologyData.AirHumidity);
+		cJSON_AddNumberToObject(pJsonRoot,"Press",DataPointer->MeteorologyData.AirPressure);
+		cJSON_AddNumberToObject(pJsonRoot,"Llum",DataPointer->MeteorologyData.Illumination);
+	}
+	if(hal_GetBit(SensorStatus_H, 3)) {
+		cJSON_AddNumberToObject(pJsonRoot,"RainH",DataPointer->MeteorologyData.RainGaugeH);		
+		cJSON_AddNumberToObject(pJsonRoot,"RainD",DataPointer->MeteorologyData.RainGaugeD);
 	}
 
-    pSubJson = NULL;
-    pSubJson = cJSON_CreateObject();
-    if(NULL == pSubJson)
-    {
-      //create object faild, exit
-      cJSON_Delete(pSubJson);
-      return NULL;
-    }
-	if(hal_GetBit(SensorStatus_L, 0)) {
-		cJSON_AddNumberToObject(pSubJson,"Winds",DataPointer->MeteorologyData.WindSpeed);
-		cJSON_AddNumberToObject(pSubJson,"Windd",DataPointer->MeteorologyData.WindDirection);
-		cJSON_AddNumberToObject(pSubJson,"Temp",DataPointer->MeteorologyData.AirTemperature);
-		cJSON_AddNumberToObject(pSubJson,"Humi",DataPointer->MeteorologyData.AirHumidity);
-		cJSON_AddNumberToObject(pSubJson,"Press",DataPointer->MeteorologyData.AirPressure);
-		cJSON_AddNumberToObject(pSubJson,"PM2_5",DataPointer->MeteorologyData.PM25);
-		cJSON_AddNumberToObject(pSubJson,"PM10",DataPointer->MeteorologyData.PM10);
-		cJSON_AddNumberToObject(pSubJson,"Radi",DataPointer->MeteorologyData.Radiation);
-		cJSON_AddNumberToObject(pSubJson,"llum",DataPointer->MeteorologyData.Illumination);
-	}
-	if(hal_GetBit(SensorStatus_L, 1)) {
-		cJSON_AddNumberToObject(pSubJson,"Rain",DataPointer->MeteorologyData.RainGauge);
-	}
-	cJSON_AddItemToObject(pJsonRoot,"WeatherData", pSubJson);
-
-	SensorStatus_L = 0;		//传感器状态位清零
+	SensorStatus_H = 0;		//传感器状态位清零
 #if (TRANSMIT_TYPE == GPRS_Mode)
 	cJSON_AddStringToObject(pJsonRoot, "CSQ",CSQBuffer);
 #endif
-#if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-	cJSON_AddNumberToObject(pJsonRoot,"RSRP",DataPointer->TransMethodData.RSRP);
-	cJSON_AddNumberToObject(pJsonRoot,"SINR",DataPointer->TransMethodData.SINR);
-	cJSON_AddNumberToObject(pJsonRoot,"PCI",DataPointer->TransMethodData.PCI);
-#endif
-	cJSON_AddNumberToObject(pJsonRoot,"SendPeriod",DataPointer->TerminalInfoData.SendPeriod);
-	cJSON_AddNumberToObject(pJsonRoot,"Quanity",DataPointer->TerminalInfoData.PowerQuantity);
+
+	cJSON_AddNumberToObject(pJsonRoot,"CSQ",DataPointer->TransMethodData.CSQ);
+	cJSON_AddNumberToObject(pJsonRoot,"Period",DataPointer->TerminalInfoData.SendPeriod);
+	cJSON_AddNumberToObject(pJsonRoot,"BatteryPercentage",DataPointer->TerminalInfoData.PowerQuantity);
 	cJSON_AddNumberToObject(pJsonRoot,"Version",DataPointer->TerminalInfoData.Version);
 
 
@@ -572,8 +558,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	g_Device_RTCstring_Creat(date,Uptime);
 	g_Printf_info("Uptime:%s\r\n",Uptime);
 	cJSON_AddStringToObject(pJsonRoot,"Uptime",Uptime);
-	cJSON_AddNumberToObject(pJsonRoot,"UnixTimeStamp",UnixTimeStamp);
-	cJSON_AddNumberToObject(pJsonRoot,"ReSiC",DataPointer->TerminalInfoData.ReviseSimulationCode);
 
     p = cJSON_Print(pJsonRoot);
     if(NULL == p)
@@ -585,17 +569,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
     }
 
     cJSON_Delete(pJsonRoot);
-	cJSON_Delete(pSubJson);
-
-#if HAVE_SDCARD_SERVICE
-	OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
-	OSTimeDly(500);
-	g_SD_FileName_Creat("0:/",date,filestore);
-	g_SD_File_Write(filestore,p);
-	g_SD_File_Write(filestore,"\r\n");     //数据换行
-#endif  	
-	// OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);  //++++++++++++++++++++++++
-
     return p;
 }
 
@@ -618,7 +591,7 @@ void ScadaData_base_Init(void)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 	AppDataPointer->TransMethodData.GPRSNet = 0;
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
 #elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
@@ -725,7 +698,7 @@ void Terminal_Para_Init(void)
 	// HashValueSet();
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Waitfor_SMSReady;
 	#endif
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	// OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);	  // PowerON-P4.3 //传输板上插LoRa模块时供电
     // OSTimeDly(500);  //节拍2ms
 	// ResetCommunication();    		      	//模块复位管脚复位

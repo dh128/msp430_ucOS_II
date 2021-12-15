@@ -56,12 +56,12 @@ MEMORY
     SFR                     : origin = 0x0000, length = 0x0010
     PERIPHERALS_8BIT        : origin = 0x0010, length = 0x00F0
     PERIPHERALS_16BIT       : origin = 0x0100, length = 0x0100
-    RAM                     : origin = 0x2400, length = 0x8000
+    RAM                     : origin = 0x2400, length = 0x7E00
     INFOA                   : origin = 0x1980, length = 0x0080
     INFOB                   : origin = 0x1900, length = 0x0080
     INFOC                   : origin = 0x1880, length = 0x0080
     INFOD                   : origin = 0x1800, length = 0x0080
-    FLASH                   : origin = 0xC400, length = 0x37FF
+    FLASH                   : origin = 0xA400, length = 0x5B80
     FLASH2                  : origin = 0x10000,length = 0x1A400
     INT00                   : origin = 0xFF80, length = 0x0002
     INT01                   : origin = 0xFF82, length = 0x0002
@@ -99,34 +99,34 @@ MEMORY
     INT33                   : origin = 0xFFC2, length = 0x0002
     INT34                   : origin = 0xFFC4, length = 0x0002
     INT35                   : origin = 0xFFC6, length = 0x0002
-    INT36                   : origin = 0xFC00, length = 0x0002
-    INT37                   : origin = 0xFC02, length = 0x0002
-    INT38                   : origin = 0xFC04, length = 0x0002
-    INT39                   : origin = 0xFC06, length = 0x0002
-    INT40                   : origin = 0xFC08, length = 0x0002
-    INT41                   : origin = 0xFC0A, length = 0x0002
-    INT42                   : origin = 0xFC0C, length = 0x0002
-    INT43                   : origin = 0xFC0E, length = 0x0002
-    INT44                   : origin = 0xFC10, length = 0x0002
-    INT45                   : origin = 0xFC12, length = 0x0002
-    INT46                   : origin = 0xFC14, length = 0x0002
-    INT47                   : origin = 0xFC16, length = 0x0002
-    INT48                   : origin = 0xFC18, length = 0x0002
+    INT36                   : origin = 0xFFC8, length = 0x0002
+    INT37                   : origin = 0xFFCA, length = 0x0002
+    INT38                   : origin = 0xFFCC, length = 0x0002
+    INT39                   : origin = 0xFFCE, length = 0x0002
+    INT40                   : origin = 0xFFD0, length = 0x0002
+    INT41                   : origin = 0xFFD2, length = 0x0002
+    INT42                   : origin = 0xFFD4, length = 0x0002
+    INT43                   : origin = 0xFFD6, length = 0x0002
+    INT44                   : origin = 0xFFD8, length = 0x0002
+    INT45                   : origin = 0xFFDA, length = 0x0002
+    INT46                   : origin = 0xFFDC, length = 0x0002
+    INT47                   : origin = 0xFFDE, length = 0x0002
+    INT48                   : origin = 0xFFE0, length = 0x0002
     INT49                   : origin = 0xFFE2, length = 0x0002
-    INT50                   : origin = 0xFC1A, length = 0x0002
-    INT51                   : origin = 0xFC1C, length = 0x0002
-    INT52                   : origin = 0xFC1E, length = 0x0002
-    INT53                   : origin = 0xFC20, length = 0x0002
-    INT54                   : origin = 0xFC22, length = 0x0002
-    INT55                   : origin = 0xFC24, length = 0x0002
-    INT56                   : origin = 0xFC26, length = 0x0002
-    INT57                   : origin = 0xFC28, length = 0x0002
-    INT58                   : origin = 0xFC2A, length = 0x0002
-    INT59                   : origin = 0xFC2C, length = 0x0002
-    INT60                   : origin = 0xFC2E, length = 0x0002
-    INT61                   : origin = 0xFC30, length = 0x0002
-    INT62                   : origin = 0xFC32, length = 0x0002
-    RESET                   : origin = 0xFC34, length = 0x0002
+    INT50                   : origin = 0xFFE4, length = 0x0002
+    INT51                   : origin = 0xFFE6, length = 0x0002
+    INT52                   : origin = 0xFFE8, length = 0x0002
+    INT53                   : origin = 0xFFEA, length = 0x0002
+    INT54                   : origin = 0xFFEC, length = 0x0002
+    INT55                   : origin = 0xFFEE, length = 0x0002
+    INT56                   : origin = 0xFFF0, length = 0x0002
+    INT57                   : origin = 0xFFF2, length = 0x0002
+    INT58                   : origin = 0xFFF4, length = 0x0002
+    INT59                   : origin = 0xFFF6, length = 0x0002
+    INT60                   : origin = 0xFFF8, length = 0x0002
+    INT61                   : origin = 0xFFFA, length = 0x0002
+    INT62                   : origin = 0xFFFC, length = 0x0002
+    RESET                   : origin = 0xFFFE, length = 0x0002
 }
 
 /****************************************************************************/
@@ -140,7 +140,6 @@ SECTIONS
     .TI.noinit  : {} > RAM                  /* For #pragma noinit                */
     .sysmem     : {} > RAM                  /* Dynamic memory allocation area    */
     .stack      : {} > RAM (HIGH)           /* Software system stack             */
-
 #ifndef __LARGE_DATA_MODEL__
     .text       : {}>> FLASH                /* Code                              */
 #else

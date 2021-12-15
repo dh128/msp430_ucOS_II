@@ -81,8 +81,8 @@
 
 
 //#define PRODUCT_TYPE                MagicSTICK_Station
-//#define PRODUCT_TYPE                Weather_Station
-#define PRODUCT_TYPE                Soil_Station
+#define PRODUCT_TYPE                Weather_Station
+//#define PRODUCT_TYPE                Soil_Station
 //#define PRODUCT_TYPE 	             Voc_Station
 //#define PRODUCT_TYPE	             Flowmeter_Station
 // #define PRODUCT_TYPE	             WRain_Station
@@ -99,7 +99,7 @@
 #define NBIoT_MQTT_Ali	      		0x09
 #define NBIoT_AEP					0x0A
 
-#define TRANSMIT_TYPE 			    GPRS_Mode
+//#define TRANSMIT_TYPE 			    GPRS_Mode
 //#define TRANSMIT_TYPE 			    NBIoT_BC95_Mode
 // #define TRANSMIT_TYPE 			    LoRa_M100C_Mode
 //#define TRANSMIT_TYPE 			    LoRa_F8L10D_Mode

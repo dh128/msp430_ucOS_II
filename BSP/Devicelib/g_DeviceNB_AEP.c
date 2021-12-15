@@ -1245,8 +1245,6 @@ void  TransmitTaskStart (void *p_arg)
 								data[j++] = str[i++];
 							else
 								i++;
-								// data[i] = ' ';
-							// i++; //j++;
 						}
 						data[i] = '\0';
 						datalen = strlen(data);
