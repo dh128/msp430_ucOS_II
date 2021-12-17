@@ -262,3 +262,5 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2021-12-07	dingh	watergague
 1、添加AEP平台json下发解析；
 2、seeperStation 添加json组包判断。
+2021-12-17	dingh	AEP
+1、修改AEP组包过程中while循环类型bug。

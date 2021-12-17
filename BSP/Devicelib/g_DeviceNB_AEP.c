@@ -1159,7 +1159,7 @@ void GetStoreData(void)
 *******************************************************************************/
 void  TransmitTaskStart (void *p_arg)
 {
-	uint8_t i,j;
+	uint16_t i,j;
 	uint8_t initRetry = 0;
 	Hex2Float gpsTemp;	
 	uint32_t datalen = 0;

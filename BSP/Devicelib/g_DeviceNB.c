@@ -248,8 +248,8 @@ char g_Device_NB_Init(void)
 		OSTimeDly(100);
 		NB_Config("AT+CGSN=1\r\n",5,5);  //IMEI
 		OSTimeDly(100);
-		NB_Config("AT+NCDP=180.101.147.115\r\n",5,5);         //电信物联网中心平台
-		// NB_Config("AT+NCDP=221.229.214.202,5683\r\n",5,5); //CTWing
+		//NB_Config("AT+NCDP=180.101.147.115\r\n",5,5);         //电信物联网中心平台
+		 NB_Config("AT+NCDP=221.229.214.202,5683\r\n",5,5); //CTWing
 		OSTimeDly(100);
 		NB_Config("AT+CFUN=1\r\n",100,5);
 		OSTimeDly(100);
