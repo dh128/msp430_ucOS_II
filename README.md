@@ -264,3 +264,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2、seeperStation 添加json组包判断。
 2021-12-17	dingh	AEP
 1、修改AEP组包过程中while循环类型bug。
+2021-12-22	dingh	AEP
+1、添加AirStation，检测空气（RK一体式传感器：温湿度、PM、气压、噪声）+TVOC；
+2、删除AEP.c中无用变量。

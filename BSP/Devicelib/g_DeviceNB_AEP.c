@@ -30,21 +30,6 @@
 
 #if (TRANSMIT_TYPE == NBIoT_AEP)
 
-//                                          [0]   [1]  [2]  [3]  [4]  [5]  [6]  [7]  [8]  [9] [10] [11] [12] [13] [14] [15]                                                                            
-uint32_t Send_Buffer_CTwing_NBSignal[16] = {0x02,0x00,0x02,0x00,0x0B,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00};   //test
-//                                      |数据上报|平台服务ID| 数据长度|   RSRP  |   SNR   |   PCI   | ECL |     CELL ID
-
-//                                            [0]   [1]  [2]  [3]  [4]  [5]  [6]  [7]  [8]  [9] [10] [11] [12]                                                                         
-uint32_t Send_Buffer_CTwing_NBSoildata[13] = {0x02,0x00,0x02,0x00,0x08,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; 
-//                                        |数据上报|平台服务ID| 数据长度|     Soil_Temp     |   Soil_Humi       |
-
-//                                              [0]   [1]  [2]  [3]  [4]  [5]  [6]                                                                        
-uint32_t Send_Buffer_CTwing_NBWeatherdata[7] = {0x02,0x00,0x01,0x00,0x02,0x00,0x00}; 
-//                                         |数据上报|平台服务ID| 数据长度 |Temp|Humi|
-uint32_t testHexData[44] = {0x7B,0x22,0x53,0x65,0x71,0x4E,0x75,0x6D,0x22,0x3A,0x31,0x2C,0x22,0x53,0x4E
-							,0x22,0x3A,0x31,0x2C,0x22,0x44,0x4F,0x22,0x3A,0x30,0x2E,0x30,0x37,0x2C,0x22
-							,0x73,0x65,0x72,0x76,0x69,0x63,0x65,0x49,0x64,0x22,0x3A,0x31,0x32,0x7D};
-   
 uint32_t CTWing_Data[512];
 //断点续传使用
 uint16_t BackupIndex = 0;
@@ -63,7 +48,7 @@ static unsigned char Singal_data[6]={0};
 //static unsigned char ECL_data[5]={0};
 //static unsigned char CellID_data[10]={0};
 
-//PCP测试
+//PCP 变量
 char NB_Fota = 0;		//Fota状态，开始时置1，结束时置0
 FotaStruct fota = {0,0,0,0,0,0,0,0};
 /* CRC计算前把CRC校验码位清零，然后计算整个CRC结果，填充在对应位置上 */

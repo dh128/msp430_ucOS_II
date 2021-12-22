@@ -169,6 +169,19 @@ typedef struct
 
 typedef struct
 {
+	float WindSpeed;			 //风速                  0~30.0    m/s
+	float AirTemperature;		 //室外温度             -40~60.0    ℃
+	int   WindDirection;		 //风向                  0~360     °
+	float AirHumidity;		     //室外湿度              0~100.0    %
+	float AirPressure;           //大气压
+	float PM25;			         //PM2.5     0~6000     ug/m3
+	float PM10;			      	 //PM10      0~6000     ug/m3
+	float Noise;                 //噪音                 30.0~120.0 dB
+	float TVOC;					 //TVOC
+}AirPlatform;//空气检测平台
+
+typedef struct
+{
 	char  RainGaugeScadaStatus;		//bit0--周期采集，bit1--小时上报，bit2--24小时上报
 	float RainGauge;             //雨量                  0~4.0     mm/min
 	float RainGaugeH;			//小时雨量
@@ -360,6 +373,8 @@ typedef struct
 	RainPlatform               RainData;
 #elif (PRODUCT_TYPE == MagicSTICK_Station)    
 	MagicPlatform               MagicData;
+#elif (PRODUCT_TYPE == Air_Station) 
+    AirPlatform                AirData;
 #endif
 	PitWellPlatform            PitWellData;
 	InputmodeWellPlatform      InputmodeWellData;
