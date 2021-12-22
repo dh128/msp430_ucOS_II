@@ -136,10 +136,10 @@ static char *print_number(cJSON *item)
               sprintf(str,"%.0f",d);
             else if (fabs(d)<1.0e-6 || fabs(d)>1.0e9)			
               sprintf(str,"%e",d);
-            else												
-              sprintf(str,"%.2f",d);//.3f 改成.2f,只保留小数点�?�
-//			  sprintf(str,"%f",d);   //��ӡfloat���͵�С��������˵����ʾĬ��Ϊ6λ
-//  		      sprintf(str,"%lf",d);  //��ӡdouble���͵�С��
+            else
+				sprintf(str,"%g",d);	//自动选择小数格式，避免后面多余的0											
+            //   sprintf(str,"%.3f",d);	//.3f 只保留小数点后3位
+
         }
     }
     return str;

@@ -108,11 +108,11 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 
 						//PM2.5
 						sensorCahe = (uint32_t)data[9]*256 + data[10];
-						AppDataPointer->AirData.AirPressure = (float)sensorCahe;
+						AppDataPointer->AirData.PM25 = (float)sensorCahe;
 
 						//PM10
 						sensorCahe = (uint32_t)data[11]*256 + data[12];
-						AppDataPointer->AirData.AirPressure = (float)sensorCahe;
+						AppDataPointer->AirData.PM10 = (float)sensorCahe;
 												
 						//气压
 						sensorCahe = (uint32_t)data[13]*256 + data[14];
@@ -254,7 +254,6 @@ void InqureSensor(void)
 					sensorSN = 0;
 				}
 				LED_OFF;
-
 				Clear_CMD_Buffer(dRxBuff, dRxNum); //发送之前buff清0
 				dRxNum = 0;
 			}
@@ -262,7 +261,6 @@ void InqureSensor(void)
 	}
 	else
 	{
-
 		g_Printf_dbg("%s.AnalyzeSensor.No sensor to scan\r\n", __func__);
 		AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCAN_OVER;
 		g_Printf_info("ScadaTask is over because of No sensor to scan!\n");
@@ -317,11 +315,11 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 		cJSON_AddNumberToObject(pJsonRoot, "Temp", DataPointer->AirData.AirTemperature);
 		cJSON_AddNumberToObject(pJsonRoot, "Humi", DataPointer->AirData.AirHumidity);
 		cJSON_AddNumberToObject(pJsonRoot, "Press", DataPointer->AirData.AirPressure);
-		cJSON_AddNumberToObject(pJsonRoot, "Noise", DataPointer->AirData.Noise);
+		cJSON_AddNumberToObject(pJsonRoot, "NS", DataPointer->AirData.Noise);
 		cJSON_AddNumberToObject(pJsonRoot, "PM2_5", DataPointer->AirData.PM25);
 		cJSON_AddNumberToObject(pJsonRoot, "PM10", DataPointer->AirData.PM10);
 	}
-	if (hal_GetBit(SensorStatus_H, 1))	//TVOC
+	if (hal_GetBit(SensorStatus_H, 2))	//TVOC
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "TVOC", DataPointer->AirData.TVOC);
 	}
