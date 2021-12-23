@@ -53,15 +53,12 @@ uint32_t Send_Buffer[60] = {0xaa, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00,
 //                          /-----------------/ /-----------------/ /-----------------/ /-------/ /--/ /-------/ /-------/ /-------/ /-------/ /--/
 //                               timestamp            Lng经度             lat纬度          海拔     PCI    RSRP      SINR       修正      模拟   保留
 
-const uint8_t ScadaNH4_KMS[CMDLength] = {0x04, 0x03, 0x00, 0x00, 0x00, 0x04, 0x44, 0x5C};	//氨氮-KMS(含温度)
 const uint8_t ScadaNH4_WS[CMDLength] = {0x04, 0x03, 0x00, 0x52, 0x00, 0x02, 0x65, 0x8F};	 //氨氮-WS(含温度oRPNH4PH)浮点
 const uint8_t ScadaCOD_KMS[CMDLength] = {0x05, 0x03, 0x00, 0x00, 0x00, 0x04, 0x45, 0x8D};	//COD_KMS
 const uint8_t ScadaCOD_WS[CMDLength] = {0x05, 0x03, 0x00, 0x42, 0x00, 0x02, 0x65, 0x9B};	 //COD_WS_float
 const uint8_t ScadaORP_KMS[CMDLength] = {0x06, 0x03, 0x00, 0x00, 0x00, 0x02, 0xC5, 0xBC};	//氧化还原电位ORP_KMS
 const uint8_t ScadaORP_QJ[CMDLength] = {0x06, 0x03, 0x00, 0x00, 0x00, 0x06, 0xC4, 0x7F};	 //氧化还原电位ORP_QJ
-const uint8_t ScadaDO_KMS[CMDLength] = {0x07, 0x03, 0x00, 0x00, 0x00, 0x04, 0x44, 0x6F};	 //溶解氧DO_KMS
 const uint8_t ScadaDO_QJ[CMDLength] = {0x07, 0x03, 0x00, 0x00, 0x00, 0x06, 0xC5, 0xAE};		 //溶解氧DO_QJ
-const uint8_t ScadaZS_KMS[CMDLength] = {0x08, 0x03, 0x00, 0x00, 0x00, 0x04, 0x44, 0x90};	 //浊度_KMS
 const uint8_t ScadaZS_WS[CMDLength] = {0x08, 0x03, 0x00, 0x1e, 0x00, 0x01, 0xE4, 0x95};		 //浊度_WS
 const uint8_t ScadaZS_WS_TEMP[CMDLength] = {0x08, 0x03, 0x00, 0x1b, 0x00, 0x01, 0xf4, 0x94}; //浊度_WS_温度
 const uint8_t ScadaZS_QJ[CMDLength] = {0x08, 0x03, 0x00, 0x00, 0x00, 0x06, 0xC5, 0x51};		 //浊度_QJ
@@ -785,8 +782,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	mallco_dev.init();
 
 	cJSON *pJsonRoot = mymalloc(512 * sizeof(cJSON *));
-	cJSON *pSubJson = mymalloc(128 * sizeof(cJSON *));
-	;
 	char *p;
 
 	pJsonRoot = cJSON_CreateObject();
@@ -796,153 +791,62 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 		return NULL;
 	}
 
-	cJSON_AddNumberToObject(pJsonRoot, "SN", DataPointer->TerminalInfoData.SerialNumber);
+	// cJSON_AddNumberToObject(pJsonRoot, "SN", DataPointer->TerminalInfoData.SerialNumber);
 	cJSON_AddNumberToObject(pJsonRoot, "DeviceID", DataPointer->TerminalInfoData.DeviceID);
 	cJSON_AddNumberToObject(pJsonRoot, "SeqNum", DataPointer->TransMethodData.SeqNumber);
-	if (REGRST != 0)
-	{
-		cJSON_AddNumberToObject(pJsonRoot, "reboot", REGRST);
-		REGRST = 0;
-	}
-
-	pSubJson = NULL;
-	pSubJson = cJSON_CreateObject();
-	if (NULL == pSubJson)
-	{
-		//create object faild, exit
-		cJSON_Delete(pSubJson);
-		return NULL;
-	}
-
+	cJSON_AddNumberToObject(pJsonRoot, "serviceId", 12);
+	
 	if (hal_GetBit(SensorStatus_H, 3))
 	{
-		cJSON_AddNumberToObject(pSubJson, "COD", DataPointer->WaterData.CODValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.CODValue * 100);
-		Send_Buffer[7] = (uint8_t)((TempCahe & 0xFF00) >> 8);
-		Send_Buffer[8] = (uint8_t)(TempCahe & 0xFF);
+		cJSON_AddNumberToObject(pJsonRoot, "COD", DataPointer->WaterData.CODValue);
 	}
 	if (hal_GetBit(SensorStatus_H, 2))
 	{
-		cJSON_AddNumberToObject(pSubJson, "Cond", DataPointer->WaterData.ECValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.ECValue);
-		Send_Buffer[9] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-		Send_Buffer[10] = (uint8_t)(TempCahe & 0xFF);		  //=%256
+		cJSON_AddNumberToObject(pJsonRoot, "EC", DataPointer->WaterData.ECValue);
 	}
 	if (hal_GetBit(SensorStatus_H, 1))
 	{
-		cJSON_AddNumberToObject(pSubJson, "DoVal", DataPointer->WaterData.DOValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.DOValue * 100);
-		Send_Buffer[11] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-		Send_Buffer[12] = (uint8_t)(TempCahe & 0xFF);		   //=%256
+		cJSON_AddNumberToObject(pJsonRoot, "DO", DataPointer->WaterData.DOValue);
 	}
 	if (hal_GetBit(SensorStatus_H, 0))
 	{
-		cJSON_AddNumberToObject(pSubJson, "NH4", DataPointer->WaterData.NH4Value);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.NH4Value * 100);
-		Send_Buffer[13] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-		Send_Buffer[14] = (uint8_t)(TempCahe & 0xFF);		   //=%256
+		cJSON_AddNumberToObject(pJsonRoot, "NH3N", DataPointer->WaterData.NH4Value);
 	}
 	if (hal_GetBit(SensorStatus_L, 7))
 	{
-		cJSON_AddNumberToObject(pSubJson, "Temp", DataPointer->WaterData.WaterTemp);
-		//需要组hex包
-		TempCahe = (uint32_t)(DataPointer->WaterData.WaterTemp * 10);
-		if (TempIntCahe >= 0)
-		{														   //temp为正数
-			Send_Buffer[15] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-			Send_Buffer[16] = (uint8_t)(TempCahe & 0xFF);		   //=%256
-		}
-		else
-		{																	   //temp为负数
-			Send_Buffer[15] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) / 256; //负数先不用
-			Send_Buffer[16] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) % 256;
-		}
+		cJSON_AddNumberToObject(pJsonRoot, "WaterTemp", DataPointer->WaterData.WaterTemp);
 	}
 	if (hal_GetBit(SensorStatus_L, 6))
 	{
-		cJSON_AddNumberToObject(pSubJson, "ORP", DataPointer->WaterData.ORPValue);
-
-		TempIntCahe = (uint32_t)(DataPointer->WaterData.ORPValue);
-		if (TempIntCahe >= 0)
-		{														   //ORP为正数
-			Send_Buffer[17] = (uint8_t)((TempIntCahe & 0xFF00) >> 8); //=/256
-			Send_Buffer[18] = (uint8_t)(TempIntCahe & 0xFF);		   //=%256
-		}
-		else
-		{																	   //ORP为负数
-			Send_Buffer[17] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) / 256; //负数先不用
-			Send_Buffer[18] = (uint8_t)(0xFFFF - ~(int16_t)TempIntCahe) % 256;
-		}
+		cJSON_AddNumberToObject(pJsonRoot, "ORP", DataPointer->WaterData.ORPValue);
 	}
 	if (hal_GetBit(SensorStatus_L, 5))
 	{
-		cJSON_AddNumberToObject(pSubJson, "ZS", DataPointer->WaterData.ZSValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.ZSValue * 100);
-		Send_Buffer[19] = (uint8_t)((TempCahe & 0xFF00) >> 8); //=/256
-		Send_Buffer[20] = (uint8_t)(TempCahe & 0xFF);		   //=%256
+		cJSON_AddNumberToObject(pJsonRoot, "TUB", DataPointer->WaterData.ZSValue);
 	}
 	if (hal_GetBit(SensorStatus_L, 4))
 	{
-		cJSON_AddNumberToObject(pSubJson, "PH", DataPointer->WaterData.PHValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.PHValue * 100);
-		Send_Buffer[21] = (uint8_t)((TempCahe & 0xFF00) >> 8);
-		Send_Buffer[22] = (uint8_t)(TempCahe & 0xFF);
+		cJSON_AddNumberToObject(pJsonRoot, "PH", DataPointer->WaterData.PHValue);
 	}
-	if (hal_GetBit(SensorStatus_L, 3))
-	{
-		cJSON_AddNumberToObject(pSubJson, "Chla", DataPointer->WaterData.CHLValue);
-
-		TempCahe = (uint32_t)(DataPointer->WaterData.CHLValue * 100);
-		Send_Buffer[23] = (uint8_t)((TempCahe & 0xFF00) >> 8);
-		Send_Buffer[24] = (uint8_t)(TempCahe & 0xFF); //=%256
-	}
-	//if (hal_GetBit(SensorStatus_L, 2))
-	{
-		cJSON_AddNumberToObject(pSubJson, "WL", DataPointer->WaterData.LVValue);
-	}
-	if (hal_GetBit(SensorStatus_L, 1))
-	{
-	}
-	if (hal_GetBit(SensorStatus_L, 0))
-	{
-	}
-	cJSON_AddItemToObject(pJsonRoot, "WaterData", pSubJson);
+	// if (hal_GetBit(SensorStatus_L, 3))
+	// {
+	// 	cJSON_AddNumberToObject(pJsonRoot, "Chla", DataPointer->WaterData.CHLValue);
+	// }
+	// if (hal_GetBit(SensorStatus_L, 2))
+	// {
+	// 	cJSON_AddNumberToObject(pJsonRoot, "WL", DataPointer->WaterData.LVValue);
+	// }
+	
 #if (TRANSMIT_TYPE == GPRS_Mode)
 	cJSON_AddStringToObject(pJsonRoot, "CSQ", CSQBuffer);
 #endif
-#if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-	cJSON_AddNumberToObject(pJsonRoot, "RSRP", DataPointer->TransMethodData.RSRP);
-	cJSON_AddNumberToObject(pJsonRoot, "SINR", DataPointer->TransMethodData.SINR);
-	cJSON_AddNumberToObject(pJsonRoot, "PCI", DataPointer->TransMethodData.PCI);
-#endif
 
-#if (ACCESSORY_TYPR == GPS_Mode)
-	// sprintf((char *)gpsBuffer, (const char *)"%lf", DataPointer->TransMethodData.GPSLat_Point);
-	// cJSON_AddStringToObject(pJsonRoot, (const char *)"latitude", (const char *)gpsBuffer);
-	// sprintf((char *)gpsBuffer, (const char *)"%lf", DataPointer->TransMethodData.GPSLng_Point);
-	// cJSON_AddStringToObject(pJsonRoot, (const char *)"longitude", (const char *)gpsBuffer);
-#endif
+	cJSON_AddNumberToObject(pJsonRoot,"CSQ",DataPointer->TransMethodData.CSQ);
+	cJSON_AddNumberToObject(pJsonRoot,"Period",DataPointer->TerminalInfoData.SendPeriod);
+	cJSON_AddNumberToObject(pJsonRoot,"BatteryPercentage",DataPointer->TerminalInfoData.PowerQuantity);
+	cJSON_AddNumberToObject(pJsonRoot,"Version",DataPointer->TerminalInfoData.Version);
 
-	cJSON_AddNumberToObject(pJsonRoot, "SendPeriod", DataPointer->TerminalInfoData.SendPeriod);
-	cJSON_AddNumberToObject(pJsonRoot, "Quanity", DataPointer->TerminalInfoData.PowerQuantity);
-	cJSON_AddNumberToObject(pJsonRoot, "Version", DataPointer->TerminalInfoData.Version);
-
-	// uint8_t date[8];
-	// char Uptime[18];
-	// char filestore[18];
-	// memset(date,0x0,8);
-	// memset(Uptime,0x0,18);
-	// memset(filestore,0x0,20);
-	// OSBsp.Device.RTC.ReadExtTime(date,RealTime);
-	// g_Device_RTCstring_Creat(date,Uptime);
-	// g_Printf_info("Uptime:%s\r\n",Uptime);
-	// cJSON_AddStringToObject(pJsonRoot, "Uptime",Uptime);
+	
 	uint8_t date[8];
 	char Uptime[19] = "2019-09-01 00:00:00";
 	char filestore[19];
@@ -957,8 +861,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	g_Device_RTCstring_Creat(date, Uptime);
 	g_Printf_info("Uptime:%s\r\n", Uptime);
 	cJSON_AddStringToObject(pJsonRoot, "Uptime", Uptime);
-	cJSON_AddNumberToObject(pJsonRoot, "UnixTimeStamp", UnixTimeStamp);
-	cJSON_AddNumberToObject(pJsonRoot, "ReSiC", DataPointer->TerminalInfoData.ReviseSimulationCode);
 
 	p = cJSON_Print(pJsonRoot);
 	if (NULL == p)
@@ -970,20 +872,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	}
 
 	cJSON_Delete(pJsonRoot);
-	cJSON_Delete(pSubJson);
-
-#if HAVE_SDCARD_SERVICE
-	if (SD_Status == 0) //只是一个示例
-	{
-		OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
-		OSTimeDly(500);
-		g_SD_FileName_Creat("0:/", date, filestore);
-		g_SD_File_Write(filestore, p);
-		g_SD_File_Write(filestore, "\r\n"); //数据换行
-	}
-#endif
-	// OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);  //++++++++++++++++++++++++
-
 	return p;
 }
 
@@ -1005,7 +893,7 @@ void ScadaData_base_Init(void)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
 	AppDataPointer->TransMethodData.GPRSNet = 0;
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
 #elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
@@ -1121,7 +1009,7 @@ void Terminal_Para_Init(void)
 	// HashValueSet();
 	AppDataPointer->TransMethodData.GPRSStatus = GPRS_Waitfor_SMSReady;
 #endif
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
 	// OSBsp.Device.IOControl.PowerSet(LPModule_Power_On);	  // PowerON-P4.3 //传输板上插LoRa模块时供电
 	// OSTimeDly(500);  //节拍2ms
 	// ResetCommunication();    		      	//模块复位管脚复位

@@ -80,8 +80,8 @@
 #define Custom_Station	      		0x55	 //定制需求监测站
 
 
-#define PRODUCT_TYPE                Air_Station
-//#define PRODUCT_TYPE                Water_Station
+//#define PRODUCT_TYPE                Air_Station
+#define PRODUCT_TYPE                Water_Station
 //#define PRODUCT_TYPE                MagicSTICK_Station
 //#define PRODUCT_TYPE                Weather_Station
 //#define PRODUCT_TYPE                Soil_Station
