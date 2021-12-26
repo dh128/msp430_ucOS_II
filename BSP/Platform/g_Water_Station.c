@@ -812,7 +812,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "NH3N", DataPointer->WaterData.NH4Value);
 	}
-	if (hal_GetBit(SensorStatus_L, 7))
+	if (hal_GetBit(SensorStatus_L, 4) || hal_GetBit(SensorStatus_H, 1))
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "WaterTemp", DataPointer->WaterData.WaterTemp);
 	}
@@ -820,7 +820,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "ORP", DataPointer->WaterData.ORPValue);
 	}
-	if (hal_GetBit(SensorStatus_L, 5))
+	if (hal_GetBit(SensorStatus_L, 7))
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "TUB", DataPointer->WaterData.ZSValue);
 	}
