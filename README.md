@@ -270,3 +270,5 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 3、cJson中浮点数改用%g格式输出，小数后面的0舍去。
 2021-12-23	dingh AEP
 1、添加水质设备解析接入AEP平台。
+2021-12-27	dingh AEP
+1、删除滤波处理中TUB标志位置位。

@@ -471,11 +471,11 @@ void FilteringSensor(void) //wj20200215 这个只能保证传感器都能读取�
 
 	uint8_t i = 0;
 	static uint8_t FilteringNum = 0;
-	if(TemperatureStatus != 0)
-	{
-		hal_SetBit(SensorStatus_L, 7); //温度状态位置1
-		TemperatureStatus = 0;
-	}
+	// if(TemperatureStatus != 0)
+	// {
+	// 	hal_SetBit(SensorStatus_L, 7); //温度状态位置1
+	// 	TemperatureStatus = 0;
+	// }
 	//温度滤波结束
 	//其他水质参数，先进先出
 	for (i = 0; i < (WQ_Q_Num - 1); i++)
@@ -551,7 +551,7 @@ void FilteringSensor(void) //wj20200215 这个只能保证传感器都能读取�
 		if (AppDataPointer->WaterData.WaterTemp == 0.0)
 		{
 			AppDataPointer->WaterData.WaterTemp = 15.1;
-			hal_ResetBit(SensorStatus_L, 7);
+			// hal_ResetBit(SensorStatus_L, 7);
 		}
 		if (AppDataPointer->WaterData.ORPValue == 0)
 		{
