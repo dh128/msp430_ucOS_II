@@ -126,10 +126,10 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						hal_SetBit(SensorStatus_H, 0);			 //传感器状态位置1
 						WQ_ValueTemp.NH4Value = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 
-						if ((WQ_ValueTemp.NH4Value <= 0.0) || (WQ_ValueTemp.NH4Value >= 50.0)) //输值根据实际水情而定，作为参考
-						{
-							WQ_ValueTemp.NH4Value = AppDataPointer->WaterData.NH4Value;
-						}
+						// if ((WQ_ValueTemp.NH4Value <= 0.0) || (WQ_ValueTemp.NH4Value >= 50.0)) //输值根据实际水情而定，作为参考
+						// {
+						// 	WQ_ValueTemp.NH4Value = AppDataPointer->WaterData.NH4Value;
+						// }
 					}
 					break;
 				case 0x05:						   //COD
@@ -142,10 +142,10 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 					SensorData.Hex[3] = data[6];
 					WQ_ValueTemp.CODValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 
-					if ((WQ_ValueTemp.CODValue <= 5.0) || (WQ_ValueTemp.CODValue >= 60.0)) //输值根据实际水情而定，作为参考
-					{
-						WQ_ValueTemp.CODValue = AppDataPointer->WaterData.CODValue;
-					}
+					// if ((WQ_ValueTemp.CODValue <= 5.0) || (WQ_ValueTemp.CODValue >= 60.0)) //输值根据实际水情而定，作为参考
+					// {
+					// 	WQ_ValueTemp.CODValue = AppDataPointer->WaterData.CODValue;
+					// }
 					
 					break;
 				case 0x06:				 //ORP
@@ -159,10 +159,10 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 
 						WQ_ValueTemp.ORPValue = (int16_t)(SensorData.Data); //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 
-						if ((WQ_ValueTemp.ORPValue <= -200) || (WQ_ValueTemp.ORPValue >= 300)) //输值根据实际水情而定，作为参考
-						{
-							WQ_ValueTemp.ORPValue = AppDataPointer->WaterData.ORPValue;
-						}
+						// if ((WQ_ValueTemp.ORPValue <= -200) || (WQ_ValueTemp.ORPValue >= 300)) //输值根据实际水情而定，作为参考
+						// {
+						// 	WQ_ValueTemp.ORPValue = AppDataPointer->WaterData.ORPValue;
+						// }
 						
 					}
 					break;
@@ -177,10 +177,10 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[3] = data[3];
 						WQ_ValueTemp.DOValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 
-						if ((WQ_ValueTemp.DOValue <= 0.5) || (WQ_ValueTemp.DOValue >= 12.0)) //输值根据实际水情而定，作为参考
-						{
-							WQ_ValueTemp.DOValue = AppDataPointer->WaterData.DOValue;
-						}
+						// if ((WQ_ValueTemp.DOValue <= 0.5) || (WQ_ValueTemp.DOValue >= 12.0)) //输值根据实际水情而定，作为参考
+						// {
+						// 	WQ_ValueTemp.DOValue = AppDataPointer->WaterData.DOValue;
+						// }
 						
 						//DO水温
 						if(TemperatureStatus < DO_temperature)
@@ -204,10 +204,10 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[3] = data[3];
 						hal_SetBit(SensorStatus_L, 7);										  //传感器状态位置1
 						WQ_ValueTemp.ZSValue = SensorData.Data;								  //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
-						if ((WQ_ValueTemp.ZSValue <= 0.0) || (WQ_ValueTemp.ZSValue >= 200.0)) //输值根据实际水情而定，作为参考
-						{
-							WQ_ValueTemp.ZSValue = 0.50 + (float)(rand() % 50) / 100 - (float)(rand() % 30) / 100;
-						}
+						// if ((WQ_ValueTemp.ZSValue <= 0.0) || (WQ_ValueTemp.ZSValue >= 200.0)) //输值根据实际水情而定，作为参考
+						// {
+						// 	WQ_ValueTemp.ZSValue = 0.50 + (float)(rand() % 50) / 100 - (float)(rand() % 30) / 100;
+						// }
 					}
 					break;
 				case 0x09:				 //PH+温度
@@ -220,10 +220,10 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[2] = data[4];
 						SensorData.Hex[3] = data[3];
 						WQ_ValueTemp.PHValue = SensorData.Data;								 //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
-						if ((WQ_ValueTemp.PHValue <= 4.0) || (WQ_ValueTemp.PHValue >= 12.0)) //输值根据实际水情而定，作为参考
-						{
-							WQ_ValueTemp.PHValue = AppDataPointer->WaterData.PHValue;
-						}
+						// if ((WQ_ValueTemp.PHValue <= 4.0) || (WQ_ValueTemp.PHValue >= 12.0)) //输值根据实际水情而定，作为参考
+						// {
+						// 	WQ_ValueTemp.PHValue = AppDataPointer->WaterData.PHValue;
+						// }
 						//PH 水温
 						if(TemperatureStatus < PH_temperature)
 						{
@@ -245,10 +245,10 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[2] = data[4];
 						SensorData.Hex[3] = data[3];
 						WQ_ValueTemp.ECValue = (uint16_t)(SensorData.Data * 1000);			//更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
-						if ((WQ_ValueTemp.ECValue <= 10) || (WQ_ValueTemp.ECValue >= 1000)) //输值根据实际水情而定，作为参考
-						{
-							WQ_ValueTemp.ECValue = AppDataPointer->WaterData.ECValue;
-						}
+						// if ((WQ_ValueTemp.ECValue <= 10) || (WQ_ValueTemp.ECValue >= 1000)) //输值根据实际水情而定，作为参考
+						// {
+						// 	WQ_ValueTemp.ECValue = AppDataPointer->WaterData.ECValue;
+						// }
 						
 						//EC水温+++++易出现故障，暂未采用
 						if(TemperatureStatus < EC_temperature)
@@ -271,10 +271,10 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[2] = data[5];
 						SensorData.Hex[3] = data[6];
 						WQ_ValueTemp.CHLValue = SensorData.Data;								//更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
-						if ((WQ_ValueTemp.CHLValue <= 2.0) || (WQ_ValueTemp.CHLValue >= 100.0)) //输值根据实际水情而定，作为参考
-						{
-							WQ_ValueTemp.CHLValue = AppDataPointer->WaterData.CHLValue;
-						}
+						// if ((WQ_ValueTemp.CHLValue <= 2.0) || (WQ_ValueTemp.CHLValue >= 100.0)) //输值根据实际水情而定，作为参考
+						// {
+						// 	WQ_ValueTemp.CHLValue = AppDataPointer->WaterData.CHLValue;
+						// }
 					}
 					break;
 				default:
@@ -471,11 +471,11 @@ void FilteringSensor(void) //wj20200215 这个只能保证传感器都能读取�
 
 	uint8_t i = 0;
 	static uint8_t FilteringNum = 0;
-	// if(TemperatureStatus != 0)
-	// {
-	// 	hal_SetBit(SensorStatus_L, 7); //温度状态位置1
-	// 	TemperatureStatus = 0;
-	// }
+	if(TemperatureStatus != 0)
+	{
+		// hal_SetBit(SensorStatus_L, 7); //温度状态位置1
+		TemperatureStatus = 0;
+	}
 	//温度滤波结束
 	//其他水质参数，先进先出
 	for (i = 0; i < (WQ_Q_Num - 1); i++)
@@ -775,9 +775,9 @@ void InqureSensor(void)
 *******************************************************************************/
 char *MakeJsonBodyData(DataStruct *DataPointer)
 {
-	uint32_t TempCahe = 0;
-	int32_t TempIntCahe = 0;
-	uint8_t gpsBuffer[15];
+//	uint32_t TempCahe = 0;
+//	int32_t TempIntCahe = 0;
+//	uint8_t gpsBuffer[15];
 
 	mallco_dev.init();
 

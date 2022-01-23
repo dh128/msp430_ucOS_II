@@ -272,3 +272,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、添加水质设备解析接入AEP平台。
 2021-12-27	dingh AEP
 1、删除滤波处理中TUB标志位置位。
+2022-01-23	dingh	AEP (v007版本)
+1、恢复上一版多注释的TemperatureStatus=0操作，恢复温度变化；
+2、取消水质参数数据范围限制，直接上报采集值。
