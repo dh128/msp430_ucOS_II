@@ -275,3 +275,6 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2022-01-23	dingh	AEP (v007版本)
 1、恢复上一版多注释的TemperatureStatus=0操作，恢复温度变化；
 2、取消水质参数数据范围限制，直接上报采集值。
+
+2022-02-19	dingh	AEP
+1、[g_DeviceRTC] [covUnixTimeStp2Beijing] 月底最后一天0区16时之后day出错BUG修复。

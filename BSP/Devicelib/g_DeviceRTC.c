@@ -331,6 +331,8 @@ void covUnixTimeStp2Beijing(uint32_t unixTime, RtcStruct *tempBeijing)
    uint16_t remainDayofYear;
    uint8_t *pr, tempYear=0;
 
+	//时区调整
+	unixTime += TIMEZONE * 60 * 60;
 
    totleDaynum = unixTime/(86400); //总天数(注意加括号)
    totleSecNum = unixTime%(86400); //当天剩余的秒速
@@ -359,13 +361,6 @@ void covUnixTimeStp2Beijing(uint32_t unixTime, RtcStruct *tempBeijing)
    tempBeijing->Hour = totleSecNum/3600;
    tempBeijing->Minute = (totleSecNum%3600)/60; //error：变量搞错
    tempBeijing->Second = (totleSecNum%3600)%60;
-
-   //4.时区调整
-   tempBeijing->Hour +=TIMEZONE;
-   if(tempBeijing->Hour>23){
-       tempBeijing->Hour -= 24;
-       tempBeijing->Day++;
-   }
 }
  
 // 将北京时间转换为Unix时间戳
