@@ -543,7 +543,7 @@ void ProcessCommand()
 void ProcessJsonCommand(unsigned char *p)
 {
 	char *CommandBuff;
-	uint8_t CommandBuffData[6]={0};
+	uint8_t CommandBuffData[10]={0};
 	uint8_t CommandBuffNum = 0;;
 	uint8_t cmdData[50];
 	uint16_t Temp_SendPeriod;
@@ -591,6 +591,43 @@ void ProcessJsonCommand(unsigned char *p)
 		OSTimeDly(500);
 		hal_Reboot(); //******软件复位*******//
 	}
+#if (PRODUCT_TYPE == WRain_Station)
+	else if(Hal_CheckString(cmdData,"\"Height\":")) //修改上报周期
+	{
+		memset(CommandBuffData, 0, 10);
+		CommandBuffNum = 0;
+		CommandBuff = strstr(cmdData,"\"Height\":");         //判断接收到的数据是否有效
+		while(*(CommandBuff+9) != '}')
+		{
+			CommandBuffData[CommandBuffNum] = *(CommandBuff+9);
+			CommandBuffNum++;
+			CommandBuff++;
+			if(CommandBuffNum > 6)		/* 超出范围 最大15.000 */
+				break;
+		}
+		CommandBuffData[CommandBuffNum] = '\0';
+		float temp_Height = 0.0;
+		if(CommandBuffNum < 7){
+			temp_Height= (float)atof(CommandBuffData);
+		}
+	
+		if( (temp_Height > 0) && ( temp_Height<= 15) )
+		{
+			App.Data.WRainData.Height = temp_Height;
+			g_Printf_info("NB Set Height as %d OK\r\n",temp_Height);
+			//将发送周期的信息存入Flash
+			// delay_ms(10);
+			OSTimeDly(5);
+			// Flash_Tmp[11] = (Temp_SendPeriod & 0xFF00)>>8;	//修改周期存储值（min）
+			// Flash_Tmp[12] = Temp_SendPeriod & 0x00FF;		
+			// OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[11], 2, infor_ChargeAddr, 11);//把周期信息写入FLASH
+		}
+		else
+		{
+			g_Printf_info("NB Set Height Failed！\r\n");
+		}
+	}
+#endif // 0
 	else
 	{
 		g_Printf_info("Unknown command\r\n");

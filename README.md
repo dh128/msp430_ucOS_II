@@ -277,4 +277,5 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2、取消水质参数数据范围限制，直接上报采集值。
 
 2022-02-19	dingh	AEP
-1、[g_DeviceRTC] [covUnixTimeStp2Beijing] 月底最后一天0区16时之后day出错BUG修复。
+1、[g_DeviceRTC.c] [covUnixTimeStp2Beijing] 月底最后一天0区16时之后day出错BUG修复；
+2、[g_DeviceWrain_Station.c]超声波传感器地址改成1，液位字段修改为Ultrasonic，增加Real和height(下发高程数据)。

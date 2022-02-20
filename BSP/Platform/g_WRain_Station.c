@@ -21,9 +21,11 @@
 *                                          MSP-EXP430F5259LP
 *                                          Evaluation Board
 *
-* Filename      : g_WRain_Station.c
-* Version       : V1.00
-* Programmer(s) : Dingh
+* Filename   : g_WRain_Station.c
+* Change Logs:
+* Date			Author		Notes
+* 2020-07-08	dingh   	the first version
+* 2022-02-19	dingh		access to China Telecom AEP
 *********************************************************************************************************
 */
 #include  <hal_layer_api.h>
@@ -47,7 +49,7 @@ uint32_t Send_Buffer[60] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x00,
 //                            Period   ver		timestamp            Lng经度             lat纬度          海拔      RSRP      SINR       PCI      保留		模拟  	 保留       
 
 
-const uint8_t ScadaUSLV[CMDLength]  = {0x02,0x03,0x00,0x01,0x00,0x01,0xD5,0xF9};		      //超声波液位
+const uint8_t ScadaUSLV[CMDLength]  = {0x01,0x03,0x00,0x01,0x00,0x01,0xD5,0xCA};		      //超声波液位
 const uint8_t ScadaRainGauge_XPH[CMDLength]={0x08,0x03,0x00,0x00,0x00,0x01,0x84,0x93};            //雨量-XPH
 
 
@@ -101,9 +103,10 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 			{
 				switch(data[0])
 				{		
-					case 0x02:		//超声波液位传感器
+					case 0x01:		//超声波液位传感器
 					    sensorCahe = (uint32_t)data[3]*256 + data[4];
-					    AppDataPointer->WRainData.LVValue = (uint16_t)(sensorCahe/10);    //mm单位转化为cm
+					    AppDataPointer->WRainData.Ultrasonic = (uint16_t)(sensorCahe/1000);    //mm单位转化为m
+						AppDataPointer->WRainData.Real = AppDataPointer->WRainData.Height - AppDataPointer->WRainData.Ultrasonic;
 					    hal_SetBit(SensorStatus_H, 2);   //传感器状态位置1						
 					    Send_Buffer[7] = (uint32_t)(sensorCahe/10) / 256;
 					    Send_Buffer[8] = (uint32_t)(sensorCahe/10) % 256;
@@ -149,14 +152,6 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 			Len = 0;
 			return -2;
 		}
-
-		// SensorStatusBuff[0] = SensorStatus_H;
-		// SensorStatusBuff[1] = SensorStatus_L;
-		// AppDataPointer->TerminalInfoData.SensorStatus = (uint16_t)SensorStatus_H*256 + (uint16_t)SensorStatus_L;
-
-		// Clear_CMD_Buffer(dRxBuff,dRxNum);
-		// dRxNum=0;
-		// Len = 0;
 	}else{
 		Clear_CMD_Buffer(dRxBuff,dRxNum);
 		dRxNum=0;
@@ -217,7 +212,7 @@ static int SimulationSensorData(void)
 				case 2:
 					/**************LEVEL************/
 					SimulationSensorIntCahe = 331 + rand()%100 - rand()%100  ;
-					AppDataPointer->WRainData.LVValue = (uint16_t)SimulationSensorIntCahe;
+					AppDataPointer->WRainData.Ultrasonic = (uint16_t)SimulationSensorIntCahe;
 					hal_SetBit(SensorStatus_H, 2);             //传感器状态位置1
 					hal_SetBit(SensorSimulationStatus_H, 2);   //传感器模拟状态位置1
 					Send_Buffer[9] = (uint32_t)(SimulationSensorIntCahe) / 256;
@@ -281,7 +276,7 @@ void InqureSensor(void)
 	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {	
 		SensorStatus_H = 0;
 		SensorStatus_L = 0;
-		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)  //SensorNum = 12
+		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)
 		{
 			// sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0001;
 			// AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) >> 1;
@@ -403,9 +398,8 @@ void InqureSensor(void)
 char *MakeJsonBodyData(DataStruct *DataPointer)
 {
     mallco_dev.init();
-   RainStatus = 0;
+//    RainStatus = 0;
     cJSON *pJsonRoot = mymalloc(512*sizeof(cJSON *));
-	cJSON *pSubJson = mymalloc(128*sizeof(cJSON *));;
 	char *p;
 
     pJsonRoot = cJSON_CreateObject();
@@ -415,64 +409,36 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
         return NULL;
     }
 
-    cJSON_AddNumberToObject(pJsonRoot, "SN",DataPointer->TerminalInfoData.SerialNumber);
     cJSON_AddNumberToObject(pJsonRoot, "DeviceID",DataPointer->TerminalInfoData.DeviceID);
-    cJSON_AddNumberToObject(pJsonRoot, "SeqNum",DataPointer->TransMethodData.SeqNumber);
-	if(REGRST != 0 ){
-		cJSON_AddNumberToObject(pJsonRoot, "reboot",REGRST);
-		REGRST = 0;
+    cJSON_AddNumberToObject(pJsonRoot, "SeqNum",DataPointer->TransMethodData.SeqNumber);	
+	cJSON_AddNumberToObject(pJsonRoot, "serviceId", 12);
+
+	if(hal_GetBit(SensorStatus_H, 3)) {
+		cJSON_AddNumberToObject(pJsonRoot,"RainR",DataPointer->WRainData.RainGauge);
+	}
+	if(hal_GetBit(SensorStatus_H, 2)) {
+		cJSON_AddNumberToObject(pJsonRoot,"Real",DataPointer->WRainData.Real);
+		cJSON_AddNumberToObject(pJsonRoot,"Ultrasonic",DataPointer->WRainData.Ultrasonic);		
+		cJSON_AddNumberToObject(pJsonRoot,"Height",DataPointer->WRainData.Height);
 	}
 
-    pSubJson = NULL;
-    pSubJson = cJSON_CreateObject();
-    if(NULL == pSubJson)
-    {
-      //create object faild, exit
-      cJSON_Delete(pSubJson);
-      return NULL;
-    }
-
-//	 if(hal_GetBit(SensorStatus_H, 3)) {
-		cJSON_AddNumberToObject(pSubJson,"Rain",DataPointer->WRainData.RainGauge);
-//	 }
-//	 if(hal_GetBit(SensorStatus_H, 2)) {
-		cJSON_AddNumberToObject(pSubJson,"Level",DataPointer->WRainData.LVValue);
-//	 }
-	cJSON_AddItemToObject(pJsonRoot,"WRain_Station", pSubJson);
-#if (TRANSMIT_TYPE == GPRS_Mode)
-	cJSON_AddStringToObject(pJsonRoot, "CSQ",CSQBuffer);
-#endif
-#if (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-	cJSON_AddNumberToObject(pJsonRoot,"RSRP",DataPointer->TransMethodData.RSRP);
-	cJSON_AddNumberToObject(pJsonRoot,"SINR",DataPointer->TransMethodData.SINR);
-	cJSON_AddNumberToObject(pJsonRoot,"PCI",DataPointer->TransMethodData.PCI);
-#endif
-	cJSON_AddNumberToObject(pJsonRoot,"SendPeriod",DataPointer->TerminalInfoData.SendPeriod);
-	cJSON_AddNumberToObject(pJsonRoot,"Quanity",DataPointer->TerminalInfoData.PowerQuantity);
+	cJSON_AddNumberToObject(pJsonRoot,"CSQ",DataPointer->TransMethodData.CSQ);
+	cJSON_AddNumberToObject(pJsonRoot,"Period",DataPointer->TerminalInfoData.SendPeriod);
+	cJSON_AddNumberToObject(pJsonRoot,"BatteryPercentage",DataPointer->TerminalInfoData.PowerQuantity);
 	cJSON_AddNumberToObject(pJsonRoot,"Version",DataPointer->TerminalInfoData.Version);
 
-	// uint8_t date[8];
-	// char Uptime[18];
-	// char filestore[18];
-	// memset(date,0x0,8);
-	// memset(Uptime,0x0,18);
-	// memset(filestore,0x0,20);
-	// OSBsp.Device.RTC.ReadExtTime(date,RealTime);
-	// g_Device_RTCstring_Creat(date,Uptime);
-	// g_Printf_info("Uptime:%s\r\n",Uptime);
-	// cJSON_AddStringToObject(pJsonRoot, "Uptime",Uptime);
 	uint8_t date[8];
 	char Uptime[19] = "2019-09-01 00:00:00";
 	char filestore[19];
-	memset(date,0x0,8);
-	memset(Uptime,0x0,19);
-	memset(filestore,0x0,19);
-	OSBsp.Device.RTC.ReadExtTime(date,RealTime);
-	g_Device_RTCstring_Creat(date,Uptime);
-	g_Printf_info("Uptime:%s\r\n",Uptime);
-	cJSON_AddStringToObject(pJsonRoot,"Uptime",Uptime);
-	cJSON_AddNumberToObject(pJsonRoot,"UnixTimeStamp",UnixTimeStamp);
-	cJSON_AddNumberToObject(pJsonRoot,"ReSiC",DataPointer->TerminalInfoData.ReviseSimulationCode);
+	memset(date, 0x0, 8);
+	memset(Uptime, 0x0, 19);
+	memset(filestore, 0x0, 19);
+
+	Read_info_RTC(date);
+
+	g_Device_RTCstring_Creat(date, Uptime);
+	g_Printf_info("Uptime:%s\r\n", Uptime);
+	cJSON_AddStringToObject(pJsonRoot, "Uptime", Uptime);
 
     p = cJSON_Print(pJsonRoot);
     if(NULL == p)
@@ -484,17 +450,6 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
     }
 
     cJSON_Delete(pJsonRoot);
-	cJSON_Delete(pSubJson);
-
-#if HAVE_SDCARD_SERVICE
-	OSBsp.Device.IOControl.PowerSet(SDCard_Power_On);
-	OSTimeDly(500);
-	g_SD_FileName_Creat("0:/",date,filestore);
-	g_SD_File_Write(filestore,p);
-	g_SD_File_Write(filestore,"\r\n");     //数据换行
-#endif  	
-	// OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);  //++++++++++++++++++++++++
-
     return p;
 }
 
@@ -685,7 +640,9 @@ void Teminal_Data_Init(void)
 	Send_Buffer[58] = 0x00; 
 	App.Data.TerminalInfoData.ReviseSimulationCode = 0;
 
-	App.Data.WRainData.LVValue = 0;
+	App.Data.WRainData.Ultrasonic = 0.0;
+	App.Data.WRainData.Real = 0.0;
+	App.Data.WRainData.Height = 0.0;
 	App.Data.WRainData.RainGauge = 0.0;
 	App.Data.WRainData.RainGaugeH = 0.0;
 	App.Data.WRainData.RainGaugeD = 0.0;

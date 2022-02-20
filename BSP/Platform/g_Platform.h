@@ -186,7 +186,9 @@ typedef struct
 	float RainGauge;             //雨量                  0~4.0     mm/min
 	float RainGaugeH;			//小时雨量
 	float RainGaugeD;			//24小时雨量
-	uint16_t LVValue;            //液位
+	float Ultrasonic;            //超声波传感器值
+	float Real;				//实际液位高度
+	float Height;				//高程
 }WRainPlatform;       //水雨情监测平台
 
 typedef struct
