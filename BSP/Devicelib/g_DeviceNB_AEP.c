@@ -226,8 +226,7 @@ void SyncTime(void)
 			Rtctime.Hour = (nb_Timedata[9] - 0x30) * 10 + (nb_Timedata[10] - 0x30) * 1;			//时
 			Rtctime.Minute = (nb_Timedata[12] - 0x30) * 10 + (nb_Timedata[13] - 0x30) * 1;	       //分
 			Rtctime.Second = (nb_Timedata[15] - 0x30) * 10 + (nb_Timedata[16] - 0x30) * 1;	       //秒
-			UnixTimeStamp = covBeijing2UnixTimeStp(&Rtctime);		//get UTC
-			UnixTimeStamp += 28800;									//UTC + 8hours
+			UnixTimeStamp = cov2UnixTimeStp(&Rtctime);		//get UTC
 			covUnixTimeStp2Beijing(UnixTimeStamp, &BjTime);			//get Beijing time
 			time_buf[1]= BjTime.Year - 2000;	   //年
 			time_buf[2]= BjTime.Month;	       //月
@@ -609,18 +608,15 @@ void ProcessJsonCommand(unsigned char *p)
 		float temp_Height = 0.0;
 		if(CommandBuffNum < 7){
 			temp_Height= (float)atof(CommandBuffData);
-		}
-	
+		}	
 		if( (temp_Height > 0) && ( temp_Height<= 15) )
 		{
 			App.Data.WRainData.Height = temp_Height;
-			g_Printf_info("NB Set Height as %d OK\r\n",temp_Height);
-			//将发送周期的信息存入Flash
-			// delay_ms(10);
+			g_Printf_info("NB Set Height as %f OK\r\n",temp_Height);
 			OSTimeDly(5);
-			// Flash_Tmp[11] = (Temp_SendPeriod & 0xFF00)>>8;	//修改周期存储值（min）
-			// Flash_Tmp[12] = Temp_SendPeriod & 0x00FF;		
-			// OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[11], 2, infor_ChargeAddr, 11);//把周期信息写入FLASH
+			Flash_Tmp[9] = ((uint16_t)(temp_Height*1000) & 0xFF00)>>8;	//修改周期存储值（min）
+			Flash_Tmp[10] = (uint16_t)(temp_Height*1000) & 0x00FF;		
+			OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[9], 2, infor_ChargeAddr, 53);//把高度信息写入FLASH
 		}
 		else
 		{
@@ -1182,12 +1178,12 @@ void GetStoreData(void)
 void  TransmitTaskStart (void *p_arg)
 {
 	uint16_t i,j;
-	uint8_t initRetry = 0;
+//	uint8_t initRetry = 0;
 	Hex2Float gpsTemp;	
 	uint32_t datalen = 0;
 	char data[512];
 	char *str=NULL;
-	char response[128];
+//	char response[128];
 //	uint8_t testData[]="{\"SeqNum\":1,\"SN\":1,\"DO\":0.07}";
 	(void)p_arg;   
     OSTimeDlyHMSM(0u, 0u, 0u, 100u);      

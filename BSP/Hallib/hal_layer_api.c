@@ -637,6 +637,20 @@ uint16_t Hal_getBackupIndex(void)
     return (uint16_t)temp;
 }
 
+#if (PRODUCT_TYPE == WRain_Station)
+float Hal_getSensorHeight(void)
+{
+    uint32_t temp =0;
+    temp = OSBsp.Device.InnerFlash.innerFLASHRead(53,infor_ChargeAddr);
+	temp = temp<<8;
+	temp += OSBsp.Device.InnerFlash.innerFLASHRead(54,infor_ChargeAddr);
+    if(temp == 0xFFFF)
+        temp = 15000;
+    g_Printf_info("%s %d\n",__func__,temp);
+    return (float)temp/1000;
+}
+#endif
+
 uint16_t Hal_getStartFile(void)
 {
     uint32_t temp =0;

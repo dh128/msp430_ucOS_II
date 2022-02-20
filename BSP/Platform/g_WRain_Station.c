@@ -105,7 +105,7 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 				{		
 					case 0x01:		//超声波液位传感器
 					    sensorCahe = (uint32_t)data[3]*256 + data[4];
-					    AppDataPointer->WRainData.Ultrasonic = (uint16_t)(sensorCahe/1000);    //mm单位转化为m
+					    AppDataPointer->WRainData.Ultrasonic = (float)sensorCahe/1000;    //mm单位转化为m
 						AppDataPointer->WRainData.Real = AppDataPointer->WRainData.Height - AppDataPointer->WRainData.Ultrasonic;
 					    hal_SetBit(SensorStatus_H, 2);   //传感器状态位置1						
 					    Send_Buffer[7] = (uint32_t)(sensorCahe/10) / 256;
@@ -274,14 +274,8 @@ void InqureSensor(void)
 		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; 
 	}
 	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {	
-		SensorStatus_H = 0;
-		SensorStatus_L = 0;
 		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)
 		{
-			// sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0001;
-			// AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) >> 1;
-			// if(sensorExistStatus == 1)
-
 			memset(dRxBuff,0x0,dRxLength); //dRxLength=50，清空，接收Usart3即传感器数据
 			dRxNum=0;
 			sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0800;
@@ -294,18 +288,18 @@ void InqureSensor(void)
 				{
 					case 1:
 						sensorSN = 1;
-						// hal_ResetBit(SensorStatus_H, 3);
 						if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_SCADA_ENABLE)
 						{
+							hal_ResetBit(SensorStatus_H, 3);
 							AppDataPointer->WRainData.RainGaugeScadaStatus &= ~RAINGAUGE_SCADA_ENABLE;
-							OSBsp.Device.Usart3.WriteNData(ScadaRainGauge_XPH,CMDLength);
+							OSBsp.Device.Usart3.WriteNData((uint8_t *)ScadaRainGauge_XPH,CMDLength);
 						}	
 						//雨量一个周期内只读取一次
 						break;
 					case 2:
 						sensorSN = 2;
-						// hal_ResetBit(SensorStatus_H, 2);		
-						OSBsp.Device.Usart3.WriteNData(ScadaUSLV,CMDLength);		
+						hal_ResetBit(SensorStatus_H, 2);		
+						OSBsp.Device.Usart3.WriteNData((uint8_t *)ScadaUSLV,CMDLength);
 						break;
 					
 					default:
@@ -536,6 +530,9 @@ void Terminal_Para_Init(void)
 	/**************************Version******************************************/
 	App.Data.TerminalInfoData.Version = Hal_getFirmwareVersion();    //软件版本
 	Send_Buffer[34] = App.Data.TerminalInfoData.Version;
+
+	App.Data.WRainData.Height = Hal_getSensorHeight();
+	
 	/**************************未读取Flash中存储的传感器状态***********************/
 	App.Data.TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_NOTYET;
 	/**************************未写入Flash中存储的传感器状态***********************/
@@ -642,7 +639,6 @@ void Teminal_Data_Init(void)
 
 	App.Data.WRainData.Ultrasonic = 0.0;
 	App.Data.WRainData.Real = 0.0;
-	App.Data.WRainData.Height = 0.0;
 	App.Data.WRainData.RainGauge = 0.0;
 	App.Data.WRainData.RainGaugeH = 0.0;
 	App.Data.WRainData.RainGaugeD = 0.0;

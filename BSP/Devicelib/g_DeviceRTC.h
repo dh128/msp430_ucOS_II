@@ -67,6 +67,7 @@ extern RtcStruct Rtctime;
 extern uint32_t UnixTimeStamp;
 uint8_t isLeapYear(uint16_t year);
 void covUnixTimeStp2Beijing(uint32_t unixTime, RtcStruct *tempBeijing);
+uint32_t cov2UnixTimeStp(RtcStruct* rtcTime);
 uint32_t covBeijing2UnixTimeStp(RtcStruct *beijingTime);
 
 #endif

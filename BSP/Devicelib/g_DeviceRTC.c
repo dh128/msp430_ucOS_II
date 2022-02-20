@@ -362,7 +362,54 @@ void covUnixTimeStp2Beijing(uint32_t unixTime, RtcStruct *tempBeijing)
    tempBeijing->Minute = (totleSecNum%3600)/60; //error：变量搞错
    tempBeijing->Second = (totleSecNum%3600)%60;
 }
- 
+// 将0区时间转换为Unix时间戳
+// year: 需要判断的年
+// return：Unix时间戳（从1970/1/1 00:00:00 到现在的秒数)
+// note：没对输入参数正确性做判断
+uint32_t cov2UnixTimeStp(RtcStruct* rtcTime)
+{
+	uint32_t daynum = 0, secNum = 0, secDayNum = 0, secHourNum = 0, secMinNum = 0, secSecNum = 0; //保存北京时间到起始时间的天数
+	uint16_t tempYear = 1970, tempMonth = 0;
+
+
+	//1.年的天数
+	while (tempYear < rtcTime->Year)
+	{
+		if (isLeapYear(tempYear)) {
+			daynum += 366;
+		}
+		else {
+			daynum += 365;
+		}
+		tempYear++;
+	}
+	//2.月的天数
+	if (rtcTime->Month > 1) {
+		while (tempMonth < (rtcTime->Month - 1))
+		{
+			if (isLeapYear(rtcTime->Year)) { //闰年
+				daynum += Leap_month_day[tempMonth];
+			}
+			else {
+				daynum += month_day[tempMonth];
+			}
+			tempMonth++;
+		}
+	}
+	//3.天数
+	if (rtcTime->Day > 1) {
+		daynum += (rtcTime->Day) - 1;
+	}
+
+	//4.时分秒
+	secDayNum = daynum * 24 * 60 * 60; //s    
+	secHourNum = (rtcTime->Hour) * 60 * 60;
+	secMinNum = (rtcTime->Minute) * 60;
+	secSecNum = rtcTime->Second;
+
+	secNum = secDayNum + secHourNum + secMinNum + secSecNum;
+	return secNum;
+}
 // 将北京时间转换为Unix时间戳
 // year: 需要判断的年
 // return：Unix时间戳（从1970/1/1 00:00:00 到现在的秒数)

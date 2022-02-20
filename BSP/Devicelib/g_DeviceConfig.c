@@ -41,114 +41,36 @@ void *QConfiMsgTb[QConfigMsgTb_Size];
 struct hal_message ConfigMsg;
 
 
-static void g_Device_WirelessUpload_Config(g_Device_Config_CMD uploadCmd)   //通信模块无线指令下发配置(串口1)
-{
-	if(uploadCmd.cmdLenth != 0)
-	{
-#if (TRANSMIT_TYPE == GPRS_Mode)
-#elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
-#elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
-		if(Hal_CheckString(uploadCmd.strcmd,"+RCV") & Hal_CheckString(uploadCmd.strcmd,"FF") & Hal_CheckString(uploadCmd.strcmd,"AA"))
-		{
-			char *Uart0_RxBuff;     						 //+++++++++++++//
-			char Uart0_RxBuff_data[50];
-			uint8_t Uart0_RxBuff_Num = 0;
-			if(Hal_CheckString(uploadCmd.strcmd,"FF0102")) //修改上报周期
-			{
-
-				Uart0_RxBuff = strstr(uploadCmd.strcmd,"FF0102");         //判断接收到的数据是否有效
-				while(*(Uart0_RxBuff+6) != ',')
-				{
-					Uart0_RxBuff_data[Uart0_RxBuff_Num] = *(Uart0_RxBuff+6);
-					Uart0_RxBuff_Num++;
-					Uart0_RxBuff++;
-				}
-				uint16_t Temp_SendPeriod = (Uart0_RxBuff_data[0]-0x30)*1000 + (Uart0_RxBuff_data[1]-0x30)*100
-									+ (Uart0_RxBuff_data[2]-0x30)*10 + (Uart0_RxBuff_data[3]-0x30)*1;
-				if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
-				{
-					uint8_t Flash_Tmp[14];  //flash操作中间变量
-					App.Data.TerminalInfoData.SendPeriod = (uint8_t)(Temp_SendPeriod & 0x00FF);
-					OSBsp.Device.Usart2.WriteString("LoRa Set SendPeriod OK\r\n");
-					//将发送周期的信息存入Flash
-					Flash_Tmp[0] = OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_ChargeAddr);
-					Flash_Tmp[1] = OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_ChargeAddr);
-					Flash_Tmp[2] = OSBsp.Device.InnerFlash.innerFLASHRead(2, infor_ChargeAddr);
-					Flash_Tmp[3] = OSBsp.Device.InnerFlash.innerFLASHRead(3, infor_ChargeAddr);
-					Flash_Tmp[4] = OSBsp.Device.InnerFlash.innerFLASHRead(4, infor_ChargeAddr);
-					Flash_Tmp[5] = OSBsp.Device.InnerFlash.innerFLASHRead(5, infor_ChargeAddr);
-					Flash_Tmp[6] = OSBsp.Device.InnerFlash.innerFLASHRead(6, infor_ChargeAddr);
-					Flash_Tmp[7] = OSBsp.Device.InnerFlash.innerFLASHRead(7, infor_ChargeAddr);//终端类型
-					Flash_Tmp[8] = OSBsp.Device.InnerFlash.innerFLASHRead(8, infor_ChargeAddr);//传输方式
-					Flash_Tmp[9] = OSBsp.Device.InnerFlash.innerFLASHRead(9, infor_ChargeAddr);//DevEUI_H(高八位)
-					Flash_Tmp[10] = OSBsp.Device.InnerFlash.innerFLASHRead(10, infor_ChargeAddr);//DevEUI_L(低八位)
-					Flash_Tmp[11] = App.Data.TerminalInfoData.SendPeriod;//上传周期（min）
-					OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 12, infor_ChargeAddr, 0);//把终端信息写入FLASH
-	//							//*******返回ACK成功 字符串数组 BEGIN*******//
-	////										delay_ms(10);
-	//							User_Printf("AT+TXH=15,AA0101FF\r\n");	//TXH 发送16进制数，15代表通道号，TXA 发送字符串
-	//							//*******返回ACK成功 字符串数组  END*********//
-				}else{
-					OSBsp.Device.Usart2.WriteString("LoRa Set SendPeriod Failed！\r\n");
-				}
-			}
-			if(Hal_CheckString(uploadCmd.strcmd,"FF0208")) //同步设备时间
-			{
-				uint8_t TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16进制的时间Buffer  2018年3月15号 20时50分00秒 星期4
-				OSBsp.Device.Usart2.WriteString("Time Set Done!\r\n");
-				Uart0_RxBuff = strstr(aRxBuploadCmd.strcmduff,"FF0208");         //判断接收到的数据是否有效
-				while(*(Uart0_RxBuff+6) != ',')
-				{
-					Uart0_RxBuff_data[Uart0_RxBuff_Num] = *(Uart0_RxBuff+6);
-					Uart0_RxBuff_Num++;
-					Uart0_RxBuff++;
-				}
-				uint8_t TimebuffNum=0;
-				uint8_t time_buf[8];
-				for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++){
-					TimeBuff_Hex[TimebuffNum] = (Uart0_RxBuff_data[TimebuffNum*2]-0x30)*10 + (Uart0_RxBuff_data[TimebuffNum*2+1]-0x30)*1;
-				}
-				if( (TimeBuff_Hex[0]==20) && (TimeBuff_Hex[1]>=18) && (TimeBuff_Hex[2]>=1) && (TimeBuff_Hex[2]<=12) && (TimeBuff_Hex[3]>=1) && (TimeBuff_Hex[3]<=31)
-					&& (TimeBuff_Hex[4]<24)  && (TimeBuff_Hex[5]<60) && (TimeBuff_Hex[6]<60) && (TimeBuff_Hex[7]>=1) && (TimeBuff_Hex[7]<=7) )
-				{
-					for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++)
-					{
-						time_buf[TimebuffNum]= HexToBCD(TimeBuff_Hex[TimebuffNum]);    //存“年月日时分秒周”
-					}
-					OSBsp.Device.RTC.ConfigExtTime(time_buf,RealTime);   //写入时间
-					OSBsp.Device.Usart2.WriteString("LoRa Time Set Done\r\n");
-				}else{
-					OSBsp.Device.Usart2.WriteString("LoRa Time Set Failed！\r\n");
-				}
-
-			}
-			if(Hal_CheckString(uploadCmd.strcmd,"FF0301")) //复位设备
-			{
-				OSBsp.Device.Usart2.WriteString("LoRa Reset Device OK!\r\n");
-				hal_Delay_ms(100);hal_Delay_ms(100);hal_Delay_ms(100);
-				hal_Reboot(); //******软件复位*******//
-			}
-		}
-#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
-		if(Hal_CheckString(uploadCmd.strcmd,"+NNMI") & Hal_CheckString(uploadCmd.strcmd,"FF") & Hal_CheckString(uploadCmd.strcmd,"AA"))
-		{
-			if(Hal_CheckString(uploadCmd.strcmd,"FF0102")) //修改上报周期
-			{
-				Uart0_RxBuff = strstr(aRxBuff,"FF0102");         //判断接收到的数据是否有效
-				while(*(Uart0_RxBuff+6) != 0x0A)
-				{
-					Uart0_RxBuff_data[Uart0_RxBuff_Num] = *(Uart0_RxBuff+6);
-					Uart0_RxBuff_Num++;
-					Uart0_RxBuff++;
-				}
-				uint16_t Temp_SendPeriod = (Uart0_RxBuff_data[0]-0x30)*1000 + (Uart0_RxBuff_data[1]-0x30)*100
-									+ (Uart0_RxBuff_data[2]-0x30)*10 + (Uart0_RxBuff_data[3]-0x30)*1;
-				if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
-				{
-					uint8_t Flash_Tmp[14];  //flash操作中间变量
-					App.Data.TerminalInfoData.SendPeriod = (uint8_t)(Temp_SendPeriod & 0x00FF);
-					OSBsp.Device.Usart2.WriteString("NB Set SendPeriod OK\r\n");
-					//将发送周期的信息存入Flash
+//static void g_Device_WirelessUpload_Config(g_Device_Config_CMD uploadCmd)   //通信模块无线指令下发配置(串口1)
+//{
+//	if(uploadCmd.cmdLenth != 0)
+//	{
+//#if (TRANSMIT_TYPE == GPRS_Mode)
+//#elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
+//#elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
+//		if(Hal_CheckString(uploadCmd.strcmd,"+RCV") & Hal_CheckString(uploadCmd.strcmd,"FF") & Hal_CheckString(uploadCmd.strcmd,"AA"))
+//		{
+//			char *Uart0_RxBuff;     						 //+++++++++++++//
+//			char Uart0_RxBuff_data[50];
+//			uint8_t Uart0_RxBuff_Num = 0;
+//			if(Hal_CheckString(uploadCmd.strcmd,"FF0102")) //修改上报周期
+//			{
+//
+//				Uart0_RxBuff = strstr(uploadCmd.strcmd,"FF0102");         //判断接收到的数据是否有效
+//				while(*(Uart0_RxBuff+6) != ',')
+//				{
+//					Uart0_RxBuff_data[Uart0_RxBuff_Num] = *(Uart0_RxBuff+6);
+//					Uart0_RxBuff_Num++;
+//					Uart0_RxBuff++;
+//				}
+//				uint16_t Temp_SendPeriod = (Uart0_RxBuff_data[0]-0x30)*1000 + (Uart0_RxBuff_data[1]-0x30)*100
+//									+ (Uart0_RxBuff_data[2]-0x30)*10 + (Uart0_RxBuff_data[3]-0x30)*1;
+//				if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
+//				{
+//					uint8_t Flash_Tmp[14];  //flash操作中间变量
+//					App.Data.TerminalInfoData.SendPeriod = (uint8_t)(Temp_SendPeriod & 0x00FF);
+//					OSBsp.Device.Usart2.WriteString("LoRa Set SendPeriod OK\r\n");
+//					//将发送周期的信息存入Flash
 //					Flash_Tmp[0] = OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_ChargeAddr);
 //					Flash_Tmp[1] = OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_ChargeAddr);
 //					Flash_Tmp[2] = OSBsp.Device.InnerFlash.innerFLASHRead(2, infor_ChargeAddr);
@@ -160,54 +82,132 @@ static void g_Device_WirelessUpload_Config(g_Device_Config_CMD uploadCmd)   //�
 //					Flash_Tmp[8] = OSBsp.Device.InnerFlash.innerFLASHRead(8, infor_ChargeAddr);//传输方式
 //					Flash_Tmp[9] = OSBsp.Device.InnerFlash.innerFLASHRead(9, infor_ChargeAddr);//DevEUI_H(高八位)
 //					Flash_Tmp[10] = OSBsp.Device.InnerFlash.innerFLASHRead(10, infor_ChargeAddr);//DevEUI_L(低八位)
-					Flash_Tmp[11] = App.Data.TerminalInfoData.SendPeriod;//上传周期（min）
-					OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp[11], 1, infor_ChargeAddr, 11);
-				}else{
-					OSBsp.Device.Usart2.WriteString("NB Set SendPeriod Failed!\r\n");
-				}
-			}
-			if(Hal_CheckString(uploadCmd.strcmd,"FF0208")) //同步设备时间
-			{
-				OSBsp.Device.Usart2.WriteString("Time Set Done!\r\n");
-				Uart0_RxBuff = strstr(uploadCmd.strcmd,"FF0208");         //判断接收到的数据是否有效
-				while(*(Uart0_RxBuff+6) != 0x0A)
-				{
-					Uart0_RxBuff_data[Uart0_RxBuff_Num] = *(Uart0_RxBuff+6);
-					Uart0_RxBuff_Num++;
-					Uart0_RxBuff++;
-				}
-
-				uint8_t TimebuffNum;
-				uint8_t time_buf[8];
-				for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++)
-				{
-					TimeBuff_Hex[TimebuffNum] = (Uart0_RxBuff_data[TimebuffNum*2]-0x30)*10 + (Uart0_RxBuff_data[TimebuffNum*2+1]-0x30)*1;
-				}
-				if( (TimeBuff_Hex[0]==20) && (TimeBuff_Hex[1]>=18) && (TimeBuff_Hex[2]>=1) && (TimeBuff_Hex[2]<=12) && (TimeBuff_Hex[3]>=1) && (TimeBuff_Hex[3]<=31)
-					&& (TimeBuff_Hex[4]<24)  && (TimeBuff_Hex[5]<60) && (TimeBuff_Hex[6]<60) && (TimeBuff_Hex[7]>=1) && (TimeBuff_Hex[7]<=7) )
-				{
-					for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++)
-					{
-						time_buf[TimebuffNum]= HexToBCD(TimeBuff_Hex[TimebuffNum]);    //存“年月日时分秒周”
-					}
-					OSBsp.Device.RTC.ConfigExtTime(time_buf,RealTime);   //写入时间
-					Write_info_RTC(time_buf);		//同步写入MCU内部RTC
-					OSBsp.Device.Usart2.WriteString("NB Time Set Done\r\n");
-				}else{
-					OSBsp.Device.Usart2.WriteString("NB Time Set Failed！\r\n");
-				}
-
-			}
-			if(Hal_CheckString(uploadCmd.strcmd,"FF0301")) //复位设备
-			{
-				OSBsp.Device.Usart2.WriteString("NB Reset Device OK!\r\n");
-				hal_Delay_ms(100);hal_Delay_ms(100);hal_Delay_ms(100);
-				hal_Reboot(); //******软件复位*******//
-			}
-		}
-#endif
-	}
-}
+//					Flash_Tmp[11] = App.Data.TerminalInfoData.SendPeriod;//上传周期（min）
+//					OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp, 12, infor_ChargeAddr, 0);//把终端信息写入FLASH
+//	//							//*******返回ACK成功 字符串数组 BEGIN*******//
+//	////										delay_ms(10);
+//	//							User_Printf("AT+TXH=15,AA0101FF\r\n");	//TXH 发送16进制数，15代表通道号，TXA 发送字符串
+//	//							//*******返回ACK成功 字符串数组  END*********//
+//				}else{
+//					OSBsp.Device.Usart2.WriteString("LoRa Set SendPeriod Failed！\r\n");
+//				}
+//			}
+//			if(Hal_CheckString(uploadCmd.strcmd,"FF0208")) //同步设备时间
+//			{
+//				uint8_t TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16进制的时间Buffer  2018年3月15号 20时50分00秒 星期4
+//				OSBsp.Device.Usart2.WriteString("Time Set Done!\r\n");
+//				Uart0_RxBuff = strstr(aRxBuploadCmd.strcmduff,"FF0208");         //判断接收到的数据是否有效
+//				while(*(Uart0_RxBuff+6) != ',')
+//				{
+//					Uart0_RxBuff_data[Uart0_RxBuff_Num] = *(Uart0_RxBuff+6);
+//					Uart0_RxBuff_Num++;
+//					Uart0_RxBuff++;
+//				}
+//				uint8_t TimebuffNum=0;
+//				uint8_t time_buf[8];
+//				for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++){
+//					TimeBuff_Hex[TimebuffNum] = (Uart0_RxBuff_data[TimebuffNum*2]-0x30)*10 + (Uart0_RxBuff_data[TimebuffNum*2+1]-0x30)*1;
+//				}
+//				if( (TimeBuff_Hex[0]==20) && (TimeBuff_Hex[1]>=18) && (TimeBuff_Hex[2]>=1) && (TimeBuff_Hex[2]<=12) && (TimeBuff_Hex[3]>=1) && (TimeBuff_Hex[3]<=31)
+//					&& (TimeBuff_Hex[4]<24)  && (TimeBuff_Hex[5]<60) && (TimeBuff_Hex[6]<60) && (TimeBuff_Hex[7]>=1) && (TimeBuff_Hex[7]<=7) )
+//				{
+//					for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++)
+//					{
+//						time_buf[TimebuffNum]= HexToBCD(TimeBuff_Hex[TimebuffNum]);    //存“年月日时分秒周”
+//					}
+//					OSBsp.Device.RTC.ConfigExtTime(time_buf,RealTime);   //写入时间
+//					OSBsp.Device.Usart2.WriteString("LoRa Time Set Done\r\n");
+//				}else{
+//					OSBsp.Device.Usart2.WriteString("LoRa Time Set Failed！\r\n");
+//				}
+//
+//			}
+//			if(Hal_CheckString(uploadCmd.strcmd,"FF0301")) //复位设备
+//			{
+//				OSBsp.Device.Usart2.WriteString("LoRa Reset Device OK!\r\n");
+//				hal_Delay_ms(100);hal_Delay_ms(100);hal_Delay_ms(100);
+//				hal_Reboot(); //******软件复位*******//
+//			}
+//		}
+//#elif (TRANSMIT_TYPE == NBIoT_BC95_Mode)
+//		if(Hal_CheckString(uploadCmd.strcmd,"+NNMI") & Hal_CheckString(uploadCmd.strcmd,"FF") & Hal_CheckString(uploadCmd.strcmd,"AA"))
+//		{
+//			if(Hal_CheckString(uploadCmd.strcmd,"FF0102")) //修改上报周期
+//			{
+//				Uart0_RxBuff = strstr(aRxBuff,"FF0102");         //判断接收到的数据是否有效
+//				while(*(Uart0_RxBuff+6) != 0x0A)
+//				{
+//					Uart0_RxBuff_data[Uart0_RxBuff_Num] = *(Uart0_RxBuff+6);
+//					Uart0_RxBuff_Num++;
+//					Uart0_RxBuff++;
+//				}
+//				uint16_t Temp_SendPeriod = (Uart0_RxBuff_data[0]-0x30)*1000 + (Uart0_RxBuff_data[1]-0x30)*100
+//									+ (Uart0_RxBuff_data[2]-0x30)*10 + (Uart0_RxBuff_data[3]-0x30)*1;
+//				if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
+//				{
+//					uint8_t Flash_Tmp[14];  //flash操作中间变量
+//					App.Data.TerminalInfoData.SendPeriod = (uint8_t)(Temp_SendPeriod & 0x00FF);
+//					OSBsp.Device.Usart2.WriteString("NB Set SendPeriod OK\r\n");
+//					//将发送周期的信息存入Flash
+////					Flash_Tmp[0] = OSBsp.Device.InnerFlash.innerFLASHRead(0, infor_ChargeAddr);
+////					Flash_Tmp[1] = OSBsp.Device.InnerFlash.innerFLASHRead(1, infor_ChargeAddr);
+////					Flash_Tmp[2] = OSBsp.Device.InnerFlash.innerFLASHRead(2, infor_ChargeAddr);
+////					Flash_Tmp[3] = OSBsp.Device.InnerFlash.innerFLASHRead(3, infor_ChargeAddr);
+////					Flash_Tmp[4] = OSBsp.Device.InnerFlash.innerFLASHRead(4, infor_ChargeAddr);
+////					Flash_Tmp[5] = OSBsp.Device.InnerFlash.innerFLASHRead(5, infor_ChargeAddr);
+////					Flash_Tmp[6] = OSBsp.Device.InnerFlash.innerFLASHRead(6, infor_ChargeAddr);
+////					Flash_Tmp[7] = OSBsp.Device.InnerFlash.innerFLASHRead(7, infor_ChargeAddr);//终端类型
+////					Flash_Tmp[8] = OSBsp.Device.InnerFlash.innerFLASHRead(8, infor_ChargeAddr);//传输方式
+////					Flash_Tmp[9] = OSBsp.Device.InnerFlash.innerFLASHRead(9, infor_ChargeAddr);//DevEUI_H(高八位)
+////					Flash_Tmp[10] = OSBsp.Device.InnerFlash.innerFLASHRead(10, infor_ChargeAddr);//DevEUI_L(低八位)
+//					Flash_Tmp[11] = App.Data.TerminalInfoData.SendPeriod;//上传周期（min）
+//					OSBsp.Device.InnerFlash.FlashRsvWrite(Flash_Tmp[11], 1, infor_ChargeAddr, 11);
+//				}else{
+//					OSBsp.Device.Usart2.WriteString("NB Set SendPeriod Failed!\r\n");
+//				}
+//			}
+//			if(Hal_CheckString(uploadCmd.strcmd,"FF0208")) //同步设备时间
+//			{
+//				OSBsp.Device.Usart2.WriteString("Time Set Done!\r\n");
+//				Uart0_RxBuff = strstr(uploadCmd.strcmd,"FF0208");         //判断接收到的数据是否有效
+//				while(*(Uart0_RxBuff+6) != 0x0A)
+//				{
+//					Uart0_RxBuff_data[Uart0_RxBuff_Num] = *(Uart0_RxBuff+6);
+//					Uart0_RxBuff_Num++;
+//					Uart0_RxBuff++;
+//				}
+//
+//				uint8_t TimebuffNum;
+//				uint8_t time_buf[8];
+//				for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++)
+//				{
+//					TimeBuff_Hex[TimebuffNum] = (Uart0_RxBuff_data[TimebuffNum*2]-0x30)*10 + (Uart0_RxBuff_data[TimebuffNum*2+1]-0x30)*1;
+//				}
+//				if( (TimeBuff_Hex[0]==20) && (TimeBuff_Hex[1]>=18) && (TimeBuff_Hex[2]>=1) && (TimeBuff_Hex[2]<=12) && (TimeBuff_Hex[3]>=1) && (TimeBuff_Hex[3]<=31)
+//					&& (TimeBuff_Hex[4]<24)  && (TimeBuff_Hex[5]<60) && (TimeBuff_Hex[6]<60) && (TimeBuff_Hex[7]>=1) && (TimeBuff_Hex[7]<=7) )
+//				{
+//					for(TimebuffNum=0;TimebuffNum<8;TimebuffNum++)
+//					{
+//						time_buf[TimebuffNum]= HexToBCD(TimeBuff_Hex[TimebuffNum]);    //存“年月日时分秒周”
+//					}
+//					OSBsp.Device.RTC.ConfigExtTime(time_buf,RealTime);   //写入时间
+//					Write_info_RTC(time_buf);		//同步写入MCU内部RTC
+//					OSBsp.Device.Usart2.WriteString("NB Time Set Done\r\n");
+//				}else{
+//					OSBsp.Device.Usart2.WriteString("NB Time Set Failed！\r\n");
+//				}
+//
+//			}
+//			if(Hal_CheckString(uploadCmd.strcmd,"FF0301")) //复位设备
+//			{
+//				OSBsp.Device.Usart2.WriteString("NB Reset Device OK!\r\n");
+//				hal_Delay_ms(100);hal_Delay_ms(100);hal_Delay_ms(100);
+//				hal_Reboot(); //******软件复位*******//
+//			}
+//		}
+//#endif
+//	}
+//}
 
 // #if ((ACCESSORY_TYPR == RS485_Mode)||(ACCESSORY_TYPR == RS232_Mode))
 // static void g_Device_WiredUpload_Config(g_Device_Config_CMD uploadCmd)  //485/232有线指令下发配置(串口1)
@@ -414,11 +414,15 @@ static int FirmCMD_Receive(uint8_t *RxBuff, uint8_t RxNum)
 				infor_ChargeAddrBuff[12] = RxBuff[5]; //上传周期（min）(低八位)
 				infor_ChargeAddrBuff[20] = RxBuff[6]; //FLASH修改标志位       01允许修改  FF禁止修改
 				infor_ChargeAddrBuff[23] = RxBuff[7]; //模拟数据标志位        01允许修改  FF禁止修改
+				infor_ChargeAddrBuff[26] = RxBuff[8]; //传感器安装高度_H，超声波液位用
+				infor_ChargeAddrBuff[27] = RxBuff[9]; //传感器安装高度_L，超声波液位用
 				OSBsp.Device.InnerFlash.FlashRsvWrite(&infor_ChargeAddrBuff[9], 4, infor_ChargeAddr, 9);//把终端信息写入FLASH
 				hal_Delay_ms(10);		//连续存储添加延时
 				OSBsp.Device.InnerFlash.FlashRsvWrite(&infor_ChargeAddrBuff[20], 1, infor_ChargeAddr, 20);
 				hal_Delay_ms(10);		//连续存储添加延时
 				OSBsp.Device.InnerFlash.FlashRsvWrite(&infor_ChargeAddrBuff[23], 1, infor_ChargeAddr, 23);
+				hal_Delay_ms(10);		//连续存储添加延时
+				OSBsp.Device.InnerFlash.FlashRsvWrite(&infor_ChargeAddrBuff[26], 2, infor_ChargeAddr, 53);
 				// App.Data.TerminalInfoData.SendPeriod = Hal_getTransmitPeriod();
 				App.Data.TerminalInfoData.SendPeriod = infor_ChargeAddrBuff[11]*256 + infor_ChargeAddrBuff[12];
 				Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;

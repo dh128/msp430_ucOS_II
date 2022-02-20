@@ -109,6 +109,9 @@ uint32_t Hal_getSerialNumber(void);
 uint32_t Hal_getTransmitPeriod(void);
 uint32_t Hal_getSensorFlashStatus(void);
 uint16_t Hal_getBackupIndex(void);
+#if (PRODUCT_TYPE == WRain_Station)
+float Hal_getSensorHeight(void);
+#endif
 uint16_t Hal_getStartFile(void);
 uint8_t Hal_getFullFlag(void);
 void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num);
