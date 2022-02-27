@@ -279,3 +279,7 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 2022-02-19	dingh	AEP
 1、[g_DeviceRTC.c] [covUnixTimeStp2Beijing] 月底最后一天0区16时之后day出错BUG修复；
 2、[g_DeviceWrain_Station.c]超声波传感器地址改成1，液位字段修改为Ultrasonic，增加Real和height(下发高程数据)。
+2022-2-27	dingh	AEP
+1、增加g_PitWell_Station，窨井液位设备，检测投入式液位和超声波液位传感器；
+2、关闭GPS配件，设备为ACCESSORY_TYPR 为 None;
+3、修改App.c 中修改IntegratedPitWell时，检测超时时间为10s。

@@ -269,10 +269,14 @@ typedef struct
 
 typedef struct
 {
-	float UltrasonicLevel;
-	float InputmodeLevel;
-	float RealLevel;
-}PitWellPlatform;     //一体化窨井液位监测平台
+	float Ultrasonic;
+	float Input;
+	float Real;
+	float AirPress; 		//投入式传感器大气压值
+	float Height;			//传感器安装高度
+	float WarningHeight;	//告警高度
+	float DangerHeight;		//危险高度
+}PitWellPlatform;     		//一体化窨井液位监测平台
 
 typedef struct
 {
@@ -377,9 +381,9 @@ typedef struct
 	MagicPlatform               MagicData;
 #elif (PRODUCT_TYPE == Air_Station) 
     AirPlatform                AirData;
-#endif
+#elif (PRODUCT_TYPE == IntegratedPitWell) 
 	PitWellPlatform            PitWellData;
-	InputmodeWellPlatform      InputmodeWellData;
+#endif
 
 	NoxiousGasPlatform         NoxiousGasData;
 	WeatherSoilPlatform        WeatherSoilData;
@@ -389,10 +393,6 @@ typedef struct
 
 	AliveNestPlatform          AliveNestData;
 	CLCupboardPlatform         CLCupboardData;
-
-//  以下为系统保留数据，系统层直接使用
-    // RtcStruct                  RtcData;
-
 
 }DataStruct;
 
