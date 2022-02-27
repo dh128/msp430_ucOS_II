@@ -17,8 +17,9 @@ enum G_CONFIG_TYPE{
 
 void ManagerTaskStart(void *p_arg);
 int g_Device_Config_QueuePost(uint32_t type,void *state);
+#if (ACCESSORY_TYPR == GPS_Mode)
 static void g_Device_GPS_Config(g_Device_Config_CMD uploadCmd);
-
+#endif
 
 
 

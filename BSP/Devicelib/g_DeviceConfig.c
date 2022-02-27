@@ -566,6 +566,7 @@ void ManagerTaskStart(void *p_arg)
 					else if(strcmp(cmdType,"Wireless") == 0){
 						hal_Delay_ms(50);	        //延时等待接收完成
 					}
+#if (ACCESSORY_TYPR == GPS_Mode)
 					else if(strcmp(cmdType,"GPS_Info") == 0){
 						// g_Printf_info("Recv message type %d\r\n",ConfigMsg.what);
 						g_Device_Config_CMD g_ConfigCMD;
@@ -573,6 +574,7 @@ void ManagerTaskStart(void *p_arg)
 						g_ConfigCMD = g_Device_Usart_UserCmd_Copy(Usart1);
 						g_Device_GPS_Config(g_ConfigCMD);
 					}
+#endif
 				}else if (ConfigMsg.what == G_CLIENT_CMD){
 					char *cmdType = (char *)ConfigMsg.content;
 					if(strcmp(cmdType,"ClientCMD") == 0){

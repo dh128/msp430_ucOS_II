@@ -514,7 +514,7 @@ int Hal_getProductName(char *proName)
 #elif (PRODUCT_TYPE == Rain_Station) 
 	strncpy(proName, "RainData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == IntegratedPitWell_Station)
+#elif (PRODUCT_TYPE == IntegratedPitWell)
 	strncpy(proName, "IntegratedPitWellData", PRODUCT_NAMES_LEN-1);
 	return 0;
 #elif (PRODUCT_TYPE == InputmodeWell_Station)
@@ -650,6 +650,19 @@ float Hal_getSensorHeight(void)
     return (float)temp/1000;
 }
 #endif
+#if (PRODUCT_TYPE == IntegratedPitWell)
+float Hal_getSensorHeight(void)
+{
+    uint32_t temp =0;
+    temp = OSBsp.Device.InnerFlash.innerFLASHRead(53,infor_ChargeAddr);
+	temp = temp<<8;
+	temp += OSBsp.Device.InnerFlash.innerFLASHRead(54,infor_ChargeAddr);
+    if(temp == 0xFFFF)
+        temp = 5000;
+    g_Printf_info("%s %d\n",__func__,temp);
+    return (float)temp/1000;
+}
+#endif
 
 uint16_t Hal_getStartFile(void)
 {
@@ -745,21 +758,32 @@ int Hal_getDeviceSecret(char *devSecret)
 }
 
 #endif
-
+/* 
+ * 传感器断电处理，根据设备类型，部分设备只关闭一路电源
+ */
+void Hal_SensorPowerOff(void)
+{
+#if (PRODUCT_TYPE == WRain_Station)
+    OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
+    OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
+#elif(PRODUCT_TYPE == Weather_Station)
+    OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
+    OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
+#else
+    OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
+    OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
+#endif
+}
 void Hal_EnterLowPower_Mode(void)
 {
     static int m = 0;
     g_Printf_info("Enter Low Power!\r\n");
     hal_Delay_ms(100);
-//    Teminal_Data_Init();  //状态清0
-
-
-
+    
 #if (PRODUCT_TYPE == WRain_Station)
-    // OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
-    OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
-    OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
-    OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
     if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
     {
         AppDataPointer->WRainData.RainGaugeScadaStatus &=  ~RAINGAUGE_REPORT_HOUR;
@@ -775,9 +799,6 @@ void Hal_EnterLowPower_Mode(void)
         Send_Buffer[14] = 0xFF;	
     }
 #elif(PRODUCT_TYPE == Weather_Station)
-    OSBsp.Device.IOControl.PowerSet(BaseBoard_5V_Power_Off);
-    OSBsp.Device.IOControl.PowerSet(Sensor_Power2_Off);
-    OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
     if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
     {
         g_Printf_dbg("RAIN_HOUR Cancle\r\n");
@@ -794,10 +815,6 @@ void Hal_EnterLowPower_Mode(void)
         Send_Buffer[19] = 0x7F;
         Send_Buffer[20] = 0xFF;	
     }
-#else
-    OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_Off);
-    OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
-    OSBsp.Device.IOControl.PowerSet(Base3V3_Power_Off);
 #endif
 
 #if (TRANSMIT_TYPE == GPRS_Mode)

@@ -112,6 +112,9 @@ uint16_t Hal_getBackupIndex(void);
 #if (PRODUCT_TYPE == WRain_Station)
 float Hal_getSensorHeight(void);
 #endif
+#if (PRODUCT_TYPE == IntegratedPitWell)
+float Hal_getSensorHeight(void);
+#endif
 uint16_t Hal_getStartFile(void);
 uint8_t Hal_getFullFlag(void);
 void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num);
@@ -120,7 +123,7 @@ int Hal_getProductKey(char *produckey);
 int Hal_getDeviceName(char *devName);
 int Hal_getDeviceSecret(char *devSecret);
 #endif
-
+void Hal_SensorPowerOff(void);
 void Hal_EnterLowPower_Mode(void);
 // void Hal_ExitLowPower_Mode(void);
 void Hal_ExitLowPower_Mode(uint8_t int_Src);   //GLZ
