@@ -256,10 +256,14 @@ typedef struct
 
 typedef struct
 {
-//	double Depth1Vlaue; //液位
-//	double Speed1Vlaue; //流速
-	float Depth1Vlaue;  //液位
-	float Speed1Vlaue;  //流速
+	float ACCFlowVal;	//周期累积流量
+	float ICCFlowVal; 	//瞬时流量
+	float IFlowS;  		//瞬时流速
+	float IFlowL;  		//瞬时液位
+	float WaterTemp;	//水温
+	float Directions;	//流向
+	uint16_t TotalPeiod;	//一个发送周期内采集次数
+	uint16_t InqurePeriod;	//采集周期，默认5分钟
 }FlowPlatform;    //窨井管道流量监测平台
 
 typedef struct
@@ -373,7 +377,7 @@ typedef struct
 	FlowmeterPlatform		   FlowmeterData;
 #elif (PRODUCT_TYPE == Seeper_Station) 
 	SeeperPlatform             SeeperData;
-#elif (PRODUCT_TYPE == Flow_Station) 
+#elif (PRODUCT_TYPE == PipeFlow_Station) 
 	FlowPlatform               FlowData;
 #elif (PRODUCT_TYPE == Rain_Station)    
 	RainPlatform               RainData;

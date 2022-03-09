@@ -30,7 +30,7 @@
 
 // buffer size for printf
 #ifndef AM_PRINTF_BUFSIZE
-#define AM_PRINTF_BUFSIZE              256
+#define AM_PRINTF_BUFSIZE              512
 #endif
 
 

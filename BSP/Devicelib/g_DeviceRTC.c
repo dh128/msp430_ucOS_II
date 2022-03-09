@@ -500,7 +500,11 @@ __interrupt void RTC_ISR(void)
 						}
 					}
 					#endif
+				#if (PRODUCT_TYPE == PipeFlow_Station)   
+					if((min % App.Data.FlowData.InqurePeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
+				#else
 					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
+				#endif
 						__bic_SR_register_on_exit(LPM0_bits);
 						Hal_ExitLowPower_Mode(Rtc_Int);
 					}

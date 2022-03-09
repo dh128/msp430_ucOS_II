@@ -65,7 +65,7 @@
 #define Agriculture_Station   		0x09	 //农业监测仪
 #define Flowmeter_Station     		0x08	 //流量计监测仪
 #define Seeper_Station        		0x11	 //易涝点液位监测仪
-#define Flow_Station          		0x12	 //窨井管道流量监测仪
+#define PipeFlow_Station       		0x12	 //窨井管道流量监测仪
 #define Rain_Station          		0x13	 //雨量监测仪
 #define IntegratedPitWell     		0x14	 //一体化窨井液位监测仪
 #define InputmodeWell         		0x15	 //投入式窨井液位监测仪
@@ -89,7 +89,8 @@
 //#define PRODUCT_TYPE	             Flowmeter_Station
 // #define PRODUCT_TYPE	             WRain_Station
 //#define PRODUCT_TYPE	             Seeper_Station
-#define PRODUCT_TYPE	             IntegratedPitWell
+// #define PRODUCT_TYPE	             IntegratedPitWell
+#define PRODUCT_TYPE				PipeFlow_Station
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
 #define NBIoT_BC95_Mode	      		0x02

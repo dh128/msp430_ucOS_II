@@ -1,10 +1,10 @@
-	 ________         __            _________          
-	/ ______|        |  |          |____    _|         
-	| |   _____      |  |               /  /           
-	| |  |_   _|     |  |              /  /            
-	| |____| |       |  |____       __/  /____         
-	\________|       |_______|     |__________|        
- Copyright (C) 2018 - present, liangzhiGuo, <lz_kwok@163.com>, et al 
+	 ________         __            _________
+	/ ______|        |  |          |____    _|
+	| |   _____      |  |               /  /
+	| |  |_   _|     |  |              /  /
+	| |____| |       |  |____       __/  /____
+	\________|       |_______|     |__________|
+ Copyright (C) 2018 - present, liangzhiGuo, <lz_kwok@163.com>, et al
  msp430_ucOS_II
 ## Note : ##
 ### 1. The branch of "master" is the original branch, so you can't upload code at will. You can test your own code in the branch of "develop" and Refer to the following steps: ###
@@ -283,3 +283,7 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、增加g_PitWell_Station，窨井液位设备，检测投入式液位和超声波液位传感器；
 2、关闭GPS配件，设备为ACCESSORY_TYPR 为 None;
 3、修改App.c 中修改IntegratedPitWell时，检测超时时间为10s。
+2022-3-9	dingh	AEP
+1、增加g_PipeFlow_Station，在流量计的基础上实现窨井流量监测；
+2、修改g_printf的打印buffer为512字节；
+3、修改NB AEP发送循环为uint32_t类型。

@@ -80,20 +80,20 @@ unsigned char NB_Config(unsigned char *c , unsigned char m, unsigned char t)
 	Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 	while (!Hal_CheckString(aRxBuff,"OK")  & (i < t))
 	{
-		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);		
+		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 	 	g_Printf_dbg((char *)c);		//debug口同步打印
 	 	User_Printf((char *)c);
 		for(x=0;x<m;x++)
 			OSTimeDly(50);
 
-		i++;	
+		i++;
 	}
 	if(i>=t)
 	{
 		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 		return 0;
 	}
-	else 
+	else
 	{
 		Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
 		return 1;
@@ -180,7 +180,7 @@ void g_Device_NB_Restart(void)
 
 	User_Printf("AT+NRB\r\n");
 	OSTimeDly(5000);
-	
+
 	if(NB_Config("AT\r\n",5,5))
 	{
 		AppDataPointer->TransMethodData.NBStatus = NB_Boot;
@@ -218,8 +218,8 @@ void SyncTime(void)
 				nb_Timedata[i]=*(a+6);
 				i++;
 				a++;
-			}	
-			nb_Timedata[i]='\n';	
+			}
+			nb_Timedata[i]='\n';
 			Rtctime.Year = 2000+(nb_Timedata[0] - 0x30) * 10 + (nb_Timedata[1] - 0x30) * 1;	       //年
 			Rtctime.Month = (nb_Timedata[3] - 0x30) * 10 + (nb_Timedata[4] - 0x30) * 1;	       //月
 			Rtctime.Day = (nb_Timedata[6] - 0x30) * 10 + (nb_Timedata[7] - 0x30) * 1;	       //日
@@ -252,7 +252,7 @@ void SyncTime(void)
 char g_Device_NB_Init(void)
 {
 	uint8_t ii = 0;
-	
+
 	if(AppDataPointer->TransMethodData.NBStatus == NB_Boot)
 	{
 		NB_Config("AT+CFUN=0\r\n",5,5);
@@ -265,7 +265,7 @@ char g_Device_NB_Init(void)
 		// OSTimeDly(100);
 
 		/* 配置存活时间 */
-		NB_Config("AT+QCFG=\"LWM2M/lifetime\",86400\r\n",5,5);  
+		NB_Config("AT+QCFG=\"LWM2M/lifetime\",86400\r\n",5,5);
 		/* 配置EndPoint */
 		NB_ConfigEndPoint();
 		// NB_Config("AT+NCDP=180.101.147.115\r\n",5,5);         //电信物联网中心平台
@@ -319,7 +319,7 @@ char g_Device_NB_Init(void)
 		AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
 		//********ML同步时间-20191111************//
 		SyncTime();
-		
+
 		//*****************同步时间END************//
 		return 1;
 	}
@@ -336,8 +336,8 @@ void g_Device_NB_GetIP(void)
 //	uint8_t ii = 0;
 	//等待注册成功信息
 	//+QLWEVTIND:0
-	//+QLWEVTIND:3 
-	
+	//+QLWEVTIND:3
+
 	AppDataPointer->TransMethodData.NBStatus = NB_Registered;
 }
 /*******************************************************************************
@@ -348,7 +348,7 @@ void g_Device_NB_GetIP(void)
 *******************************************************************************/
 void g_Device_NB_Send(uint32_t *data ,uint16_t length)
 {
-	static unsigned char ii = 0;
+	static uint32_t ii = 0;
 	char buff[15];
 	AppDataPointer->TransMethodData.NBSendStatus = 0;
 	Clear_Buffer((unsigned char *)aRxBuff,&aRxNum);
@@ -357,7 +357,7 @@ void g_Device_NB_Send(uint32_t *data ,uint16_t length)
     // User_Printf("AT+NMGS=34,");
     for(ii=0;ii<length;ii++)
     {
-		
+
         if(data[ii] < 0x10)       //Printf下小于16进行补0打印
         {
         	User_Printf("0%X",data[ii] & 0xff);			// & 0xff防止出现数据溢出
@@ -406,7 +406,7 @@ void g_Device_NBSignal(void)
 
 	User_Printf("AT+CSQ\r\n");
 	OSTimeDly(200);			//等待串口接收
-	
+
 	//处理信号值，若多次无信号，则复位NB，重新入网
 	//get the RSRP
 	a=strstr(aRxBuff,"+CSQ:");//用于判断字符串str2是否是str1的子串。如果是，则该函数返回str2在str1中首次出现的地址；否则，返回NULL。
@@ -447,7 +447,7 @@ void g_Device_NBSignal(void)
 		AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
 		g_Device_NB_Init();
 	}
-		
+
 }
 /*******************************************************************************
 * 函数名    : ProcessCommand
@@ -487,7 +487,7 @@ void ProcessCommand()
 			// delay_ms(10);
 			OSTimeDly(5);
 			Flash_Tmp[11] = (Temp_SendPeriod & 0xFF00)>>8;	//修改周期存储值（min）
-			Flash_Tmp[12] = Temp_SendPeriod & 0x00FF;		
+			Flash_Tmp[12] = Temp_SendPeriod & 0x00FF;
 			OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[11], 2, infor_ChargeAddr, 11);//把周期信息写入FLASH
 		}
 		else
@@ -565,7 +565,7 @@ void ProcessJsonCommand(unsigned char *p)
 		if(CommandBuffNum < 5){
 			Temp_SendPeriod = (uint16_t)atoi(CommandBuffData);
 		}
-	
+
 		if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
 		{
 			App.Data.TerminalInfoData.SendPeriod = (unsigned char)(Temp_SendPeriod & 0x00FF);
@@ -576,7 +576,7 @@ void ProcessJsonCommand(unsigned char *p)
 			// delay_ms(10);
 			OSTimeDly(5);
 			Flash_Tmp[11] = (Temp_SendPeriod & 0xFF00)>>8;	//修改周期存储值（min）
-			Flash_Tmp[12] = Temp_SendPeriod & 0x00FF;		
+			Flash_Tmp[12] = Temp_SendPeriod & 0x00FF;
 			OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[11], 2, infor_ChargeAddr, 11);//把周期信息写入FLASH
 		}
 		else
@@ -608,14 +608,14 @@ void ProcessJsonCommand(unsigned char *p)
 		float temp_Height = 0.0;
 		if(CommandBuffNum < 7){
 			temp_Height= (float)atof(CommandBuffData);
-		}	
+		}
 		if( (temp_Height > 0) && ( temp_Height<= 15) )
 		{
 			App.Data.WRainData.Height = temp_Height;
 			g_Printf_info("NB Set Height as %f OK\r\n",temp_Height);
 			OSTimeDly(5);
 			Flash_Tmp[9] = ((uint16_t)(temp_Height*1000) & 0xFF00)>>8;	//修改周期存储值（min）
-			Flash_Tmp[10] = (uint16_t)(temp_Height*1000) & 0x00FF;		
+			Flash_Tmp[10] = (uint16_t)(temp_Height*1000) & 0x00FF;
 			OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[9], 2, infor_ChargeAddr, 53);//把高度信息写入FLASH
 		}
 		else
@@ -637,7 +637,7 @@ void ProcessJsonCommand(unsigned char *p)
 *******************************************************************************/
 void GetCode(int num)
 {
-	uint16_t temp1=0;	
+	uint16_t temp1=0;
 	uint16_t ii = 0;
 	// long m = 0;
 	// uint32_t sumTemp = 0;
@@ -657,7 +657,7 @@ void GetCode(int num)
 			g_Device_SendByte_Uart0(getCommand[ii]);		//获取数据指令
 			// delay_ms(10);
 		}
-		
+
 	}
 	else		//上报下载完成
 	{
@@ -673,16 +673,16 @@ void GetCode(int num)
 		// {
 		// 	sumTemp += SPI_Flash_ReadByte(m);
 		// 	// sumTemp &= 0x00FF;
-		// }	
+		// }
 		// if((sumTemp & 0xFF) == fota.CheckSum){
 		// 	g_Printf_dbg("Check code OK\r\n");
 			User_Printf("AT+NMGS=9,FFFE0116850E000100\r\n");
-		// }else{			
+		// }else{
 		// 	g_Printf_dbg("Check code Err,checkSum=%x,sumTemp=%x\r\n",fota.CheckSum,sumTemp);
 		// 	for(m=FOTA_ADDR_START;m<addr_write;m++)		//输出错误固件查看
 		// 	{
 		// 		OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
-		// 	}	
+		// 	}
 		// 	ReportUpErr(0x16, CheckErr);
 		// 	NB_Fota = 0;
 		// }
@@ -726,7 +726,7 @@ void ProcessPCP(unsigned char *p)
 	uint8_t readData[512];
 	uint16_t CRCtemp;
 	long addTemp = 0;
-	uint16_t ret = 0;	
+	uint16_t ret = 0;
 	long ii;
 	long m;
 	uint8_t checkTimes = 0;
@@ -822,7 +822,7 @@ void ProcessPCP(unsigned char *p)
 		else
 			fota.CRCFlag = 0;
 		// CRC校验通过、设备包正确则存储继续获取否则重新获取
-		if((fota.CRCFlag == 1) && (ret == fota.PackageNum))	
+		if((fota.CRCFlag == 1) && (ret == fota.PackageNum))
 		{
 			OS_ENTER_CRITICAL();
 			addTemp = addr_write;
@@ -858,7 +858,7 @@ check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 				for(m=FOTA_ADDR_START;m<(addr_write+500);m++)		//输出错误固件查看
 				{
 					OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
-				}	
+				}
 				NB_Fota = 0;
 				OS_EXIT_CRITICAL();		//break前退出临界态
 				break;
@@ -877,7 +877,7 @@ check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 		GetCode(fota.PackageNum);
 	break;
 	case 0x016:			//上报下载情况
-		
+
 	break;
 	case 0x017:			//执行升级		重启后
 		g_Printf_info("get 0x17 command\r\n");
@@ -905,7 +905,7 @@ check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 		NB_Fota = 0;
 		g_Printf_info("%d version code printf begin:\r\n",fota.newVersion);
 		// add_temp = FOTA_ADDR_START;
-		// lenth = 
+		// lenth =
 		OS_ENTER_CRITICAL();
 		for(m=FOTA_ADDR_START;m<addr_write;m++)
 		{
@@ -913,13 +913,13 @@ check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 			// OSBsp.Device.Usart2.WriteData(d_t[m]);
 			OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
 			hal_Delay_us(5);
-		}	
+		}
 		OS_EXIT_CRITICAL();
 
 		TestData[0] = SPI_Flash_ReadByte(addr_write-3);
 		TestData[1] = SPI_Flash_ReadByte(FOTA_ADDR_START+1);
 		if(TestData[0] == 'q' && TestData[1] == 'c')	//确认@c400和q\r\n,存储结束后addr_writer值为\n后面一位
-		{	        
+		{
 			g_Printf_info("Enter %s and System will goto bootloader\r\n",__func__);
 			loop8:
 				Flash_Tmp[0] = 0x02; 		//置位Flash 标志位	//把infor_BootAddr写0x02，建立FOTA升级标志位
@@ -930,14 +930,14 @@ check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 					hal_Delay_sec(10);
 					hal_Reboot();			//重启MCU
 				}else{
-					goto loop8;	
+					goto loop8;
 				}
 		}
 		else
 		{
 			g_Printf_info("Error code!\r\n");
 		}
-		
+
 	break;
 	default:
 		g_Printf_info("Error pcp data\r\n");
@@ -981,7 +981,7 @@ void g_Device_NB_GetReceive(void)
 			i++;
 			OSTimeDly(250);		//500ms
 			if(Hal_CheckString(aRxBuff,"+NNMI"))
-				break;			
+				break;
 			OSTimeDly(250);		//500ms
 		}
 	}
@@ -1100,7 +1100,7 @@ void CreatFileNum(char x)
 void WriteStoreData(void)
 {
 //	uint8_t tempBuffer[20];
-	
+
 	CreatFileNum(1);		//参数1   BackupIndex++;
 	ltoa( (long)BackupIndex , RespFile);
 	strcat(RespFile , ".txt");
@@ -1154,7 +1154,7 @@ void GetStoreData(void)
 		ltoa( (long)BackupIndex , RespFile);
 		strcat(RespFile , ".txt");
 		temp = Get_String("0:/INDEX" , RespFile , Data_Backup , 122);
-		if( temp == 1)		
+		if( temp == 1)
 		{
 			// BackupIndex--;
 			ResendData = 1;		//补发数据标志位
@@ -1167,7 +1167,7 @@ void GetStoreData(void)
 			CreatFileNum(0);		//参数0   BackupIndex--;
 		}
 	}
-	
+
 }
 /*******************************************************************************
 * 函数名  : TransmitTaskStart
@@ -1179,15 +1179,15 @@ void  TransmitTaskStart (void *p_arg)
 {
 	uint16_t i,j;
 //	uint8_t initRetry = 0;
-	Hex2Float gpsTemp;	
+	Hex2Float gpsTemp;
 	uint32_t datalen = 0;
 	char data[512];
 	char *str=NULL;
 //	char response[128];
 //	uint8_t testData[]="{\"SeqNum\":1,\"SN\":1,\"DO\":0.07}";
-	(void)p_arg;   
-    OSTimeDlyHMSM(0u, 0u, 0u, 100u);      
-    g_Printf_info("%s ... ...\n",__func__);           
+	(void)p_arg;
+    OSTimeDlyHMSM(0u, 0u, 0u, 100u);
+    g_Printf_info("%s ... ...\n",__func__);
     while (DEF_TRUE) {               /* Task body, always written as an infinite loop.*/
         if(Hal_getCurrent_work_Mode() == 0){
 			TaskRefreshWTD(EventWtFlag , WTD_BIT_TRANSMIT);
@@ -1203,7 +1203,7 @@ void  TransmitTaskStart (void *p_arg)
                 // OSBsp.Device.IOControl.PowerSet(AIR202_Power_On);
                 AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
 				g_Printf_dbg("NB power on\r\n");
-                
+
             }
 			else if(AppDataPointer->TransMethodData.NBStatus == NB_Power_on)
 			{
@@ -1220,7 +1220,7 @@ void  TransmitTaskStart (void *p_arg)
 					g_Printf_info("Scan over,data uploading\r\n");
 					if(ResendData == 0)		//正常上报数据,需要累加SeqNum,采集电压，本地存储
 					{
-						
+
 						//SeqNumber ++
 						if(App.Data.TerminalInfoData.DeviceFirstRunStatus == DEVICE_STATUS_FIRSTRUN_BEGIN) {
 							App.Data.TerminalInfoData.DeviceFirstRunStatus = DEVICE_STATUS_FIRSTRUN_OVER;
@@ -1232,14 +1232,14 @@ void  TransmitTaskStart (void *p_arg)
 						}
 						Send_Buffer[5] = AppDataPointer->TransMethodData.SeqNumber/256;
 						Send_Buffer[6] = AppDataPointer->TransMethodData.SeqNumber%256;
-						
+
 						if(REGRST != 0){
 						#if(PRODUCT_TYPE != MagicSTICK_Station)
 							Send_Buffer[29] = REGRST / 256; 	//添加reboot参数上报传感器数据最后一位
-							Send_Buffer[30] = REGRST % 256; 
+							Send_Buffer[30] = REGRST % 256;
 						#endif
 						}
-						
+
 						//Voltage
 						GetADCValue();
 						//检查信号质量
@@ -1273,7 +1273,7 @@ void  TransmitTaskStart (void *p_arg)
 						// sprintf(CTWing_Data, "%02X",data);
 						// g_Printf_info("data:%s\r\n",data);
 						// memset(response,0x0,128);
-						// Hex2Str(Data_Backup,data,datalen,0);					
+						// Hex2Str(Data_Backup,data,datalen,0);
 						// g_Printf_info("Hexdata:%s\r\n",Data_Backup);    //打印输出16进制发送数据
 					}
 					//发送数据
@@ -1282,9 +1282,9 @@ void  TransmitTaskStart (void *p_arg)
 						// if(App.Data.TransMethodData.SeqNumber == 0){		//开机第一次不上报数据
 						// 	AppDataPointer->TransMethodData.NBStatus = NB_Idel;
 						// }else{
-							// g_Device_NB_Send_Str(Data_Backup,60);	
-							
-							// g_Printf_info("Hexdata2:%s\r\n",testHexData); 
+							// g_Device_NB_Send_Str(Data_Backup,60);
+
+							// g_Printf_info("Hexdata2:%s\r\n",testHexData);
 							OSTimeDly(100);
 							g_Device_NB_Send(CTWing_Data,datalen);
 							OSTimeDly(5000);	//等待10s
@@ -1310,21 +1310,21 @@ void  TransmitTaskStart (void *p_arg)
 						//WriteStoreData();
 						AppDataPointer->TransMethodData.NBStatus = NB_Init_Error;
 					}
-				}      
+				}
             }
 			else if(AppDataPointer->TransMethodData.NBStatus == NB_Send_Over)		//不在线直接进Idle
 			{
 				g_Device_NB_GetReceive();
 			}
-			else if((AppDataPointer->TransMethodData.NBStatus == NB_Idel) 
+			else if((AppDataPointer->TransMethodData.NBStatus == NB_Idel)
 				|| (AppDataPointer->TransMethodData.NBStatus == NB_Init_Error)
 				|| (AppDataPointer->TransMethodData.NBStatus == NB_Send_Error))	//发送完成或入网失败，关闭NB电源，进入低功耗，退出低功耗后重新上电初始化
 			{
 				if( AppDataPointer->TerminalInfoData.DeviceStatus == DEVICE_STATUS_POWER_SCAN_OVER)
 					Hal_EnterLowPower_Mode();
-			}  
+			}
 
-            OSTimeDlyHMSM(0u, 0u, 0u, 200u);  
+            OSTimeDlyHMSM(0u, 0u, 0u, 200u);
         }
     }
 }

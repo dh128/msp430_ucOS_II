@@ -547,6 +547,9 @@ int Hal_getProductName(char *proName)
 #elif (PRODUCT_TYPE == Custom_Station) 
 	strncpy(proName, "CustomData", PRODUCT_NAMES_LEN-1);
 	return 0;
+#elif (PRODUCT_TYPE == PipeFlow_Station)
+	strncpy(proName, "FlowData", PRODUCT_NAMES_LEN-1);
+	return 0;
 #endif
 }
 
@@ -898,7 +901,19 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
             if(App.Data.TransMethodData.SeqNumber == 0){        //seq==0重启模组，避免校时偏差
                 AppDataPointer->TransMethodData.NBStatus = NB_Power_on;
             }else{
+                #if(PRODUCT_TYPE == PipeFlow_Station)
+                    AppDataPointer->FlowData.TotalPeiod += AppDataPointer->FlowData.InqurePeriod;
+                    if(AppDataPointer->FlowData.TotalPeiod >= AppDataPointer->TerminalInfoData.SendPeriod){
+                        AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+                        AppDataPointer->FlowData.TotalPeiod = 0;
+                        // g_Printf_info("total period = %d,NB set init done\r\n",AppDataPointer->FlowData.TotalPeiod);
+                    }else{
+                        AppDataPointer->TransMethodData.NBStatus = NB_Idel;
+                        g_Printf_info("NB set init idel\r\n");
+                    }
+                #else
                 AppDataPointer->TransMethodData.NBStatus = NB_Init_Done;
+                #endif
             }
         }
         #endif

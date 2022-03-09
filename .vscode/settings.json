@@ -13,6 +13,11 @@
         "g_devicesdmmc.h": "c",
         "g_devicesd.h": "c",
         "g_devicenb_mqtt.h": "c",
-        "g_platform.h": "c"
+        "g_platform.h": "c",
+        "limits": "c",
+        "xstddef": "c",
+        "cstddef": "c",
+        "new": "c",
+        "type_traits": "c"
     }
 }
