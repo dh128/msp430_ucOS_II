@@ -31,7 +31,7 @@
 
 #if (PRODUCT_TYPE == Dust_Station)
 
-#define SensorNum			12 
+#define SensorNum			12
 #define CMDLength        	8
 #define SensorKind          0b111111100000
 
@@ -46,8 +46,8 @@ DataStruct *AppDataPointer;
 uint32_t Send_Buffer[60] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x00,
                             0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,0x7F,0xFF,
                             0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff};
-					//                          /-----------------/ /-----------------/ /-----------------/ /-------/ /--/ /-------/ /-------/ /-------/ /-------/ /--/                                                                                            		
-					//                               timestamp            Lng经度             lat纬度          海拔     PCI    RSRP      SINR       修正      模拟   保留                   
+					//                          /-----------------/ /-----------------/ /-----------------/ /-------/ /--/ /-------/ /-------/ /-------/ /-------/ /--/
+					//                               timestamp            Lng经度             lat纬度          海拔     PCI    RSRP      SINR       修正      模拟   保留
 
 
 const uint8_t Inqure_WindSpeed[CMDLength]={0x01,0x03,0x00,0x00,0x00,0x01,0x84,0x0A};          //风速
@@ -88,7 +88,7 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 		CRC_Result[1] = (uint8_t)(CalcuResult & 0xFF);
 		if((data[Len-2] == CRC_Result[0]) && (data[Len-1] == CRC_Result[1]))   //判断数据接收是否存在异常
 		{
-	        LED_ON;  
+	        LED_ON;
 			if(data[1]==0x03)
 			{
 				switch(data[0])
@@ -159,14 +159,14 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 						break;
 					default:
 						break;
-				}//switch(data[0]) END	
+				}//switch(data[0]) END
 			} //(data[1]==0x03)  END
 			Send_Buffer[54] = SensorReviseStatus_H;
 			Send_Buffer[55] = SensorReviseStatus_L;
 			Clear_CMD_Buffer(dRxBuff,dRxNum);
 			dRxNum=0;
 			Len = 0;
-			return 1; 
+			return 1;
  		}else{
 			Clear_CMD_Buffer(dRxBuff,dRxNum);
 			dRxNum=0;
@@ -198,7 +198,7 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 static int SimulationSensorData(void)
 {
 	volatile char simulationIndex;
-	volatile uint16_t sensorNOTExistStatus = 0; 
+	volatile uint16_t sensorNOTExistStatus = 0;
 	uint8_t str[12];
     uint32_t temp =0;
 
@@ -237,7 +237,7 @@ static int SimulationSensorData(void)
 					sensorCahe = 326;
 					AppDataPointer->DustData.Noise = (float)sensorCahe/10;
 					hal_SetBit(SensorStatus_L, 5);   //传感器状态位置1
-					hal_SetBit(SensorSimulationStatus_L, 5);   //传感器模拟状态位置1	
+					hal_SetBit(SensorSimulationStatus_L, 5);   //传感器模拟状态位置1
 					Send_Buffer[19] = sensorCahe / 256;
 					Send_Buffer[20] = sensorCahe % 256;
 					break;
@@ -246,7 +246,7 @@ static int SimulationSensorData(void)
 					sensorCahe = 56;
 					AppDataPointer->DustData.PM10 = sensorCahe;
 					hal_SetBit(SensorStatus_L, 6);   //传感器状态位置1
-					hal_SetBit(SensorSimulationStatus_L, 6);   //传感器模拟状态位置1	
+					hal_SetBit(SensorSimulationStatus_L, 6);   //传感器模拟状态位置1
 					Send_Buffer[17] = sensorCahe / 256;
 					Send_Buffer[18] = sensorCahe % 256;
 					break;
@@ -255,7 +255,7 @@ static int SimulationSensorData(void)
 					sensorCahe = 48;
 					AppDataPointer->DustData.PM25 = sensorCahe;
 					hal_SetBit(SensorStatus_L, 7);   //传感器状态位置1
-					hal_SetBit(SensorSimulationStatus_L, 7);   //传感器模拟状态位置1	
+					hal_SetBit(SensorSimulationStatus_L, 7);   //传感器模拟状态位置1
 					Send_Buffer[15] = sensorCahe / 256;
 					Send_Buffer[16] = sensorCahe % 256;
 					break;
@@ -264,7 +264,7 @@ static int SimulationSensorData(void)
 					sensorCahe = 135;
 					AppDataPointer->DustData.WindDirection = sensorCahe;
 					hal_SetBit(SensorStatus_H, 0);   //传感器状态位置1
-					hal_SetBit(SensorSimulationStatus_H, 0);   //传感器模拟状态位置1	
+					hal_SetBit(SensorSimulationStatus_H, 0);   //传感器模拟状态位置1
 					Send_Buffer[13] = sensorCahe / 256;
 					Send_Buffer[14] = sensorCahe % 256;
 					break;
@@ -273,7 +273,7 @@ static int SimulationSensorData(void)
 					sensorCahe = 53;
 					AppDataPointer->DustData.WindSpeed = (float)sensorCahe/10;
 					hal_SetBit(SensorStatus_H, 1);   //传感器状态位置1
-					hal_SetBit(SensorSimulationStatus_H, 1);   //传感器模拟状态位置1	
+					hal_SetBit(SensorSimulationStatus_H, 1);   //传感器模拟状态位置1
 					Send_Buffer[11] = sensorCahe / 256;
 					Send_Buffer[12] = sensorCahe % 256;
 					break;
@@ -282,7 +282,7 @@ static int SimulationSensorData(void)
 					sensorCahe = 468;
 					AppDataPointer->DustData.Humidity = (float)sensorCahe/10;
 					hal_SetBit(SensorStatus_H, 2);   //传感器状态位置1
-					hal_SetBit(SensorSimulationStatus_H, 2);   //传感器模拟状态位置1	
+					hal_SetBit(SensorSimulationStatus_H, 2);   //传感器模拟状态位置1
 					Send_Buffer[9] = sensorCahe / 256;
 					Send_Buffer[10] = sensorCahe % 256;
 					break;
@@ -291,7 +291,7 @@ static int SimulationSensorData(void)
 					sensorCahe = 326;
 					AppDataPointer->DustData.Temperature = (float)sensorCahe/10;
 					hal_SetBit(SensorStatus_H, 3);   //传感器状态位置1
-					hal_SetBit(SensorSimulationStatus_H, 3);   //传感器模拟状态位置1		
+					hal_SetBit(SensorSimulationStatus_H, 3);   //传感器模拟状态位置1
 					Send_Buffer[7] = sensorCahe / 256;
 					Send_Buffer[8] = sensorCahe % 256;
 					break;
@@ -301,7 +301,7 @@ static int SimulationSensorData(void)
 		}
 	}
 	Send_Buffer[56] = SensorSimulationStatus_H;
-	Send_Buffer[57] = SensorSimulationStatus_L; 
+	Send_Buffer[57] = SensorSimulationStatus_L;
 	return 1;
 }
 
@@ -314,22 +314,22 @@ static int SimulationSensorData(void)
 *******************************************************************************/
 void InqureSensor(void)
 {
-	//温度 湿度 风速 风向 | PM2.5 PM10 噪音 XX | XX XX XX XX                                                      
+	//温度 湿度 风速 风向 | PM2.5 PM10 噪音 XX | XX XX XX XX
 	volatile char scadaIndex;
-	volatile uint16_t sensorExistStatus = 0;   
+	volatile uint16_t sensorExistStatus = 0;
 	volatile uint8_t sensorSN = 0;    //传感器编号，按照协议顺序排列
 	volatile uint16_t sensorStatus;  //0000 1101 0010 0000   温度，湿度，风向，噪音
 
-	if(AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET) {
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_ALREADY;
-		AppDataPointer->TerminalInfoData.SensorStatus = SensorKind; 
-	} else if ( (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY) 
-	         || (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK) ) {
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_OK;
-		AppDataPointer->TerminalInfoData.SensorStatus = Hal_getSensorFlashStatus(); 
+	if(AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_NOTYET) {
+		AppDataPointer->TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_ALREADY;
+		AppDataPointer->TerminalInfoData.SensorStatus = SensorKind;
+	} else if ( (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_ALREADY)
+	         || (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_OK) ) {
+		AppDataPointer->TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_OK;
+		AppDataPointer->TerminalInfoData.SensorStatus = Hal_getSensorFlashStatus();
 	}
 
-	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {	
+	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {
 		// SensorStatus_H = 0;
 		// SensorStatus_L = 0;
 		for(scadaIndex=1;scadaIndex<=SensorNum;scadaIndex++)  //SensorNum = 12
@@ -422,8 +422,8 @@ void InqureSensor(void)
 		}
 
 		AppDataPointer->TerminalInfoData.SensorStatus = (uint16_t)SensorStatus_H*256 + (uint16_t)SensorStatus_L;
-		if(AppDataPointer->TerminalInfoData.SensorFlashWriteStatus == SENSOR_STATUS_WRITEFLASH_NOTYET) {
-			AppDataPointer->TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_ALREADY;
+		if(AppDataPointer->TerminalInfoData.SensorWriteStatus == SENSOR_STATUS_WRITE_NOTYET) {
+			AppDataPointer->TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_ALREADY;
 			// infor_ChargeAddrBuff[21] = 0b00001101;
 			// infor_ChargeAddrBuff[22] = 0b11000000;
 			// OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
@@ -438,27 +438,27 @@ void InqureSensor(void)
 		}
 
 		//根据标志位判断是否需要模拟数据
-		if (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK) 
+		if (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_OK)
 		{
 			if(OSBsp.Device.InnerFlash.innerFLASHRead(23,infor_ChargeAddr) == 0x01)
 			// if(OSBsp.Device.InnerFlash.innerFLASHRead(23,infor_ChargeAddr) == 0xFF)
 			{
-				AppDataPointer->TerminalInfoData.SensorStatusSimulation = (AppDataPointer->TerminalInfoData.SensorStatus) ^ Hal_getSensorFlashStatus(); 
+				AppDataPointer->TerminalInfoData.SensorStatusSimulation = (AppDataPointer->TerminalInfoData.SensorStatus) ^ Hal_getSensorFlashStatus();
 				//传感器损坏，无数据才支持补发
 				if(AppDataPointer->TerminalInfoData.SensorStatusSimulation != 0) {
-					SimulationSensorData();	
-					// dRxNum=0;	
+					SimulationSensorData();
+					// dRxNum=0;
 				}
 			}
 		}
 
 	} else {
-		OSTimeDly(10);     
-		g_Printf_dbg("%s.AnalyzeSensor.No sensor to scan\r\n",__func__);	
+		OSTimeDly(10);
+		g_Printf_dbg("%s.AnalyzeSensor.No sensor to scan\r\n",__func__);
 		AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCAN_OVER;
-		OSTimeDly(10); 
+		OSTimeDly(10);
 		g_Printf_info("ScadaTask is over\n");
-		OSTimeDly(10); 
+		OSTimeDly(10);
 	}
 }
 
@@ -607,7 +607,7 @@ void Terminal_Para_Init(void)
 {
 	int i = 0;
 	Hex2Double TransferData;
-	
+
 	/*********************设备当前运行状态****************************************/
 	App.Data.TerminalInfoData.DeviceFirstRunStatus = DEVICE_STATUS_FIRSTRUN_BEGIN;
 	/*********************读取Flash数据，并存放在数组中***************************/
@@ -655,9 +655,9 @@ void Terminal_Para_Init(void)
 	App.Data.TerminalInfoData.Version = Hal_getFirmwareVersion();    //软件版本
 	Send_Buffer[34] = App.Data.TerminalInfoData.Version;
 	/**************************未读取Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_NOTYET;
 	/**************************未写入Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_NOTYET;
 
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
@@ -726,7 +726,7 @@ void Terminal_Para_Init(void)
 	OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
 #elif (ACCESSORY_TYPR == ELCD_Mode)
 	OSBsp.Device.IOControl.PowerSet(GPS_Power_On);
-	g_Device_Usart1_Init(115200); 
+	g_Device_Usart1_Init(115200);
 #elif (ACCESSORY_TYPR == GPS_Mode)
 	OSBsp.Device.IOControl.PowerSet(GPS_Power_On);
 	g_Device_Usart1_Init(9600);

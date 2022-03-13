@@ -178,7 +178,7 @@ void SPI_Flash_Erase_Block(long Block_Addr)
 ***************************************************************************************/
 void SPI_Flash_Write_Page(uint8_t* pBuffer,long WriteAddr,uint16_t NumByteToWrite)
 {
- 	uint16_t i;
+// 	uint16_t i;
   	SPI_FLASH_Write_Enable();                                   //SET WEL
 	W25Q16_CS_LOW();                                            //使能器件
 	hal_Delay_us(10);

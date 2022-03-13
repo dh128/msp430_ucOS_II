@@ -60,7 +60,7 @@ uint16_t REGRST;
 void TimerBInit(void);
 static void BSP_OSTickInit(void);
 static void BSP_OSClockInit(void);
-static void BSP_OSCloseWatchDog(void);
+//static void BSP_OSCloseWatchDog(void);
 /*
 ******************************************************************************************************************************
 ******************************************************************************************************************************
@@ -92,7 +92,7 @@ void  BSP_Init(void)
     BSP_OSClockInit();
     BSP_OSTickInit();                                           /* Initialize the OS tick timer   */
     // TimerBInit();
-       
+
     g_Device_IO_Init();
     g_Device_Usart0_Init(9600);                                //通信模块串口
     g_Device_Usart1_Init(9600);                                //Socket串口
@@ -102,7 +102,7 @@ void  BSP_Init(void)
 #else
     g_Device_Usart3_Init(9600);                                //485串口
 #endif
-    g_Device_ADC_Init(); 
+    g_Device_ADC_Init();
     g_Device_SD_Init();
     // g_Device_SPI3_Init();  //++++
     g_Device_InnerFlash_Init();
@@ -118,7 +118,7 @@ void  BSP_Init(void)
     hal_Delay_ms(100);
     g_Printf_info("SD init over\r\n");
     OSBsp.Device.IOControl.PowerSet(SDCard_Power_Off);
-#endif  
+#endif
     Recive_485_Enable;
     W25Q16_CS_HIGH();
    // ScadaData_base_Init();   //后面已经执行了一�
@@ -181,10 +181,10 @@ static void BSP_OSClockInit(void){
     Init_FLL(BSP_CPU_CLK_FREQ/1000, BSP_CPU_CLK_FREQ/32768);
 }
 
-static void BSP_OSCloseWatchDog(void)
-{
-	WDTCTL = WDTPW + WDTHOLD;       //CloseWatchDog
-}
+//static void BSP_OSCloseWatchDog(void)
+//{
+//	WDTCTL = WDTPW + WDTHOLD;       //CloseWatchDog
+//}
 
 
 
@@ -201,8 +201,8 @@ SystemStruct OSBsp =
 void TaskRefreshWTD(OS_FLAG_GRP *GrpouFlag, OS_FLAGS flag)
 {
     CPU_INT08U err;
-    uint16_t res;
-    res = OSFlagPost(GrpouFlag , flag, OS_FLAG_SET, &err);
+//    uint16_t res;
+    OSFlagPost(GrpouFlag , flag, OS_FLAG_SET, &err);
     if(err != OS_ERR_NONE){
         g_Printf_dbg("%s %x failed\n",__func__,flag);
     }else{

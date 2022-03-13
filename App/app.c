@@ -80,7 +80,7 @@ void  main (void)
 //            g_Printf_dbg("EventWtFlag = %x\r\n",res);
     g_Printf_dbg(rebootBuffer);
 //    g_Printf_dbg("Reboot cause %d",REGRST);
-    if(Hal_Platform_Init() == 0){            
+    if(Hal_Platform_Init() == 0){
         g_Printf_info("Hal_Platform_Init Success\r\n");
         LED_OFF;
         hal_Delay_ms(1000);//延时1s
@@ -99,7 +99,7 @@ void  main (void)
                     (void *)"ScadaTaskStart",
                     &ScadaTaskStartStk[DEFAULT_TASK_STK_SIZE-1u],
                     SCADA_TASK_TASK_PRIO);
-                    
+
     Hal_ThreadCreate(TransmitTaskStart,
                     (void *)"TransmitTaskStart",
                     &TransmitTaskStartStk[TRANSMIT_TASK_STK_SIZE-1u],
@@ -118,10 +118,10 @@ void  WtdTaskStart (void *p_arg)
 {
 //	char buffer[50]={0};
     CPU_INT08U err;
-    uint16_t res = 0;
+//    uint16_t res = 0;
     while(1)
     {
-        res = OSFlagPend(EventWtFlag, WTD_BIT_ALL, OS_FLAG_WAIT_SET_ALL|OS_FLAG_CONSUME, 1000, &err);
+        OSFlagPend(EventWtFlag, WTD_BIT_ALL, OS_FLAG_WAIT_SET_ALL|OS_FLAG_CONSUME, 1000, &err);
         if(err == OS_ERR_NONE){     //获取到全部标志组
             //喂狗
         	InitWatchDog();
@@ -141,7 +141,7 @@ static  void  ScadaTaskStart (void *p_arg)
 #if (OS_TASK_STAT_EN > 0)
     OSStatInit();                            /* Determine CPU capacity                       */
 #endif
-	struct hal_timeval before_Scada;		
+	struct hal_timeval before_Scada;
 	struct hal_timeval after_Scada;
 	int32_t	Scada_timeout_sec;
 
@@ -166,9 +166,6 @@ static  void  ScadaTaskStart (void *p_arg)
                         OSTimeDly(5000);  //节拍2ms=10s
                 }
 
-                if(App.Data.TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET) {//如果未读取flash里的传感器置位
-                    InqureSensor();  //这里面只会执行检查哪些传感器在线，并记录
-                }
                 AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_SCANNING;
                 g_Printf_info("%s ... ...\n",__func__);
                 Hal_GetTimeOfDay(&before_Scada);
@@ -186,6 +183,7 @@ static  void  ScadaTaskStart (void *p_arg)
 #endif
                 {
                     #if (PRODUCT_TYPE == Flowmeter_Station || PRODUCT_TYPE == PipeFlow_Station)
+                        extern void CalcData(void);
                         CalcData();
                         // OSTimeDly(1000);OSTimeDly(1000);OSTimeDly(500);
                     #endif
@@ -202,7 +200,7 @@ static  void  ScadaTaskStart (void *p_arg)
                 if (scada_over_times == 60)  //120+120s 空跑4min
                 {
                     scada_over_times = 0;
-#if(TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)                    
+#if(TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_AEP)
                     if(NB_Fota == 0){
                         g_Printf_dbg("DeviceStatus always scan_over, enter low_power!\r\n");
                         Hal_EnterLowPower_Mode();
@@ -224,7 +222,7 @@ static  void  ScadaTaskStart (void *p_arg)
 #endif
 
                 }
-        
+
             }
             else  //DEVICE_STATUS_POWER_IDLE
             {

@@ -24,6 +24,9 @@
 * Filename      : g_Seeper_Station.c
 * Version       : V1.00
 * Programmer(s) : Dingh
+* Change Logs:
+* Date			Author		Notes
+* 2022-03-12	dingh		update sensor record
 *********************************************************************************************************
 */
 #include <hal_layer_api.h>
@@ -33,10 +36,16 @@
 
 #define SensorNum 2
 #define CMDLength 8
-#define SensorKind 0b111111111111
+#define SensorKind 0x03
 
 #define LV_Num 5
 #define WQ_Temp_Q_Num 5
+
+/* Sensor Exist flag */
+#define USLV			0
+#define LV				1
+uint8_t SensorRecord = 0;	/* 传感器记录标志，1--记录，0--不记录 */
+uint16_t SensorExist = SensorKind;
 
 AppStruct App;
 DataStruct *AppDataPointer;
@@ -53,14 +62,9 @@ const uint8_t ScadaLV[CMDLength] 	= {0x02, 0x03, 0x00, 0x0B, 0x00, 0x01, 0xF5, 0
 
 uint32_t sensorCahe = 0;  //临时存储各指标的值
 
-float SimulationSensorFloatCahe = 0.0;
-int32_t SimulationSensorIntCahe = 0;
+
 static uint8_t SensorStatus_H;
-//static uint8_t SensorStatus_L;
-static uint8_t SensorReviseStatus_H; //修正
-static uint8_t SensorReviseStatus_L;
-//static uint8_t SensorSimulationStatus_H; //模拟
-//static uint8_t SensorSimulationStatus_L;
+static uint8_t SensorStatus_L;
 
 
 /*******************************************************************************
@@ -87,22 +91,20 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 			{
 				switch (data[0])
 				{
-					case 0x01:						   
-						hal_SetBit(SensorStatus_H, 0); //超声波液位传感器状态位置1
+					case 0x01:
+						hal_SetBit(SensorStatus_L, USLV); //超声波液位传感器状态位置1
 						sensorCahe = (uint32_t)data[3]*256 + data[4];
 						AppDataPointer->PitWellData.Ultrasonic = (float)sensorCahe/1000;    //单位转m
 						break;
 					case 0x02:	//
-						hal_SetBit(SensorStatus_H, 1); //投入式液位传感器状态位置1
+						hal_SetBit(SensorStatus_L, LV); //投入式液位传感器状态位置1
 						sensorCahe = (uint32_t)data[3]*256 + data[4];
-						AppDataPointer->PitWellData.Input = (float)sensorCahe/100;    //单位m						
-						break;				
+						AppDataPointer->PitWellData.Input = (float)sensorCahe/100;    //单位m
+						break;
 					default:
 						break;
 				} //switch(data[0]) END
 			}	 //(data[1]==0x03)  END
-			Send_Buffer[55] = SensorReviseStatus_H;
-			Send_Buffer[56] = SensorReviseStatus_L;
 			Clear_CMD_Buffer(dRxBuff, dRxNum);
 			dRxNum = 0;
 			Len = 0;
@@ -136,31 +138,28 @@ void InqureSensor(void)
 	volatile char scadaIndex;
 	volatile uint16_t sensorExistStatus = 0;
 	volatile uint8_t sensorSN = 0;  //传感器编号，按照协议顺序排列
-	volatile uint16_t sensorStatus; //0000 0011 1100 0000     Do,氨氮，温度，ORP
 
-	if (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET)
+	if (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_NOTYET)
 	{
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_ALREADY;
+		AppDataPointer->TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_OK;
 		AppDataPointer->TerminalInfoData.SensorStatus = SensorKind;
 	    Teminal_Data_Init();   //数据初始化
 	}
-	else if ((AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY) || (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK))
-	{
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_OK;
-		AppDataPointer->TerminalInfoData.SensorFlashStatus = Hal_getSensorFlashStatus();					//wj20200217把上面一行改成了这一行
-		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; //这里是不是写反了或者上面的应该是SensorFlashStatus？？
+	else if ((AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_OK))
+	{	/* 使能传感器标记并且读取一遍后，后续轮询前更新传感器标志 */
+		AppDataPointer->TerminalInfoData.SensorStatus = SensorExist;	/* 第一轮保存的标志位 */
 	}
 	if (AppDataPointer->TerminalInfoData.SensorStatus != 0)
 	{
 		SensorStatus_H = 0;
-//		SensorStatus_L = 0;
+		SensorStatus_L = 0;
 		for (scadaIndex = 1; scadaIndex <= SensorNum; scadaIndex++) //SensorNum = 12
 		{
 			memset(dRxBuff, 0x0, dRxLength);
 			dRxNum = 0;
-			sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0800;
-			AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) << 1;
-			if (sensorExistStatus == 0x0800)
+			sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0001;
+			AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) >> 1;
+			if(sensorExistStatus == 1)
 			{
 				Send_485_Enable;
 				hal_Delay_ms(5);
@@ -202,6 +201,14 @@ void InqureSensor(void)
 
 				Clear_CMD_Buffer(dRxBuff, dRxNum); //发送之前buff清0
 				dRxNum = 0;
+			}
+		}
+		/* 上电后第一次检查哪些传感器在线 */
+		if (AppDataPointer->TerminalInfoData.SensorWriteStatus == SENSOR_STATUS_WRITE_NOTYET)
+		{
+			AppDataPointer->TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_ALREADY;
+			if(SensorRecord){
+				SensorExist = (uint16_t)SensorStatus_H * 256 + (uint16_t)SensorStatus_L; //本次读取到的传感器置位
 			}
 		}
 	}
@@ -251,7 +258,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	}else{
 		if(App.Data.PitWellData.Input >= 0.02){
 			/* 减去投入式传感器到安装位置的距离0.646m */
-			App.Data.PitWellData.Real = App.Data.PitWellData.Height + App.Data.PitWellData.Input - 0.646;	
+			App.Data.PitWellData.Real = App.Data.PitWellData.Height + App.Data.PitWellData.Input - 0.646;
 			if(App.Data.PitWellData.Real < 0){
 				App.Data.PitWellData.Real = App.Data.PitWellData.Height;
 			}
@@ -268,26 +275,26 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 		App.Data.TerminalInfoData.SendPeriod = 60;	/* 正常周期 */
 	}
 	g_Printf_info("Change period %d\r\n",App.Data.TerminalInfoData.SendPeriod);
-	
-	
+
+
 	/* 组包  */
 	cJSON_AddNumberToObject(pJsonRoot, "DeviceID", DataPointer->TerminalInfoData.SerialNumber);
 	cJSON_AddNumberToObject(pJsonRoot, "SeqNum", DataPointer->TransMethodData.SeqNumber);
 	cJSON_AddNumberToObject(pJsonRoot, "serviceId", 12);
-	
-	if (hal_GetBit(SensorStatus_H, 0))
+
+	if (hal_GetBit(SensorStatus_L, USLV))
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "Ultrasonic", DataPointer->PitWellData.Ultrasonic);
 	}
-	if (hal_GetBit(SensorStatus_H, 1))
+	if (hal_GetBit(SensorStatus_L, LV))
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "Input", DataPointer->PitWellData.Input);
 	}
-	if(hal_GetBit(SensorStatus_H, 0) || hal_GetBit(SensorStatus_H, 1))
+	if(hal_GetBit(SensorStatus_L, USLV) || hal_GetBit(SensorStatus_L, LV))
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "Real", DataPointer->PitWellData.Real);
 	}
-	cJSON_AddNumberToObject(pJsonRoot, "Height", DataPointer->PitWellData.Height);	
+	cJSON_AddNumberToObject(pJsonRoot, "Height", DataPointer->PitWellData.Height);
 	cJSON_AddNumberToObject(pJsonRoot, "AirPress", DataPointer->PitWellData.AirPress);
 
 	cJSON_AddNumberToObject(pJsonRoot, "CSQ", DataPointer->TransMethodData.CSQ);
@@ -295,23 +302,17 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	cJSON_AddNumberToObject(pJsonRoot, "BatteryPercentage", DataPointer->TerminalInfoData.PowerQuantity);
 	cJSON_AddNumberToObject(pJsonRoot, "Version", DataPointer->TerminalInfoData.Version);
 
-	
 	uint8_t date[8];
 	char Uptime[19] = "2019-09-01 00:00:00";
 	char filestore[19];
 	memset(date, 0x0, 8);
 	memset(Uptime, 0x0, 19);
 	memset(filestore, 0x0, 19);
-	// OSBsp.Device.RTC.ReadExtTime(date, RealTime);
-	// if ((date[4] > 0x59) || (date[5] > 0x59) || (date[6] > 0x59))
-	// {
-		Read_info_RTC(date);
-	// }
+
+	Read_info_RTC(date);
 	g_Device_RTCstring_Creat(date, Uptime);
 	g_Printf_info("Uptime:%s\r\n", Uptime);
 	cJSON_AddStringToObject(pJsonRoot, "Uptime", Uptime);
-	// cJSON_AddNumberToObject(pJsonRoot, "UnixTimeStamp", UnixTimeStamp);
-	//cJSON_AddNumberToObject(pJsonRoot, "ReSiC", DataPointer->TerminalInfoData.ReviseSimulationCode);
 
 	p = cJSON_Print(pJsonRoot);
 	if (NULL == p)
@@ -349,7 +350,7 @@ void ScadaData_base_Init(void)
 	AppDataPointer->TransMethodData.NBStatus = NB_Power_off;
 #elif (TRANSMIT_TYPE == NBIoT_MQTT_Ali)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
-	// AppDataPointer->TransMethodData.NBStatus = NB_Power_off;	//读取三元组时赋值	
+	// AppDataPointer->TransMethodData.NBStatus = NB_Power_off;	//读取三元组时赋值
 #elif (TRANSMIT_TYPE == LoRa_F8L10D_Mode)
 	AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;
 	AppDataPointer->LoRa_F8L10D_Mode.LoRaStatus = LoRa_Power_off;
@@ -372,12 +373,6 @@ void Terminal_Para_Init(void)
 
 	/*********************设备当前运行状态****************************************/
 	App.Data.TerminalInfoData.DeviceFirstRunStatus = DEVICE_STATUS_FIRSTRUN_BEGIN;
-	/*********************读取Flash数据，并存放在数组中***************************/
-	for (i = 0; i < 32; i++)
-	{
-		infor_ChargeAddrBuff[i] = OSBsp.Device.InnerFlash.innerFLASHRead(i, infor_ChargeAddr);
-	}
-
 	/************************地理信息*******************************************/
 	for (i = 0; i < 8; i++)
 	{
@@ -416,6 +411,8 @@ void Terminal_Para_Init(void)
 		App.Data.TerminalInfoData.SendPeriod = 15;
 		g_Printf_info("Period change as 15 min\r\n");
 	}
+	SensorRecord = Hal_getSensorRecord();	/* 获取传感器记录标志 */
+	g_Printf_info("SensorRecord flag = %d\r\n", (uint32_t)SensorRecord);
 	/**************************Version******************************************/
 	App.Data.TerminalInfoData.Version = Hal_getFirmwareVersion(); //软件版本
 	Send_Buffer[34] = App.Data.TerminalInfoData.Version;
@@ -425,9 +422,9 @@ void Terminal_Para_Init(void)
 	App.Data.PitWellData.DangerHeight = App.Data.PitWellData.Height - 0.5;
 
 	/**************************未读取Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_NOTYET;
 	/**************************未写入Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_NOTYET;
 	/**************************允许同步时间状态***********************/
 	App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;
 
@@ -567,17 +564,13 @@ void Terminal_Para_Init(void)
 void Teminal_Data_Init(void)
 {
 	SensorStatus_H = 0x00;
-//	SensorStatus_L = 0x00;
-	SensorReviseStatus_H = 0x00; //修正
-	SensorReviseStatus_L = 0x00;
+	SensorStatus_L = 0x00;
 	Send_Buffer[55] = 0x00;
 	Send_Buffer[56] = 0x00;
-//	SensorSimulationStatus_H = 0x00; //模拟
-//	SensorSimulationStatus_L = 0x00;
 	Send_Buffer[57] = 0x00;
 	Send_Buffer[58] = 0x00;
 	App.Data.TerminalInfoData.ReviseSimulationCode = 0;
-	App.Data.PitWellData.Ultrasonic = 0.0; 
+	App.Data.PitWellData.Ultrasonic = 0.0;
 	App.Data.PitWellData.Input = 0.0;
 	App.Data.PitWellData.Real = 0.0;
 }

@@ -48,7 +48,7 @@ void g_Device_SendByte_SPI2(uint8_t chr)
 void g_Device_SendNByte_SPI2(uint8_t *data,uint16_t len)
 {
 	uint16_t m = 0;
-	uint8_t delayVar;
+	volatile uint8_t delayVar;
 	for(m=0;m<len;m++)
 	{
 		while(!(UCB2IFG & UCTXIFG));

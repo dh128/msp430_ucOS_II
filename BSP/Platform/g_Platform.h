@@ -5,26 +5,26 @@
 #include <hal_device.h>
 
 enum DEVICE_STATUS_FIRSTRUN {
-	DEVICE_STATUS_FIRSTRUN_BEGIN = 0x01, 
+	DEVICE_STATUS_FIRSTRUN_BEGIN = 0x01,
 	DEVICE_STATUS_FIRSTRUN_OVER = 0x02
 };
 
 enum DEVICE_STATUS_e {
-	DEVICE_STATUS_POWER_OFF = 0x01, 
+	DEVICE_STATUS_POWER_OFF = 0x01,
 	DEVICE_STATUS_POWER_SCANNING = 0x02,
 	DEVICE_STATUS_POWER_SCAN_OVER = 0x03,
 	DEVICE_STATUS_POWER_IDLE = 0x04
 };
 
 enum SENSOR_STATUS_READFLASH {
-	SENSOR_STATUS_READFLASH_NOTYET = 0x01,           //未读取Flash中存储的传感器状态
-	SENSOR_STATUS_READFLASH_ALREADY = 0x02,          //准备好读取Flash中存储的传感器状态
-	SENSOR_STATUS_READFLASH_OK = 0x03               //成功读取Flash中存储的传感器状态
+	SENSOR_STATUS_READ_NOTYET = 0x01,           //未读取存储的传感器状态
+	SENSOR_STATUS_READ_ALREADY = 0x02,          //准备好读取存储的传感器状态
+	SENSOR_STATUS_READ_OK = 0x03               //成功读取存储的传感器状态
 };
 
 enum SENSOR_STATUS_WRITEFLASH {
-	SENSOR_STATUS_WRITEFLASH_NOTYET = 0x01,          //未写入Flash中存储的传感器状态
-	SENSOR_STATUS_WRITEFLASH_ALREADY = 0x02          //准备好写入Flash中存储的传感器状态
+	SENSOR_STATUS_WRITE_NOTYET = 0x01,          //未写入存储的传感器状态
+	SENSOR_STATUS_WRITE_ALREADY = 0x02          //准备好写入存储的传感器状态
 };
 
 enum SENSOR_STATUS_WRITEFLASH_PRINTF {
@@ -79,8 +79,8 @@ typedef struct
 	float    BATVoltage;                //电池电压   //2.75-4.2V
 	uint16_t LoraDeveui;				//LoRa Deveui
 
-	char SensorFlashReadStatus;         //传感器Flash读取存储状态
-	char SensorFlashWriteStatus;        //传感器Flash写入存储状态
+	char SensorReadStatus;         //传感器读取存储状态
+	char SensorWriteStatus;        //传感器写入存储状态
 	char SensorFlashWriteStatusPrintf;  //传感器Flash写入存储状态
 	uint16_t SensorStatus;              //传感器状态
 	uint16_t SensorFlashStatus;         //传感器Flash存储状态
@@ -345,47 +345,47 @@ typedef struct
 
 typedef struct
 {
-	char ip[16];		     
+	char ip[16];
 	uint32_t port;
-	char username[32];		
-	char password[32];  
+	char username[32];
+	char password[32];
 	char imgpath[32];
 	char imgname[32];
-	uint32_t imgversion;                
-}Fota_Info;             
+	uint32_t imgversion;
+}Fota_Info;
 
 typedef struct
 {
     TerminalPlatform           TerminalInfoData;
     TransMethodPlatform        TransMethodData;
 	Fota_Info                  FotaInfor;
-#if (PRODUCT_TYPE == Voc_Station) 
+#if (PRODUCT_TYPE == Voc_Station)
     VOCPlatform                VOCData;
-#elif (PRODUCT_TYPE == Dust_Station) 
+#elif (PRODUCT_TYPE == Dust_Station)
     DustPlatform               DustData;
-#elif (PRODUCT_TYPE == WRain_Station) 
+#elif (PRODUCT_TYPE == WRain_Station)
     WRainPlatform              WRainData;
-#elif (PRODUCT_TYPE == Weather_Station) 
+#elif (PRODUCT_TYPE == Weather_Station)
 	MeteorologyPlatform        MeteorologyData;
-#elif (PRODUCT_TYPE == Water_Station) 
-    WaterPlatform			   WaterData;	
-#elif (PRODUCT_TYPE == Soil_Station) 
+#elif (PRODUCT_TYPE == Water_Station)
+    WaterPlatform			   WaterData;
+#elif (PRODUCT_TYPE == Soil_Station)
 	SoilPlatform               SoilData;
-#elif (PRODUCT_TYPE == Agriculture_Station) 
+#elif (PRODUCT_TYPE == Agriculture_Station)
 	AgriculturePlatform        AgricultureData;
-#elif (PRODUCT_TYPE == Flowmeter_Station) 
+#elif (PRODUCT_TYPE == Flowmeter_Station)
 	FlowmeterPlatform		   FlowmeterData;
-#elif (PRODUCT_TYPE == Seeper_Station) 
+#elif (PRODUCT_TYPE == Seeper_Station)
 	SeeperPlatform             SeeperData;
-#elif (PRODUCT_TYPE == PipeFlow_Station) 
+#elif (PRODUCT_TYPE == PipeFlow_Station)
 	FlowPlatform               FlowData;
-#elif (PRODUCT_TYPE == Rain_Station)    
+#elif (PRODUCT_TYPE == Rain_Station)
 	RainPlatform               RainData;
-#elif (PRODUCT_TYPE == MagicSTICK_Station)    
+#elif (PRODUCT_TYPE == MagicSTICK_Station)
 	MagicPlatform               MagicData;
-#elif (PRODUCT_TYPE == Air_Station) 
+#elif (PRODUCT_TYPE == Air_Station)
     AirPlatform                AirData;
-#elif (PRODUCT_TYPE == IntegratedPitWell) 
+#elif (PRODUCT_TYPE == IntegratedPitWell)
 	PitWellPlatform            PitWellData;
 #endif
 
@@ -411,7 +411,7 @@ typedef struct
 
 
 extern AppStruct  App;
-extern DataStruct *AppDataPointer;  
+extern DataStruct *AppDataPointer;
 
 extern uint32_t SensorCahe;
 extern uint32_t sSensorCahe;

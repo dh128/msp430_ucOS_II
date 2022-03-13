@@ -24,6 +24,9 @@
 * Filename      : g_PipeFlow_Station.c
 * Version       : V1.00
 * Programmer(s) : Dingh
+* Change Logs:
+* Date			Author		Notes
+* 2022-03-12	dingh		update sensor record
 *********************************************************************************************************
 */
 #include  <hal_layer_api.h>
@@ -33,7 +36,7 @@
 
 #define SensorNum			2
 #define CMDLength        	8
-#define SensorKind          0b111111111111
+#define SensorKind          0x03
 #define INQPERIOD			5	/* 默认5分钟采集一次，发送周期由外部设定，5的倍数 */
 //定义管道类型数据
 typedef struct {
@@ -44,6 +47,13 @@ typedef struct {
 }shape_t;
 shape_t shape;		//定义管道
 #define PI 3.14159		//圆周率
+
+/* Sensor Exist flag */
+#define Speed			0
+#define Deep			1
+uint8_t SensorRecord = 0;	/* 传感器记录标志，1--记录，0--不记录 */
+uint16_t SensorExist = SensorKind;
+
 AppStruct  App;
 DataStruct *AppDataPointer;
 
@@ -64,18 +74,9 @@ static uint8_t FlowDtimes = 0; //存储水深的临时变量
 static float  WQ_FlowS[WQ_FlowS_Num]; //申请每一次用于流速的记录，最多读WQ_FlowS_Num次
 static uint8_t FlowStimes = 0; //存储流速的临时变量
 
-
-float sensorFloatCahe = 0.0;
-uint32_t sensorCahe = 0;
-uint32_t ssensorCahe = 0;
-float SimulationSensorFloatCahe = 0.0;
-uint32_t SimulationSensorIntCahe = 0;
 static uint8_t SensorStatus_H;
 static uint8_t SensorStatus_L;
-static uint8_t SensorReviseStatus_H;      //修正
-static uint8_t SensorReviseStatus_L;
 
-//static uint8_t  SensorStatusBuff[2];       //传感器状态数组
 
 /*******************************************************************************
 * 描述	    	: 4字节16进制转浮点数  结构体
@@ -108,7 +109,7 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 				switch(data[2])
 				{
 				case 0x04:		//返回4字节，瞬时流速
-					hal_SetBit(SensorStatus_H, 1);   //传感器状态位置1
+					hal_SetBit(SensorStatus_L, Speed);   //传感器状态位置1
 					SensorData.Hex[0] = data[4];      //MCU是小端模式，低位字节存放在低位，传感器数据0xCDAB
 					SensorData.Hex[1] = data[3];
 					SensorData.Hex[2] = data[6];
@@ -117,7 +118,7 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 					AppDataPointer->FlowData.IFlowS = SensorData.Data;
 					break;
 				case 0x18:	//返回24字节，水温，液位，流向
-					hal_SetBit(SensorStatus_H, 2);   //传感器状态位置1
+					hal_SetBit(SensorStatus_L, Deep);   //传感器状态位置1
 					/* 水温 */
 					SensorData.Hex[0] = data[4];      //MCU是小端模式，低位字节存放在低位，传感器数据0xCDAB
 					SensorData.Hex[1] = data[3];
@@ -159,8 +160,6 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 						break;
 				}//switch(data[0]) END
 			} //(data[1]==0x03)  END
-			Send_Buffer[55] = SensorReviseStatus_H;
-			Send_Buffer[56] = SensorReviseStatus_L;
 			Clear_CMD_Buffer(dRxBuff,dRxNum);
 			dRxNum=0;
 			Len = 0;
@@ -189,17 +188,16 @@ void InqureSensor(void)
 	volatile char scadaIndex;
 	volatile uint16_t sensorExistStatus = 0;
 	volatile uint8_t sensorSN = 0;    //传感器编号，按照协议顺序排列
-	volatile uint16_t sensorStatus;   //0000 0011 1100 0000     Do,氨氮，温度，ORP
 
-	if(AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET) {
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_ALREADY;
+	if (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_NOTYET)
+	{
+		AppDataPointer->TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_OK;
 		AppDataPointer->TerminalInfoData.SensorStatus = SensorKind;
-		Teminal_Data_Init();   //数据初始化
-	} else if ( (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY)
-	         || (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK) ) {
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_OK;
-		AppDataPointer->TerminalInfoData.SensorFlashStatus = Hal_getSensorFlashStatus(); //wj20200217把上面一行改成了这一行
-		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; //这里是不是写反了或者上面的应该是SensorFlashStatus？？
+	    Teminal_Data_Init();   //数据初始化
+	}
+	else if ((AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_OK))
+	{	/* 使能传感器标记并且读取一遍后，后续轮询前更新传感器标志 */
+		AppDataPointer->TerminalInfoData.SensorStatus = SensorExist;	/* 第一轮保存的标志位 */
 	}
 	if(AppDataPointer->TerminalInfoData.SensorStatus != 0) {
 		SensorStatus_H = 0;
@@ -208,9 +206,9 @@ void InqureSensor(void)
 		{
 			memset(dRxBuff,0x0,dRxLength);
 			dRxNum=0;
-			sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0800;
-			AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) << 1;
-			if(sensorExistStatus == 0x0800)
+			sensorExistStatus = (AppDataPointer->TerminalInfoData.SensorStatus) & 0x0001;
+			AppDataPointer->TerminalInfoData.SensorStatus = (AppDataPointer->TerminalInfoData.SensorStatus) >> 1;
+			if(sensorExistStatus == 1)
 			{
 				Send_485_Enable;
 				hal_Delay_ms(5);
@@ -218,11 +216,11 @@ void InqureSensor(void)
 				{
 					case 1:
 						sensorSN = 1;
-						OSBsp.Device.Usart3.WriteNData(ScadaSpeed,CMDLength);
+						OSBsp.Device.Usart3.WriteNData((uint8_t *)ScadaSpeed,CMDLength);
 						break;
 					case 2:
 						sensorSN = 2;
-						OSBsp.Device.Usart3.WriteNData(ScadaDeep,CMDLength);
+						OSBsp.Device.Usart3.WriteNData((uint8_t *)ScadaDeep,CMDLength);
 						break;
 					default:
 						break;
@@ -247,18 +245,13 @@ void InqureSensor(void)
 			}
 		}
 
-		AppDataPointer->TerminalInfoData.SensorStatus = (uint16_t)SensorStatus_H*256 + (uint16_t)SensorStatus_L;
-		if(AppDataPointer->TerminalInfoData.SensorFlashWriteStatus == SENSOR_STATUS_WRITEFLASH_NOTYET)
+		/* 上电后第一次检查哪些传感器在线 */
+		if (AppDataPointer->TerminalInfoData.SensorWriteStatus == SENSOR_STATUS_WRITE_NOTYET)
 		{
-			AppDataPointer->TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_ALREADY;
-			if(OSBsp.Device.InnerFlash.innerFLASHRead(20,infor_ChargeAddr) == 0x01) //0x01才允许修改Flash
-			{
-				infor_ChargeAddrBuff[21] = SensorStatus_H;
-				infor_ChargeAddrBuff[22] = SensorStatus_L;
-				// OSBsp.Device.InnerFlash.innerFLASHWrite(&infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
-				OSBsp.Device.InnerFlash.innerFLASHWrite(infor_ChargeAddrBuff,(uint8_t *)(infor_ChargeAddr+0),32);
+			AppDataPointer->TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_ALREADY;
+			if(SensorRecord){
+				SensorExist = (uint16_t)SensorStatus_H * 256 + (uint16_t)SensorStatus_L; //本次读取到的传感器置位
 			}
-			AppDataPointer->TerminalInfoData.SensorFlashWriteStatusPrintf = SENSOR_STATUS_WRITEFLASH_PRINTF_ENABLE;
 		}
 	}else {
 		OSTimeDly(10);
@@ -294,10 +287,10 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
     cJSON_AddNumberToObject(pJsonRoot, "SeqNum",DataPointer->TransMethodData.SeqNumber);
 	cJSON_AddNumberToObject(pJsonRoot, "serviceId", 12);
 
-	if(hal_GetBit(SensorStatus_H, 1)) {
+	if(hal_GetBit(SensorStatus_L, Speed)) {
 		cJSON_AddNumberToObject(pJsonRoot,"IFlowS",DataPointer->FlowData.IFlowS); /* 瞬时流速 */
 	}
-	if(hal_GetBit(SensorStatus_H, 2)) {
+	if(hal_GetBit(SensorStatus_L, Deep)) {
 		cJSON_AddNumberToObject(pJsonRoot,"WaterTemp",DataPointer->FlowData.WaterTemp);
 		cJSON_AddNumberToObject(pJsonRoot,"IFlowL",DataPointer->FlowData.IFlowL);		/* 瞬时液位 */
 		cJSON_AddNumberToObject(pJsonRoot,"ICCFlowVal",DataPointer->FlowData.ICCFlowVal);	/* 瞬时流量 */
@@ -464,15 +457,16 @@ void Terminal_Para_Init(void)
 	App.Data.TerminalInfoData.SendPeriod = Hal_getTransmitPeriod();  //发送周期
 	if(App.Data.TerminalInfoData.SendPeriod <= 10)
 		App.Data.TerminalInfoData.SendPeriod = 10;
-	Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
-	Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
+
+	SensorRecord = Hal_getSensorRecord();	/* 获取传感器记录标志 */
+	g_Printf_info("SensorRecord flag = %d\r\n", (uint32_t)SensorRecord);
 	/**************************Version******************************************/
 	App.Data.TerminalInfoData.Version = Hal_getFirmwareVersion();    //软件版本
 	Send_Buffer[34] = App.Data.TerminalInfoData.Version;
 	/**************************未读取Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_NOTYET;
 	/**************************未写入Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_NOTYET;
 	/**************************允许同步时间状态***********************/
 	App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;
 

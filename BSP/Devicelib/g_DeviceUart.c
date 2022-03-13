@@ -124,7 +124,7 @@ void g_Device_SendString_Uart0(char *s)
 	}
 }
 /*******************************************************************************
-* Function Name  : g_Device_Usart0_Init		
+* Function Name  : g_Device_Usart0_Init
 * Description    : BaudRate9600bps,Used for LoRa
 * Input para     : BaudRate
 * Output para    : None
@@ -201,7 +201,7 @@ void g_Device_SendString_Uart1(char *s)
 	}
 }
 /*******************************************************************************
-* Function Name  : g_Device_Usart1_Init		
+* Function Name  : g_Device_Usart1_Init
 * Description    : BaudRate9600bps Used for GPS瀹氫綅
 * Input para     : None
 * Output para    : None
@@ -282,7 +282,7 @@ void g_Device_SendString_Uart2(char *s)
 	Hal_MutexUnlock(gUartMutex);
 }
 /*******************************************************************************
-* Function Name  : g_Device_Usart2_Init		
+* Function Name  : g_Device_Usart2_Init
 * Description    : BaudRate115200bps Used for Debug
 * Input para     : BaudRate
 * Output para    : None
@@ -362,7 +362,7 @@ void g_Device_SendString_Uart3(char *s)
 	}
 }
 /*******************************************************************************
-* Function Name  : g_Device_Usart3_Init			
+* Function Name  : g_Device_Usart3_Init
 * Description    : BaudRate9600bps Used for 485
 * Input para     : BaudRate
 * Output para    : None
@@ -431,11 +431,11 @@ g_Device_Config_CMD g_Device_Usart_UserCmd_Copy(G_UART_PORT Port)
 void UartRecTaskStart(void *p_arg)
 {
 	uint8_t num = 0;
-	(void)p_arg;    
+	(void)p_arg;
 	OSTimeDlyHMSM(0u, 0u, 0u, 200u);
 	static int RecLen = 0;
-	g_Printf_info("%s ... ...\r\n",__func__);     
-    while (DEF_TRUE) {   
+	g_Printf_info("%s ... ...\r\n",__func__);
+    while (DEF_TRUE) {
 		if(cRxNum != 0){
 			RecLen = cRxNum;
 			OSTimeDly(25);
@@ -477,7 +477,7 @@ __interrupt void USCI_A0_ISR(void)
 			{
 				OSBsp.Device.Usart2.WriteData(UCA0RXBUF);  //GLZ测试屏蔽+++++++++++++++++++++++++++++++++++
 				aRxBuff[aRxNum++] = UCA0RXBUF;
-#if(TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_MQTT_Ali)
+#if(TRANSMIT_TYPE == NBIoT_BC95_Mode || TRANSMIT_TYPE == NBIoT_MQTT_Ali || TRANSMIT_TYPE == NBIoT_AEP)
 				if(aRxNum >= 1050){
 					aRxNum = 0;
 				}
@@ -497,7 +497,7 @@ __interrupt void USCI_A0_ISR(void)
 						g_Device_check_Response(aRxBuff);
 						memset(aRxBuff,0x0,256);
 						}
-					}	
+					}
 #endif	//(TRANSMIT_TYPE == LoRa_F8L10D_Mode)
 #if(TRANSMIT_TYPE == GPRS_Mode)
 				if(g_ftp_allow_storage != 0){
@@ -510,9 +510,9 @@ __interrupt void USCI_A0_ISR(void)
 					g_Device_check_Response(aRxBuff);
 					memset(aRxBuff,0x0,256);
 				}
-				
+
 #endif	//(TRANSMIT_TYPE == GPRS_Mode)
-				
+
 			}//while
 			break;
 		case 4:break;                             // Vector 4 - TXIFG
@@ -529,10 +529,10 @@ __interrupt void USCI_A1_ISR(void)
 	{
 		case 0:break;                             // Vector 0 - no interrupt
 		case 2:                                   // Vector 2 - RXIFG
-	        // __bic_SR_register_on_exit(LPM0_bits);	
+	        // __bic_SR_register_on_exit(LPM0_bits);
 			while(!(UCA1IFG&UCTXIFG));            // USCI_A1 TX buffer ready?
 			{
-				
+
 #if (ACCESSORY_TYPR == GPS_Mode)
 				if(UCA1RXBUF == '$')
 				{
@@ -549,7 +549,7 @@ __interrupt void USCI_A1_ISR(void)
 					}
 					OSBsp.Device.Usart2.WriteNData(bRxBuff,bRxNum);
 					// OSIntEnter();
-					// g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");	
+					// g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");
 					// OSIntExit();
 					//保存数据
 					// for(GPSRxNum=0;GPSRxNum<bRxNum;GPSRxNum++)
@@ -570,18 +570,18 @@ __interrupt void USCI_A1_ISR(void)
 				// 	if(UCA1RXBUF == '\n')
 				// 	{
 				// 		OSIntEnter();
-				// 		g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");	
+				// 		g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"GPS_Info");
 				// 		OSIntExit();
 				// 	}
 				// }
-#else 	
+#else
 				// if(bRxBuff.cmdLenth<bRxLength){
 				// 	bRxBuff.hexcmd[bRxBuff.cmdLenth++] = UCA1RXBUF;
 				//   	if(bRxBuff.cmdLenth == 1){
 				// 	  OSIntEnter();
-				// 	  g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"SerialBus");	
+				// 	  g_Device_Config_QueuePost(G_WIRELESS_UPLAOD,(void *)"SerialBus");
 				// 	  OSIntExit();
-				//  	}		
+				//  	}
 				// }else{
 				//   	bRxBuff.cmdLenth = 0;
 				// }
@@ -601,9 +601,9 @@ __interrupt void USCI_A2_ISR(void)
 		case 0:break;                             // Vector 0 - no interrupt
 		case 2:                                   // Vector 2 - RXIFG
 		   if(Hal_getCurrent_work_Mode() == 1){          //当前为低功耗状态
-			__bic_SR_register_on_exit(LPM0_bits);	
+			__bic_SR_register_on_exit(LPM0_bits);
 				// WDTCTL  = WDT_MDLY_32;
-				// SFRIE1 |= 1;  
+				// SFRIE1 |= 1;
 				TBCTL |= MC_1;     //start timerB
 				Hal_ExitLowPower_Mode(Uart_Int);
 			}
@@ -615,8 +615,8 @@ __interrupt void USCI_A2_ISR(void)
 					// if(cRxNum == ComData_MiniSize){
 					// 	OSIntEnter();
 					// 	g_Device_Config_QueuePost(G_CLIENT_CMD,(void *)"ClientCMD");
-					// 	OSIntExit();	
-					// }	
+					// 	OSIntExit();
+					// }
 				}else{
 					cRxNum = 0;
 				}

@@ -175,38 +175,38 @@ uint8_t BCDToHEX(uint8_t bcd_data)    //BCD转为HEX子程序
 //Itoa函数
 char* Itoa(int val,char* dst,int radix)
 {
-    char *_pdst = dst;   
-    if (!val)//允许val等于0 
+    char *_pdst = dst;
+    if (!val)//允许val等于0
     {
         *_pdst = '0';
         *++_pdst = '\0';
         return dst;
-    }           
+    }
     if(val <0)
     {
         *_pdst++ = '-';
         val = -val;
     }
-    char *_first = _pdst;     
-    char _cov;           
-    unsigned int _rem;   
+    char *_first = _pdst;
+    char _cov;
+    unsigned int _rem;
     while(val > 0)
     {
         _rem = (unsigned int)(val % radix);
         val /= radix;//每次计算一位 ，从低到高
         if  (_rem > 9)//16进制
-            *_pdst++ = (char)(_rem - 10 + 'a'); 
+            *_pdst++ = (char)(_rem - 10 + 'a');
         else
-            *_pdst++ = (char)(_rem + '0');      
-    }      
+            *_pdst++ = (char)(_rem + '0');
+    }
     *_pdst-- = '\0';
     do{ //由于数据是地位到高位储存的，需要转换位置
         _cov = *_pdst;
         *_pdst = *_first;
         *_first = _cov;
         _pdst--;
-        _first++;        
-    }while(_first < _pdst);  
+        _first++;
+    }while(_first < _pdst);
     return dst;
 }
 
@@ -276,7 +276,7 @@ void Hal_Free(void *ptr)
 {
     if (ptr != NULL)
         free(ptr);
-    g_Printf_dbg("malloc free ok\r\n");    
+    g_Printf_dbg("malloc free ok\r\n");
 }
 
 OS_FLAG_GRP *Hal_FlagCreate(uint8_t *name, OS_FLAGS  flag)
@@ -302,7 +302,7 @@ int Hal_ThreadCreate(void (*func)(void *p_arg), void *funcname,OS_STK *TaskStk, 
 #if OS_TASK_NAME_EN > 0
     OSTaskNameSet(priority, funcname, &err);
 #endif
-    
+
     if (err != OS_ERR_NONE){
         g_Printf_info("%s failed\n",__func__);
 		return -1;
@@ -358,7 +358,7 @@ int Hal_QueueSend(Queue_t queue, struct hal_message* msg, int timeout)
         g_Printf_dbg("%s failed\n",__func__);
         return -1;
     }
-    
+
 	return err;
 }
 
@@ -419,8 +419,9 @@ void Hal_MutexLock(Mutex_t mutex)
 
 void Hal_MutexUnlock(Mutex_t mutex)
 {
-    uint8_t err;
-    err = OSMutexPost(mutex);
+//    uint8_t err;
+//    err =
+    OSMutexPost(mutex);
 }
 
 void Hal_GetTimeOfDay(struct hal_timeval* tv)
@@ -463,7 +464,7 @@ int Hal_Platform_Init(void)
     ScadaData_base_Init();  //设置传输方式
     Terminal_Para_Init();   //读取flash存储的参数数据，并且开始设置设备参数
 
-    
+
     gMutex = Hal_MutexCreate(LOWEST_TASK_PRIO-2);       //串口中创建的互斥信号量为LOWEST_TASK_PRIO-1，不可以大于LOWEST_TASK_PRIO；
     if (gMutex == null) {
         g_Printf_dbg("%s mutex create Failed\r\n",__func__);
@@ -478,40 +479,40 @@ int Hal_Platform_Init(void)
 
 int Hal_getProductName(char *proName)
 {
-#if (PRODUCT_TYPE == Air_Station) 
+#if (PRODUCT_TYPE == Air_Station)
 	strncpy(proName, "AirData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Voc_Station) 
+#elif (PRODUCT_TYPE == Voc_Station)
 	strncpy(proName, "VocData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Dust_Station) 
+#elif (PRODUCT_TYPE == Dust_Station)
 	strncpy(proName, "DustData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == WRain_Station) 
+#elif (PRODUCT_TYPE == WRain_Station)
 	strncpy(proName, "WRainData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Weather_Station) 
+#elif (PRODUCT_TYPE == Weather_Station)
 	strncpy(proName, "WeatherData", PRODUCT_NAMES_LEN-1);
 	return 0;
 #elif (PRODUCT_TYPE == Water_Station)
 	strncpy(proName, "WaterData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Soil_Station) 
+#elif (PRODUCT_TYPE == Soil_Station)
 	strncpy(proName, "SoilData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Agriculture_Station) 
+#elif (PRODUCT_TYPE == Agriculture_Station)
 	strncpy(proName, "AgricultureData", PRODUCT_NAMES_LEN-1);
-	return 0;	
-#elif (PRODUCT_TYPE == Flowmeter_Station) 
+	return 0;
+#elif (PRODUCT_TYPE == Flowmeter_Station)
 	strncpy(proName, "FlowmeterData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Seeper_Station) 
+#elif (PRODUCT_TYPE == Seeper_Station)
 	strncpy(proName, "SeeperData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Flow_Station) 
+#elif (PRODUCT_TYPE == Flow_Station)
 	strncpy(proName, "FlowData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Rain_Station) 
+#elif (PRODUCT_TYPE == Rain_Station)
 	strncpy(proName, "RainData", PRODUCT_NAMES_LEN-1);
 	return 0;
 #elif (PRODUCT_TYPE == IntegratedPitWell)
@@ -519,32 +520,32 @@ int Hal_getProductName(char *proName)
 	return 0;
 #elif (PRODUCT_TYPE == InputmodeWell_Station)
 	strncpy(proName, "InputmodeWellData", PRODUCT_NAMES_LEN-1);
-	return 0;	
-#elif (PRODUCT_TYPE == NoxiousGas_Station) 
+	return 0;
+#elif (PRODUCT_TYPE == NoxiousGas_Station)
 	strncpy(proName, "NoxiousGasData", PRODUCT_NAMES_LEN-1);
-	return 0;	
-#elif (PRODUCT_TYPE == WeatherSoil_Station) 
+	return 0;
+#elif (PRODUCT_TYPE == WeatherSoil_Station)
 	strncpy(proName, "WeatherSoilData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Planting_Station) 
+#elif (PRODUCT_TYPE == Planting_Station)
 	strncpy(proName, "PlantingData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == LevelFlowrate_Station) 
+#elif (PRODUCT_TYPE == LevelFlowrate_Station)
 	strncpy(proName, "LevelFlowrateData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == TankMonitor_Station) 
+#elif (PRODUCT_TYPE == TankMonitor_Station)
 	strncpy(proName, "TankMonitorData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == MagicSTICK_Station) 
+#elif (PRODUCT_TYPE == MagicSTICK_Station)
 	strncpy(proName, "MagicSTICKData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == AliveNest_Station) 
+#elif (PRODUCT_TYPE == AliveNest_Station)
 	strncpy(proName, "AliveNestData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == CLCupboard_Station) 
+#elif (PRODUCT_TYPE == CLCupboard_Station)
 	strncpy(proName, "CLCupboardData", PRODUCT_NAMES_LEN-1);
 	return 0;
-#elif (PRODUCT_TYPE == Custom_Station) 
+#elif (PRODUCT_TYPE == Custom_Station)
 	strncpy(proName, "CustomData", PRODUCT_NAMES_LEN-1);
 	return 0;
 #elif (PRODUCT_TYPE == PipeFlow_Station)
@@ -605,7 +606,7 @@ uint32_t Hal_getTransmitPeriod(void)
 	temp += OSBsp.Device.InnerFlash.innerFLASHRead(12,infor_ChargeAddr);
     if((temp>360) || (temp<5)){
         temp = 10;
-    }     
+    }
     g_Printf_info("%s %d\r\n",__func__,temp);
     return temp;
 }
@@ -619,10 +620,10 @@ uint32_t Hal_getSensorFlashStatus(void)
 	temp += OSBsp.Device.InnerFlash.innerFLASHRead(22,infor_ChargeAddr);
     if(AppDataPointer->TerminalInfoData.SensorFlashWriteStatusPrintf == SENSOR_STATUS_WRITEFLASH_PRINTF_ENABLE) {
         AppDataPointer->TerminalInfoData.SensorFlashWriteStatusPrintf = SENSOR_STATUS_WRITEFLASH_PRINTF_DISABLE;
-        AppDataPointer->TerminalInfoData.SensorFlashStatus = temp; 
+        AppDataPointer->TerminalInfoData.SensorFlashStatus = temp;
         // g_Printf_info("%s %x\n",__func__,temp);
 
-        Itoa(temp,str,2); //2进制输出
+        Itoa(temp,(char *)str,2); //2进制输出
         g_Printf_info("%s binary format: %0s\r\n",__func__,str);
     }
     return temp;
@@ -666,6 +667,16 @@ float Hal_getSensorHeight(void)
     return (float)temp/1000;
 }
 #endif
+
+uint8_t Hal_getSensorRecord(void)
+{
+    uint8_t temp =0;
+    temp = OSBsp.Device.InnerFlash.innerFLASHRead(20,infor_ChargeAddr);
+    if(temp == 0xFF)
+        temp = 0;
+    g_Printf_info("%s %d\r\n",__func__,(uint32_t)temp);
+    return (uint8_t)(temp&0x00FF);
+}
 
 uint16_t Hal_getStartFile(void)
 {
@@ -714,9 +725,9 @@ int Hal_getProductKey(char *produckey)
 	memset(midTem,0x0,PRODUCT_KEY_LEN);
 	for(i=0;i<keyLen;i++)
 		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(ProductKey_Addr+1+i,Infor_AliAddr);
-    
+
     strncpy(produckey, midTem, keyLen);
-    
+
     return 0;
 }
 
@@ -734,9 +745,9 @@ int Hal_getDeviceName(char *devName)
 	memset(midTem,0x0,DEVICE_NAME_LEN);
 	for(i=0;i<nameLen;i++)
 		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceName_Addr+1+i,Infor_AliAddr);
-    
+
     strncpy(devName, midTem, nameLen);
-    
+
     return 0;
 }
 
@@ -754,14 +765,14 @@ int Hal_getDeviceSecret(char *devSecret)
 	memset(midTem,0x0,DEVICE_SECRET_LEN);
 	for(i=0;i<SecretLen;i++)
 		midTem[i] = OSBsp.Device.InnerFlash.innerFLASHRead(DeviceSecret_Addr+1+i,Infor_AliAddr);
-    
+
     strncpy(devSecret, midTem, SecretLen);
-    
+
     return 0;
 }
 
 #endif
-/* 
+/*
  * 传感器断电处理，根据设备类型，部分设备只关闭一路电源
  */
 void Hal_SensorPowerOff(void)
@@ -785,21 +796,21 @@ void Hal_EnterLowPower_Mode(void)
     static int m = 0;
     g_Printf_info("Enter Low Power!\r\n");
     hal_Delay_ms(100);
-    
+
 #if (PRODUCT_TYPE == WRain_Station)
     if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
     {
         AppDataPointer->WRainData.RainGaugeScadaStatus &=  ~RAINGAUGE_REPORT_HOUR;
         App.Data.WRainData.RainGaugeH = 0.0;
         Send_Buffer[11] = 0x7F;
-        Send_Buffer[12] = 0xFF;	
+        Send_Buffer[12] = 0xFF;
     }
     if(AppDataPointer->WRainData.RainGaugeScadaStatus & RAINGAUGE_REPORT_DAY)//判断发送24小时数据
     {
         AppDataPointer->WRainData.RainGaugeScadaStatus &= ~RAINGAUGE_REPORT_DAY;
 	    App.Data.WRainData.RainGaugeD = 0.0;
         Send_Buffer[13] = 0x7F;
-        Send_Buffer[14] = 0xFF;	
+        Send_Buffer[14] = 0xFF;
     }
 #elif(PRODUCT_TYPE == Weather_Station)
     if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_REPORT_HOUR)//判断发送小时数据
@@ -808,7 +819,7 @@ void Hal_EnterLowPower_Mode(void)
         AppDataPointer->MeteorologyData.RainGaugeScadaStatus &=  ~RAINGAUGE_REPORT_HOUR;
         App.Data.MeteorologyData.RainGaugeH = 0.0;
         Send_Buffer[17] = 0x7F;
-        Send_Buffer[18] = 0xFF;	
+        Send_Buffer[18] = 0xFF;
     }
     if(AppDataPointer->MeteorologyData.RainGaugeScadaStatus & RAINGAUGE_REPORT_DAY)//判断发送24小时数据
     {
@@ -816,7 +827,7 @@ void Hal_EnterLowPower_Mode(void)
         AppDataPointer->MeteorologyData.RainGaugeScadaStatus &= ~RAINGAUGE_REPORT_DAY;
 	    App.Data.MeteorologyData.RainGaugeD = 0.0;
         Send_Buffer[19] = 0x7F;
-        Send_Buffer[20] = 0xFF;	
+        Send_Buffer[20] = 0xFF;
     }
 #endif
 
@@ -838,14 +849,14 @@ void Hal_EnterLowPower_Mode(void)
     }
     OSBsp.Device.IOControl.PowerSet(AIR202_Power_Off);
     // OSBsp.Device.IOControl.PowerSet(LPModule_Power_Off);
-    OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);	
+    OSBsp.Device.IOControl.PowerSet(Motor_Power_Off);
 #endif
     // AppDataPointer->TransMethodData.LoRaNet = 0;
 	hal_Delay_ms(1000);
 
 #if (ACCESSORY_TYPR == GPS_Mode)
     //turn off the power
-    OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);     
+    OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
     //change IO status
     P4SEL &=~BIT4;
     P4OUT &=~BIT4;
@@ -876,21 +887,21 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
 
     if(int_Src == Rtc_Int)
     {
-        #if (PRODUCT_TYPE == MagicSTICK_Station)   
+        #if (PRODUCT_TYPE == MagicSTICK_Station)
             g_Printf_info("Sensor power on ahead 100s\r\n");
             OSBsp.Device.IOControl.PowerSet(BaseBoard_Power_On);
             OSBsp.Device.IOControl.PowerSet(Sensor_Power_On);
             // OSBsp.Device.IOControl.PowerSet(Max485_Power_On);
             hal_Delay_sec(150);     //延时150s
         #endif
-        #if (PRODUCT_TYPE == Weather_Station)      
-            AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;     
+        #if (PRODUCT_TYPE == Weather_Station)
+            AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;
         #endif
-        #if (PRODUCT_TYPE == WRain_Station)      
-            AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;       
+        #if (PRODUCT_TYPE == WRain_Station)
+            AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_SCADA_ENABLE;
         #endif
         AppDataPointer->TerminalInfoData.DeviceStatus = DEVICE_STATUS_POWER_OFF;  //20191112测试屏蔽
-            
+
         #if (TRANSMIT_TYPE == GPRS_Mode)
         AppDataPointer->TransMethodData.GPRSStatus = GPRS_Power_off;
         #endif
@@ -940,10 +951,10 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
             if(AppDataPointer->TransMethodData.LoRaNet)
             {
                 AppDataPointer->TransMethodData.LoRaNet = 0;
-                AppDataPointer->TransMethodData.LoRaStatus = LoRa_Init_Done;    
-                #if (PRODUCT_TYPE == Weather_Station)              
+                AppDataPointer->TransMethodData.LoRaStatus = LoRa_Init_Done;
+                #if (PRODUCT_TYPE == Weather_Station)
                 AppDataPointer->TransMethodData.LoRaStatus = LoRa_Power_on;
-                #endif            
+                #endif
             }
             else    //进低功耗前入网失败，出低功耗后继续入网
             {

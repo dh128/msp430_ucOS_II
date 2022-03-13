@@ -36,41 +36,41 @@
 * 输入参数  	: onoff
 * 返回参数      : 无
 *******************************************************************************/
-static void SetAllSensorPowerOn(bool onoff)
-{
-	if(onoff == true){
-//******************总电源***********************//
-	Base_12V_ON;                  //12V总电源  上电
-	Base_5V_ON;                   //5V总电源   上电
-//*****************3.3V电源*********************////为TF卡、SPI Flash、MAX3485、Socket_3V3供电
-	Base_3V3_ON;                  //3.3V电源   上电
-//*****************传感器电源********************//
-	Sensor_12V_1_ON;              //传感器电源接口1_12V 上电
-	Sensor_12V_2_ON;              //传感器电源接口2_12V 上电
-	Sensor_5V_1_ON;               //传感器电源接口1_5V  上电
-	Sensor_5V_2_ON;               //传感器电源接口2_5V  上电
-		
-#if (PRODUCT_TYPE == AliveNest_Station) 
-		Send_485_Enable;
-		hal_Delay_us(5);
-		OSBsp.Device.Usart3.WriteNData(SwitchPMS5003T_Passive,PTCMDLength); //将状态切换为被动式
-		hal_Delay_us(1);
-		Recive_485_Enable;
-		OSBsp.Device.Usart2.WriteString("PMS5003T Passive State Switch OK!\r\n");
-#endif
-	}else{
-//******************总电源***********************//
-	Base_12V_OFF;                 //12V总电源  掉电
-	Base_5V_OFF;                  //5V总电源   掉电
-//*****************3.3V电源*********************////为TF卡、SPI Flash、MAX3485、Socket_3V3供电
-	Base_3V3_OFF;                 //3.3V电源   掉电
-//*****************传感器电源********************//
-	Sensor_12V_1_OFF;             //传感器电源接口1_12V 掉电
-	Sensor_12V_2_OFF;             //传感器电源接口2_12V 掉电
-	Sensor_5V_1_OFF;              //传感器电源接口1_5V  掉电
-	Sensor_5V_2_OFF;              //传感器电源接口2_5V  掉电
-	}
-}
+// static void SetAllSensorPowerOn(bool onoff)
+// {
+// 	if(onoff == true){
+// //******************总电源***********************//
+// 	Base_12V_ON;                  //12V总电源  上电
+// 	Base_5V_ON;                   //5V总电源   上电
+// //*****************3.3V电源*********************////为TF卡、SPI Flash、MAX3485、Socket_3V3供电
+// 	Base_3V3_ON;                  //3.3V电源   上电
+// //*****************传感器电源********************//
+// 	Sensor_12V_1_ON;              //传感器电源接口1_12V 上电
+// 	Sensor_12V_2_ON;              //传感器电源接口2_12V 上电
+// 	Sensor_5V_1_ON;               //传感器电源接口1_5V  上电
+// 	Sensor_5V_2_ON;               //传感器电源接口2_5V  上电
+
+// #if (PRODUCT_TYPE == AliveNest_Station)
+// 		Send_485_Enable;
+// 		hal_Delay_us(5);
+// 		OSBsp.Device.Usart3.WriteNData(SwitchPMS5003T_Passive,PTCMDLength); //将状态切换为被动式
+// 		hal_Delay_us(1);
+// 		Recive_485_Enable;
+// 		OSBsp.Device.Usart2.WriteString("PMS5003T Passive State Switch OK!\r\n");
+// #endif
+// 	}else{
+// //******************总电源***********************//
+// 	Base_12V_OFF;                 //12V总电源  掉电
+// 	Base_5V_OFF;                  //5V总电源   掉电
+// //*****************3.3V电源*********************////为TF卡、SPI Flash、MAX3485、Socket_3V3供电
+// 	Base_3V3_OFF;                 //3.3V电源   掉电
+// //*****************传感器电源********************//
+// 	Sensor_12V_1_OFF;             //传感器电源接口1_12V 掉电
+// 	Sensor_12V_2_OFF;             //传感器电源接口2_12V 掉电
+// 	Sensor_5V_1_OFF;              //传感器电源接口1_5V  掉电
+// 	Sensor_5V_2_OFF;              //传感器电源接口2_5V  掉电
+// 	}
+// }
 
 
 static void Power(ControlPower type)
@@ -109,7 +109,7 @@ static void Power(ControlPower type)
 		case Sensor_Power2_On:
 			Sensor_12V_2_ON;        //传感器电源接口2_12V 上电
 			Sensor_5V_2_ON;         //传感器电源接口2_5V  上电
-			break;			
+			break;
 		case Sensor_Power_Off:
 			Sensor_12V_1_OFF;       //传感器电源接口1_12V 掉电
 			Sensor_12V_2_OFF;       //传感器电源接口2_12V 掉电
@@ -123,7 +123,7 @@ static void Power(ControlPower type)
 		case Sensor_Power2_Off:
 			Sensor_12V_2_OFF;       //传感器电源接口2_12V 掉电
 			Sensor_5V_2_OFF;        //传感器电源接口2_5V  掉电
-			break;					
+			break;
 		case AIR202_Power_On:
 			Transmit_5V_OFF;	    //通信模块5V电源    掉电
 			Transmit_HighPower;
@@ -144,7 +144,7 @@ static void Power(ControlPower type)
 			Transmit_5V_OFF;	    //通信模块5V电源    掉电
 			break;
 		case LPModule_Power_On:
-			P2SEL &=~ (BIT3 + BIT4);//1:复用功能  0：普通功能     
+			P2SEL &=~ (BIT3 + BIT4);//1:复用功能  0：普通功能
 		    P2DIR &=~ BIT3;         //1:输出模式  0：输入模式     NB震铃端口
 			P2DIR |= BIT4;          //1:输出模式  0：输入模式     NB复位端口
 			P2OUT |= BIT4;          //1:输出为高  0：输出为低     NB复位端口输出为高
@@ -185,6 +185,7 @@ static void Power(ControlPower type)
 	}
 }
 
+#if (TRANSMIT_TYPE == LoRa_OM402_Mode)
 static void ResetWirelesModule(void)
 {
 	/***********reset模块复位脚*******************/
@@ -193,6 +194,7 @@ static void ResetWirelesModule(void)
 	P2OUT |= BIT4;
 	hal_Delay_ms(100);hal_Delay_ms(100);hal_Delay_ms(100);
 }
+#endif
 
 /*******************************************************************************
 * 函数名      	: g_Device_IO_Init
@@ -226,20 +228,21 @@ void g_Device_IO_Init(void)
 	/******************禁止传感器电量采集******************/
 	ScadaBAT_OFF;
     /*********************关掉无用的电源*******************/
-	Power(BaseBoard_Power_Off);	        
-	Power(Sensor_Power_Off);      		
-	Power(AIR202_Power_Off);	 
-	Power(LPModule_Power_Off);	    
-	Power(SDCard_Power_Off);      
-	Power(Motor_Power_Off);    	
+	Power(BaseBoard_Power_Off);
+	Power(Sensor_Power_Off);
+	Power(AIR202_Power_Off);
+	Power(LPModule_Power_Off);
+	Power(SDCard_Power_Off);
+	Power(Motor_Power_Off);
 	/*********************打开需要用到的电源****************/
-	Power(SDCard_Power_On);         
+	Power(SDCard_Power_On);
 
 
 	OSBsp.Device.IOControl.PowerSet = Power;
 
-	// P2REN |= BIT2;
-	// OSBsp.Device.IOControl.ResetWirelesModule = ResetWirelesModule;
+#if (TRANSMIT_TYPE == LoRa_OM402_Mode)
+	OSBsp.Device.IOControl.ResetWirelesModule = ResetWirelesModule;
+#endif
 }
 
 

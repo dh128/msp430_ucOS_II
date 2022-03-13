@@ -139,7 +139,7 @@ void HexStrToByte(unsigned char* resource, unsigned char* dest)
 {
 	uint16_t	i =0;
 	uint8_t temp = 0;
-	unsigned int stringLen = strlen(resource)/2;
+	unsigned int stringLen = strlen((char *)resource)/2;
 	while(i < stringLen)
 	{
 		//提取高八位
@@ -550,9 +550,9 @@ void ProcessJsonCommand(unsigned char *p)
 //	unsigned char TimebuffNum=0;
 //	unsigned char TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16进制的时间Buffer  2018年3月15号 20时50分00秒 星期4
 	HexStrToByte(p,cmdData);
-	if(Hal_CheckString(cmdData,"\"Period\":")) //修改上报周期
+	if(Hal_CheckString((char *)cmdData,"\"Period\":")) //修改上报周期
 	{
-		CommandBuff = strstr(cmdData,"\"Period\":");         //判断接收到的数据是否有效
+		CommandBuff = strstr((char *)cmdData,"\"Period\":");         //判断接收到的数据是否有效
 		while(*(CommandBuff+9) != '}')
 		{
 			CommandBuffData[CommandBuffNum] = *(CommandBuff+9);
@@ -563,7 +563,7 @@ void ProcessJsonCommand(unsigned char *p)
 		}
 		CommandBuffData[CommandBuffNum] = '\0';
 		if(CommandBuffNum < 5){
-			Temp_SendPeriod = (uint16_t)atoi(CommandBuffData);
+			Temp_SendPeriod = (uint16_t)atoi((char *)CommandBuffData);
 		}
 
 		if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
@@ -584,18 +584,18 @@ void ProcessJsonCommand(unsigned char *p)
 			g_Printf_info("NB Set SendPeriod Failed！\r\n");
 		}
 	}
-	else if(Hal_CheckString(cmdData,"\"reset\":true")) //复位设备
+	else if(Hal_CheckString((char *)cmdData,"\"reset\":true")) //复位设备
 	{
 		g_Printf_info("NB Reset Device OK!\r\n");
 		OSTimeDly(500);
 		hal_Reboot(); //******软件复位*******//
 	}
 #if (PRODUCT_TYPE == WRain_Station)
-	else if(Hal_CheckString(cmdData,"\"Height\":")) //修改上报周期
+	else if(Hal_CheckString((char *)cmdData,"\"Height\":")) //修改上报周期
 	{
 		memset(CommandBuffData, 0, 10);
 		CommandBuffNum = 0;
-		CommandBuff = strstr(cmdData,"\"Height\":");         //判断接收到的数据是否有效
+		CommandBuff = strstr((char *)cmdData,"\"Height\":");         //判断接收到的数据是否有效
 		while(*(CommandBuff+9) != '}')
 		{
 			CommandBuffData[CommandBuffNum] = *(CommandBuff+9);
@@ -607,7 +607,7 @@ void ProcessJsonCommand(unsigned char *p)
 		CommandBuffData[CommandBuffNum] = '\0';
 		float temp_Height = 0.0;
 		if(CommandBuffNum < 7){
-			temp_Height= (float)atof(CommandBuffData);
+			temp_Height= (float)atof((char *)CommandBuffData);
 		}
 		if( (temp_Height > 0) && ( temp_Height<= 15) )
 		{
@@ -661,31 +661,7 @@ void GetCode(int num)
 	}
 	else		//上报下载完成
 	{
-		//重新上电flash，读取校验
-		// W25Q16_OFF;
-		// hal_Delay_sec(1);
-		// W25Q16_ON;
-		// hal_Delay_ms(200);
-		// W25Q16_Init();
-		// hal_Delay_ms(200);
-		// sumTemp = 0;
-		// for(m=FOTA_ADDR_START;m<addr_write;m++)
-		// {
-		// 	sumTemp += SPI_Flash_ReadByte(m);
-		// 	// sumTemp &= 0x00FF;
-		// }
-		// if((sumTemp & 0xFF) == fota.CheckSum){
-		// 	g_Printf_dbg("Check code OK\r\n");
-			User_Printf("AT+NMGS=9,FFFE0116850E000100\r\n");
-		// }else{
-		// 	g_Printf_dbg("Check code Err,checkSum=%x,sumTemp=%x\r\n",fota.CheckSum,sumTemp);
-		// 	for(m=FOTA_ADDR_START;m<addr_write;m++)		//输出错误固件查看
-		// 	{
-		// 		OSBsp.Device.Usart2.WriteData(SPI_Flash_ReadByte(m));
-		// 	}
-		// 	ReportUpErr(0x16, CheckErr);
-		// 	NB_Fota = 0;
-		// }
+		User_Printf("AT+NMGS=9,FFFE0116850E000100\r\n");
 	}
 }
 /*******************************************************************************
@@ -814,7 +790,7 @@ void ProcessPCP(unsigned char *p)
 		OSBsp.Device.IOControl.PowerSet(Sensor_Power_Off);
 	//	byte[9],byte[10]为数据包数，应该等于PackageNum
 		ret = PCPData[9]*256 + PCPData[10];
-		length = strlen(p)/2-11;		//去除包头FFFE等11个字节数据
+		length = strlen((char *)p)/2-11;		//去除包头FFFE等11个字节数据
 		CRCtemp = PCPData[4]*256+PCPData[5];
 		PCPData[4] = PCPData[5] = 0;
 		if(CRCtemp == CRC16CCITT_Byte(PCPData,length+11))
@@ -872,6 +848,7 @@ check:		SPI_Flash_Write_NoCheck(&PCPData[11], addr_write, length);
 		}
 		else
 		{
+			aRxNum = 0;
 			g_Printf_info("CRCFlah= %d,packGet= %d, PackageNum= %d\r\n",(uint32_t)fota.CRCFlag,(uint32_t)ret,(uint32_t)fota.PackageNum);
 		}
 		GetCode(fota.PackageNum);
@@ -969,7 +946,7 @@ void g_Device_NB_SendCheck(void)
 *******************************************************************************/
 void g_Device_NB_GetReceive(void)
 {
-	uint8_t *Uart0_RxBuff;
+	char *Uart0_RxBuff;
 	uint16_t i = 0;
 
 	Clear_CMD_Buffer((uint8_t *)aRxBuff,1050);
@@ -991,7 +968,7 @@ void g_Device_NB_GetReceive(void)
 	{
 		//提取PCP消息
 		g_Printf_info("Get PCP data!\r\n");
-		Uart0_RxBuff = strstr(aRxBuff,",FFFE");         //判断接收到的数据是否有效
+		Uart0_RxBuff = strstr((char *)aRxBuff,",FFFE");         //判断接收到的数据是否有效
 		i = 0;		//清零用于存储下行数据包
 		while(*(Uart0_RxBuff+1)!='\r')
 		{
@@ -1000,14 +977,14 @@ void g_Device_NB_GetReceive(void)
 			Uart0_RxBuff++;
 		}
 		Receive_data[i] = '\0';
-		hal_Delay_ms(200);
+		// hal_Delay_ms(200);
 		//处理PCP消息
 		ProcessPCP(Receive_data);
 	}
 	else if(Hal_CheckString(aRxBuff,"7B") & Hal_CheckString(aRxBuff,"7D"))  //获取到用户下发指令
 	{
 		g_Printf_info("Get Command data!\r\n");
-		Uart0_RxBuff = strstr(aRxBuff,",7B");         //判断接收到的数据是否有效
+		Uart0_RxBuff = strstr((char *)aRxBuff,",7B");         //判断接收到的数据是否有效
 		i = 0;		//清零用于存储下行数据包
 		while(*(Uart0_RxBuff+1)!='\r')
 		{

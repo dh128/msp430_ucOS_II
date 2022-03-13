@@ -50,7 +50,7 @@ typedef union
 }Hex2Double;
 
 enum Int_Src{                 //GLZ
-	Rtc_Int = 0x1,		
+	Rtc_Int = 0x1,
 	Uart_Int
 };
 
@@ -115,6 +115,7 @@ float Hal_getSensorHeight(void);
 #if (PRODUCT_TYPE == IntegratedPitWell)
 float Hal_getSensorHeight(void);
 #endif
+uint8_t Hal_getSensorRecord(void);
 uint16_t Hal_getStartFile(void);
 uint8_t Hal_getFullFlag(void);
 void Hal_calcFileSum(uint8_t *sum, uint8_t *data , uint16_t num);

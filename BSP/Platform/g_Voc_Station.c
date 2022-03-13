@@ -347,13 +347,13 @@ void InqureSensor(void)
 	volatile uint8_t sensorSN = 0;    //传感器编号，按照协议顺序排列
 	volatile uint16_t sensorStatus;   //0000 0011 1100 0000     Do,氨氮，温度，ORP
 
-	if(AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET) {
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_ALREADY;
+	if(AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_NOTYET) {
+		AppDataPointer->TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_ALREADY;
 		AppDataPointer->TerminalInfoData.SensorStatus = SensorKind;
 		// Teminal_Data_Init();   //数据初始化
-	} else if ( (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY)
-	         || (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK) ) {
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_OK;
+	} else if ( (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_ALREADY)
+	         || (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_OK) ) {
+		AppDataPointer->TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_OK;
 		AppDataPointer->TerminalInfoData.SensorFlashStatus = Hal_getSensorFlashStatus(); //wj20200217把上面一行改成了这一行
 		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; //这里是不是写反了或者上面的应该是SensorFlashStatus？？
 	}
@@ -458,9 +458,9 @@ void InqureSensor(void)
 		}
 
 		AppDataPointer->TerminalInfoData.SensorStatus = (uint16_t)SensorStatus_H*256 + (uint16_t)SensorStatus_L;
-		if(AppDataPointer->TerminalInfoData.SensorFlashWriteStatus == SENSOR_STATUS_WRITEFLASH_NOTYET)
+		if(AppDataPointer->TerminalInfoData.SensorWriteStatus == SENSOR_STATUS_WRITE_NOTYET)
 		{
-			AppDataPointer->TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_ALREADY;
+			AppDataPointer->TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_ALREADY;
 			//++++测试专用+++if+++++++//
 			// infor_ChargeAddrBuff[21] = 0b00000011;       //0000 0011 1100 0000     Do,氨氮，温度，ORP               //++++++
 			// infor_ChargeAddrBuff[22] = 0b11000000;                                                                 //++++++
@@ -477,7 +477,7 @@ void InqureSensor(void)
 		}
 
 		//根据标志位判断是否需要模拟数据
-		if (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK)
+		if (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_OK)
 		{
 			if(OSBsp.Device.InnerFlash.innerFLASHRead(23,infor_ChargeAddr) == 0x01)
 			// if(OSBsp.Device.InnerFlash.innerFLASHRead(23,infor_ChargeAddr) == 0xFF)
@@ -716,9 +716,9 @@ void Terminal_Para_Init(void)
 	App.Data.TerminalInfoData.Version = Hal_getFirmwareVersion();    //软件版本
 	Send_Buffer[34] = App.Data.TerminalInfoData.Version;
 	/**************************未读取Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_NOTYET;
 	/**************************未写入Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_NOTYET;
 	/**************************允许同步时间状态***********************/
 	App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;
 
@@ -791,7 +791,7 @@ void Terminal_Para_Init(void)
 	OSBsp.Device.IOControl.PowerSet(GPS_Power_Off);
 #elif (ACCESSORY_TYPR == ELCD_Mode)
 	OSBsp.Device.IOControl.PowerSet(GPS_Power_On);
-	g_Device_Usart1_Init(115200); 
+	g_Device_Usart1_Init(115200);
 #elif (ACCESSORY_TYPR == GPS_Mode)
 	OSBsp.Device.IOControl.PowerSet(GPS_Power_On);
 	g_Device_Usart1_Init(9600);

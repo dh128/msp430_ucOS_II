@@ -11,23 +11,6 @@
 #define G_DEVICEIO_H
 
 typedef enum {
-    // BaseBoard_Power_On = 0,
-    // BaseBoard_Power_Off = 1,
-    // LPModule_Power_On,
-    // LPModule_Power_Off,
-    // GPRS_Power_On,
-    // GPRS_Power_Off,
-    // SDCARD_Power_On,
-    // SDCARD_Power_Off,
-    // GPS_Power_On,
-    // GPS_Power_Off,
-    // SenSor_Power_On,
-    // SenSor_Power_Off,
-    // Motor_Power_On,
-    // Motor_Power_Off,
-    // AIR202_Power_On,
-    // AIR202_Power_Off
-
     BaseBoard_Power_On = 0,
     BaseBoard_Power_Off = 1,
     BaseBoard_12V_Power_On,
@@ -36,10 +19,10 @@ typedef enum {
     BaseBoard_5V_Power_Off,
     Sensor_Power_On,
     Sensor_Power1_On,
-    Sensor_Power2_On,   
+    Sensor_Power2_On,
     Sensor_Power_Off,
     Sensor_Power1_Off,
-    Sensor_Power2_Off,   
+    Sensor_Power2_Off,
     AIR202_Power_On,
     AIR202_Power_Off,
     SIM800C_Power_On,
@@ -97,14 +80,14 @@ typedef enum {
 #define Socket_5V_OFF         P6OUT &=~BIT5     //插口5V电源         掉电
 #define Socket_3V3_ON		  P4OUT &=~BIT1     //插口3.3V电源       上电
 #define Socket_3V3_OFF        P4OUT |= BIT1     //插口3.3V电源       掉电
-#define Socket_485_SendEnable   P1OUT |= BIT6     //插口485芯片        发送使能 
-#define Socket_485_RevEnable    P1OUT &=~BIT6     //插口485芯片        接收使能 
+#define Socket_485_SendEnable   P1OUT |= BIT6     //插口485芯片        发送使能
+#define Socket_485_RevEnable    P1OUT &=~BIT6     //插口485芯片        接收使能
 //*****************电池电量采集******************//
 #define ScadaBAT_ON		      P2OUT |= BIT0     //电池电量采集       允许
 #define ScadaBAT_OFF          P2OUT &=~BIT0     //电池电量采集       禁止
 
-#define CS_1		          P2OUT |= BIT2     
-#define CS_0                  P2OUT &=~BIT2     
+#define CS_1		          P2OUT |= BIT2
+#define CS_0                  P2OUT &=~BIT2
 
 void g_Device_IO_Init(void);
 

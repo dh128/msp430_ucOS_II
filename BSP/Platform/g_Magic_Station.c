@@ -98,14 +98,14 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 				switch (scadaIndex)
 				{
 				case 0x01: //温度 溶解氧 溶解氧%（跳过） 浊度 电导率 Float数据小端模式
-					
+
 					if (data[2] == 0x14)		//总计20个字节有效数据
 					{
 						//温度
 						SensorData.Hex[0] = data[3]; //小端模式，高位字节存放在前面
 						SensorData.Hex[1] = data[4];
 						SensorData.Hex[2] = data[5];
-						SensorData.Hex[3] = data[6];						
+						SensorData.Hex[3] = data[6];
 						WQ_ValueTemp.WaterTemp = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 0);			 //传感器状态位置0
 
@@ -113,7 +113,7 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[0] = data[7]; //小端模式，高位字节存放在前面
 						SensorData.Hex[1] = data[8];
 						SensorData.Hex[2] = data[9];
-						SensorData.Hex[3] = data[10];						
+						SensorData.Hex[3] = data[10];
 						WQ_ValueTemp.DOValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 1);			 //传感器状态位置1
 
@@ -121,7 +121,7 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[0] = data[15]; //小端模式，高位字节存放在前面
 						SensorData.Hex[1] = data[16];
 						SensorData.Hex[2] = data[17];
-						SensorData.Hex[3] = data[18];						
+						SensorData.Hex[3] = data[18];
 						WQ_ValueTemp.ZSValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 2);			 //传感器状态位置2
 
@@ -129,7 +129,7 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[0] = data[19]; //小端模式，高位字节存放在前面
 						SensorData.Hex[1] = data[20];
 						SensorData.Hex[2] = data[21];
-						SensorData.Hex[3] = data[22];						
+						SensorData.Hex[3] = data[22];
 						WQ_ValueTemp.ECValue = (uint16_t)(SensorData.Data * 1000); //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 3);			 //传感器状态位置3
 
@@ -144,9 +144,9 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 					SensorData.Hex[3] = data[6];
 					WQ_ValueTemp.CODValue = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 					hal_SetBit(SensorStatus_H, 4);			 //传感器状态位置4
-					
+
 					break;
-				case 0x03:	//PH  ORP  NH4+ 
+				case 0x03:	//PH  ORP  NH4+
 					if (data[2] == 0x0C) //数据长度是0C
 					{
 						hal_SetBit(SensorStatus_L, 2); //传感器状态位置1
@@ -164,7 +164,7 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[3] = data[10];
 						WQ_ValueTemp.ORPValue = (int16_t)SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 6);			 //传感器状态位置6
-						
+
 						//NH4+
 						SensorData.Hex[0] = data[11]; //小端模式，高位字节存放在前面
 						SensorData.Hex[1] = data[12];
@@ -172,10 +172,10 @@ static int AnalyzeComand(uint8_t *data, uint8_t Len)
 						SensorData.Hex[3] = data[14];
 						WQ_ValueTemp.NH4Value = SensorData.Data; //更新WQ数据的最后一个，后续用先进先出的模式进行数组更替
 						hal_SetBit(SensorStatus_H, 7);			 //传感器状态位置7
-											
+
 					}
 					break;
-				
+
 				default:
 					break;
 				} //switch scadaIndex END
@@ -327,7 +327,7 @@ static int SimulationSensorData(void)
 * 输入参数  	: 无
 * 返回参数  	: 无
 *******************************************************************************/
-void FilteringSensor(void) 
+void FilteringSensor(void)
 {
 
 	uint8_t i = 0;
@@ -376,7 +376,7 @@ void FilteringSensor(void)
 
 	if (FilteringNum > WQ_Q_Num) //前3次不执行
 	{
-		
+
 		if (AppDataPointer->MagicData.WaterTemp == 0.0)
 		{
 			AppDataPointer->MagicData.WaterTemp = 15.1;
@@ -432,20 +432,20 @@ void FilteringSensor(void)
 void InqureSensor(void)
 {
 	//COD EC DO NH4 | Temp ORP ZS PH | CHL WL WS XX
-	
+
 	volatile uint16_t sensorExistStatus = 0;
 	volatile uint8_t sensorSN = 0;  //传感器编号，按照协议顺序排列
 	volatile uint16_t sensorStatus; //0000 0011 1100 0000     Do,氨氮，温度，ORP
 
-	if (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_NOTYET)
+	if (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_NOTYET)
 	{
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_ALREADY;
+		AppDataPointer->TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_ALREADY;
 		AppDataPointer->TerminalInfoData.SensorStatus = SensorKind;
 	    Teminal_Data_Init();   //数据初始化
 	}
-	else if ((AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_ALREADY) || (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK))
+	else if ((AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_ALREADY) || (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_OK))
 	{
-		AppDataPointer->TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_OK;
+		AppDataPointer->TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_OK;
 		AppDataPointer->TerminalInfoData.SensorFlashStatus = Hal_getSensorFlashStatus();					//wj20200217把上面一行改成了这一行
 		AppDataPointer->TerminalInfoData.SensorStatus = AppDataPointer->TerminalInfoData.SensorFlashStatus; //这里是不是写反了或者上面的应该是SensorFlashStatus？？
 	}
@@ -518,9 +518,9 @@ void InqureSensor(void)
 
 		AppDataPointer->TerminalInfoData.SensorStatus = (uint16_t)SensorStatus_H * 256 + (uint16_t)SensorStatus_L; //本次读取到的传感器置位
 
-		if (AppDataPointer->TerminalInfoData.SensorFlashWriteStatus == SENSOR_STATUS_WRITEFLASH_NOTYET) //上电后第一次检查哪些传感器在线，并写flash里
+		if (AppDataPointer->TerminalInfoData.SensorWriteStatus == SENSOR_STATUS_WRITE_NOTYET) //上电后第一次检查哪些传感器在线，并写flash里
 		{
-			AppDataPointer->TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_ALREADY;
+			AppDataPointer->TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_ALREADY;
 			if (OSBsp.Device.InnerFlash.innerFLASHRead(20, infor_ChargeAddr) == 0x01) //0x01才允许修改Flash
 			{
 				infor_ChargeAddrBuff[21] = SensorStatus_H;
@@ -531,7 +531,7 @@ void InqureSensor(void)
 		}
 
 		//根据标志位判断是否需要模拟数据
-		if (AppDataPointer->TerminalInfoData.SensorFlashReadStatus == SENSOR_STATUS_READFLASH_OK)
+		if (AppDataPointer->TerminalInfoData.SensorReadStatus == SENSOR_STATUS_READ_OK)
 		{
 			if (OSBsp.Device.InnerFlash.innerFLASHRead(23, infor_ChargeAddr) == 0x01) //打开后可长期支持模拟
 			{
@@ -835,9 +835,9 @@ void Terminal_Para_Init(void)
 	App.Data.TerminalInfoData.Version = Hal_getFirmwareVersion(); //软件版本
 	Send_Buffer[34] = App.Data.TerminalInfoData.Version;
 	/**************************未读取Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashReadStatus = SENSOR_STATUS_READFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_NOTYET;
 	/**************************未写入Flash中存储的传感器状态***********************/
-	App.Data.TerminalInfoData.SensorFlashWriteStatus = SENSOR_STATUS_WRITEFLASH_NOTYET;
+	App.Data.TerminalInfoData.SensorWriteStatus = SENSOR_STATUS_WRITE_NOTYET;
 	/**************************允许同步时间状态***********************/
 	App.Data.TerminalInfoData.AutomaticTimeStatus = AUTOMATIC_TIME_ENABLE;
 

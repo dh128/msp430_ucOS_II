@@ -24,7 +24,7 @@
 	defined (__MSP430F6632) || defined (__MSP430F6631) || defined (__MSP430F6630) || \
 	defined (__MSP430F5638) || defined (__MSP430F5637) || defined (__MSP430F5636) || \
 	defined (__MSP430F5635) || defined (__MSP430F5634) || defined (__MSP430F5633) || \
-	defined (__MSP430F5632) || defined (__MSP430F5631) || defined (__MSP430F5630) 
+	defined (__MSP430F5632) || defined (__MSP430F5631) || defined (__MSP430F5630)
 	#define __MSP430F563x_F663x
 #elif defined (__MSP430F5510) || defined (__MSP430F5509) || defined (__MSP430F5508) || \
 	defined (__MSP430F5507) || defined (__MSP430F5506) || defined (__MSP430F5505) || \
@@ -83,14 +83,14 @@
 //#define PRODUCT_TYPE                Air_Station
 // #define PRODUCT_TYPE                Water_Station
 //#define PRODUCT_TYPE                MagicSTICK_Station
-//#define PRODUCT_TYPE                Weather_Station
+// #define PRODUCT_TYPE                Weather_Station
 //#define PRODUCT_TYPE                Soil_Station
 //#define PRODUCT_TYPE 	             Voc_Station
 //#define PRODUCT_TYPE	             Flowmeter_Station
 // #define PRODUCT_TYPE	             WRain_Station
 //#define PRODUCT_TYPE	             Seeper_Station
-// #define PRODUCT_TYPE	             IntegratedPitWell
-#define PRODUCT_TYPE				PipeFlow_Station
+#define PRODUCT_TYPE	             IntegratedPitWell
+// #define PRODUCT_TYPE				PipeFlow_Station
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
 #define NBIoT_BC95_Mode	      		0x02
