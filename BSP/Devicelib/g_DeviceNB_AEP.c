@@ -590,7 +590,7 @@ void ProcessJsonCommand(unsigned char *p)
 		OSTimeDly(500);
 		hal_Reboot(); //******软件复位*******//
 	}
-#if (PRODUCT_TYPE == WRain_Station)
+#if (PRODUCT_TYPE == WRain_Station || PRODUCT_TYPE == IntegratedPitWell)
 	else if(Hal_CheckString((char *)cmdData,"\"Height\":")) //修改上报周期
 	{
 		memset(CommandBuffData, 0, 10);
@@ -611,7 +611,11 @@ void ProcessJsonCommand(unsigned char *p)
 		}
 		if( (temp_Height > 0) && ( temp_Height<= 15) )
 		{
+#if(PRODUCT_TYPE == WRainData)
 			App.Data.WRainData.Height = temp_Height;
+#else
+			App.Data.PitWellData.Height =temp_Height;
+#endif
 			g_Printf_info("NB Set Height as %f OK\r\n",temp_Height);
 			OSTimeDly(5);
 			Flash_Tmp[9] = ((uint16_t)(temp_Height*1000) & 0xFF00)>>8;	//修改周期存储值（min）
