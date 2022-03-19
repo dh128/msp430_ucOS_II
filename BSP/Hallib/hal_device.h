@@ -89,8 +89,8 @@
 //#define PRODUCT_TYPE	             Flowmeter_Station
 // #define PRODUCT_TYPE	             WRain_Station
 //#define PRODUCT_TYPE	             Seeper_Station
-#define PRODUCT_TYPE	             IntegratedPitWell
-// #define PRODUCT_TYPE				PipeFlow_Station
+// #define PRODUCT_TYPE	             IntegratedPitWell
+#define PRODUCT_TYPE				PipeFlow_Station
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
 #define NBIoT_BC95_Mode	      		0x02

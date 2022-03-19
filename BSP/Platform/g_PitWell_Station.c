@@ -46,7 +46,7 @@
 #define LV				1
 uint8_t SensorRecord = 0;	/* 传感器记录标志，1--记录，0--不记录 */
 uint16_t SensorExist = SensorKind;
-
+uint16_t Period_Stored = 0;	/* 预设的周期 */
 AppStruct App;
 DataStruct *AppDataPointer;
 uint32_t Send_Buffer[60] = {0xaa, 0x00, 0x00, 0x01, 0x01, 0x00, 0x00,
@@ -272,7 +272,7 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	}else if(App.Data.PitWellData.Real >= App.Data.PitWellData.WarningHeight){
 		App.Data.TerminalInfoData.SendPeriod = 15;	/* 告警周期 */
 	}else{
-		App.Data.TerminalInfoData.SendPeriod = 60;	/* 正常周期 */
+		App.Data.TerminalInfoData.SendPeriod = Period_Stored;	/* 正常周期 */
 	}
 	g_Printf_info("Change period %d\r\n",App.Data.TerminalInfoData.SendPeriod);
 
@@ -411,7 +411,10 @@ void Terminal_Para_Init(void)
 		App.Data.TerminalInfoData.SendPeriod = 15;
 		g_Printf_info("Period change as 15 min\r\n");
 	}
-	SensorRecord = Hal_getSensorRecord();	/* 获取传感器记录标志 */
+	/* 开机将读取的周期值存在Period_stored中 */
+	Period_Stored = App.Data.TerminalInfoData.SendPeriod;
+	/* 获取传感器记录标志 */
+	SensorRecord = Hal_getSensorRecord();
 	g_Printf_info("SensorRecord flag = %d\r\n", (uint32_t)SensorRecord);
 	/**************************Version******************************************/
 	App.Data.TerminalInfoData.Version = Hal_getFirmwareVersion(); //软件版本

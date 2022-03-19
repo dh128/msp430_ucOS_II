@@ -38,13 +38,7 @@
 #define CMDLength        	8
 #define SensorKind          0x03
 #define INQPERIOD			5	/* 默认5分钟采集一次，发送周期由外部设定，5的倍数 */
-//定义管道类型数据
-typedef struct {
-	uint8_t type;		//类型
-	float width;		//宽度，单位米
-	float height;		//高度，圆形管道等于width 单位米
-	float high;			//传感器安装高度，单位米
-}shape_t;
+
 shape_t shape;		//定义管道
 #define PI 3.14159		//圆周率
 
@@ -64,7 +58,7 @@ uint32_t Send_Buffer[60] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x00,
 //                            Period   ver		timestamp            Lng经度             lat纬度          海拔      RSRP      SINR       PCI      保留		模拟  	 保留
 
 const uint8_t ScadaSpeed[CMDLength]	= {0x01,0x03,0x00,0x00,0x00,0x02,0xC4,0x0B};   //瞬时流速 m/s
-const uint8_t ScadaDeep[CMDLength] 	= {0x01,0x03,0x00,0x26,0x00,0x0C,0xA4,0x04};	//水温、液位、流向
+const uint8_t ScadaDeep[CMDLength] 	= {0x01,0x03,0x00,0x26,0x00,0x04,0xA5,0xC2};	//水温、液位
 
 #define WQ_FlowD_Num 		3
 #define WQ_FlowS_Num 		3
@@ -116,8 +110,16 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 					SensorData.Hex[3] = data[5];
 
 					AppDataPointer->FlowData.IFlowS = SensorData.Data;
+					if(FlowStimes < WQ_FlowD_Num){
+						WQ_FlowS[FlowStimes++] = AppDataPointer->FlowData.IFlowS;
+					}else{
+						for(i=0; i<WQ_FlowD_Num-1; i++){
+							WQ_FlowS[i] = WQ_FlowS[i+1];
+						}
+						WQ_FlowS[FlowStimes] = AppDataPointer->FlowData.IFlowS;
+					}
 					break;
-				case 0x18:	//返回24字节，水温，液位，流向
+				case 0x08:	//返回8字节，水温，液位
 					hal_SetBit(SensorStatus_L, Deep);   //传感器状态位置1
 					/* 水温 */
 					SensorData.Hex[0] = data[4];      //MCU是小端模式，低位字节存放在低位，传感器数据0xCDAB
@@ -140,20 +142,20 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 					}
 					AppDataPointer->FlowData.IFlowL = SensorData.Data;
 					/* 方向1或-1 */
-					SensorData.Hex[0] = data[24];
-					SensorData.Hex[1] = data[23];
-					SensorData.Hex[2] = data[26];
-					SensorData.Hex[3] = data[25];
-					/* 流速加上方向 */
-					AppDataPointer->FlowData.IFlowS *= SensorData.Data;
-					if(FlowStimes < WQ_FlowD_Num){
-						WQ_FlowS[FlowStimes++] = AppDataPointer->FlowData.IFlowS;
-					}else{
-						for(i=0; i<WQ_FlowD_Num-1; i++){
-							WQ_FlowS[i] = WQ_FlowS[i+1];
-						}
-						WQ_FlowS[FlowStimes] = AppDataPointer->FlowData.IFlowS;
-					}
+					// SensorData.Hex[0] = data[24];
+					// SensorData.Hex[1] = data[23];
+					// SensorData.Hex[2] = data[26];
+					// SensorData.Hex[3] = data[25];
+					// /* 流速加上方向 */
+					// AppDataPointer->FlowData.IFlowS *= SensorData.Data;
+					// if(FlowStimes < WQ_FlowD_Num){
+					// 	WQ_FlowS[FlowStimes++] = AppDataPointer->FlowData.IFlowS;
+					// }else{
+					// 	for(i=0; i<WQ_FlowD_Num-1; i++){
+					// 		WQ_FlowS[i] = WQ_FlowS[i+1];
+					// 	}
+					// 	WQ_FlowS[FlowStimes] = AppDataPointer->FlowData.IFlowS;
+					// }
 					// AppDataPointer->FlowData.Directions = SensorData.Data;
 					break;
 				default:

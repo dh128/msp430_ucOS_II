@@ -291,3 +291,5 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 1、加入NB入网超时重启模组的功能;
 2、重写传感器记录的代码，不保存在flash里，直接ram保存;
 3、重写传感器记录初步测试，Water、WRain、PitWell、PipeFlow四类设备。
+2022-3-19	dingh	AEP
+1、添加管网流量设备下发管道参数，下发参数单位采用cm。

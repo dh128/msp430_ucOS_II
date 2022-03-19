@@ -71,7 +71,7 @@ typedef struct
 	uint32_t SerialNumber;              //SN
 	uint32_t PD;
 	uint32_t Version;                   //版本
-	uint8_t  SendPeriod;                //数据发送周期
+	uint16_t  SendPeriod;                //数据发送周期
 	uint32_t DeviceID;                  //设备编号
 	uint8_t  DeviceType;                //设备类型
 //	uint8_t  CommunicationIndex;		//通信方式
@@ -405,7 +405,13 @@ typedef struct
     DataStruct Data;
 }AppStruct;
 
-
+//定义管道类型数据
+typedef struct {
+	uint8_t type;		//类型
+	float width;		//宽度，单位米
+	float height;		//高度，圆形管道等于width 单位米
+	float high;			//传感器安装高度，单位米
+}shape_t;
 
 
 

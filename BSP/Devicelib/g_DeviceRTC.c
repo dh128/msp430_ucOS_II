@@ -28,6 +28,9 @@
 
 static uint32_t g_MinuteTimeTick = 0;
 static uint32_t g_HourTimeTick = 0;
+#if(PRODUCT_TYPE == IntegratedPitWell)
+static uint32_t g_Countmin = 0;		//计算周期时间
+#endif
 //static uint32_t g_DayTimeTick = 0;
 
 RtcStruct Rtctime;
@@ -36,13 +39,13 @@ RtcStruct Rtctime;
 //***********************************************************************
 //                      DS1302_write_byte
 //***********************************************************************
-static void DS1302_write_byte(uint8_t addr, uint8_t d) 
+static void DS1302_write_byte(uint8_t addr, uint8_t d)
 {
 	uint8_t i;
-	RESET_SET;				    //??????DS1302??????
-	/*??????????????ddr*/
+	RESET_SET;
+
 	IO_OUT;
-	addr = addr & 0xFE;         //???????????�
+	addr = addr & 0xFE;
 	for (i = 0; i < 8; i ++)
 	{
 		if (addr & 0x01)
@@ -57,7 +60,7 @@ static void DS1302_write_byte(uint8_t addr, uint8_t d)
 		SCK_CLR;
 		addr = addr >> 1;
 	}
-	/*???????????d*/
+
 	IO_OUT;
 	for (i = 0; i < 8; i ++)
 	{
@@ -73,7 +76,7 @@ static void DS1302_write_byte(uint8_t addr, uint8_t d)
 		SCK_CLR;
 		d = d >> 1;
 	}
-	RESET_CLR;				//??DS1302??????
+	RESET_CLR;
 }
 //***********************************************************************
 //                   DS1302_read_byte
@@ -82,10 +85,10 @@ static uint8_t DS1302_read_byte(uint8_t addr)
 {
 	uint8_t i;
 	uint8_t temp;
-	RESET_SET;					//??????DS1302??????
-	/*??????????????ddr*/
+	RESET_SET;
+
 	IO_OUT;
-	addr = addr | 0x01;         //?????????�
+	addr = addr | 0x01;
 	for (i = 0; i < 8; i ++)
 	{
 		if (addr & 0x01)
@@ -100,7 +103,7 @@ static uint8_t DS1302_read_byte(uint8_t addr)
 		SCK_CLR;
 		addr = addr >> 1;
 	}
-	/*????????????emp*/
+
 	IO_IN;
 	for (i = 0; i < 8; i ++)
 	{
@@ -116,7 +119,7 @@ static uint8_t DS1302_read_byte(uint8_t addr)
 		SCK_SET;
 		SCK_CLR;
 	}
-	RESET_CLR;				//??DS1302??????
+	RESET_CLR;
 	return temp;
 }
 
@@ -125,23 +128,23 @@ static uint8_t DS1302_read_byte(uint8_t addr)
 //***********************************************************************
 void DS1302_write_time(uint8_t *data,uint8_t dataType)
 {
-	DS1302_write_byte(DS1302_control_add,0x00);		//???????�
-	DS1302_write_byte(DS1302_sec_add,0x80);	        //??? 
-	//DS1302_write_byte(DS1302_charger_add,0xa9);		//?????? 
+	DS1302_write_byte(DS1302_control_add,0x00);
+	DS1302_write_byte(DS1302_sec_add,0x80);
+	//DS1302_write_byte(DS1302_charger_add,0xa9);
 	switch(dataType){
 		case RealTime:{
-			DS1302_write_byte(DS1302_year_add,data[1]);	//?�
-			DS1302_write_byte(DS1302_month_add,data[2]);	//?�
-			DS1302_write_byte(DS1302_day_add,data[3]);	//?�
-			DS1302_write_byte(DS1302_hr_add,data[4]);		//?�
-			DS1302_write_byte(DS1302_min_add,data[5]);	//?�
-			DS1302_write_byte(DS1302_sec_add,data[6]);	//?�
-			DS1302_write_byte(DS1302_week_add,data[7]);	//?�
+			DS1302_write_byte(DS1302_year_add,data[1]);
+			DS1302_write_byte(DS1302_month_add,data[2]);
+			DS1302_write_byte(DS1302_day_add,data[3]);
+			DS1302_write_byte(DS1302_hr_add,data[4]);
+			DS1302_write_byte(DS1302_min_add,data[5]);
+			DS1302_write_byte(DS1302_sec_add,data[6]);
+			DS1302_write_byte(DS1302_week_add,data[7]);
 		}
 		break;
 		case AlarmData:{
-			DS1302_write_byte(DS1302_clock_hr_add,data[0]);	//????�
-			DS1302_write_byte(DS1302_clock_min_add,data[1]);	//????�
+			DS1302_write_byte(DS1302_clock_hr_add,data[0]);
+			DS1302_write_byte(DS1302_clock_min_add,data[1]);
 		}
 		break;
 		case InnerRam:{
@@ -150,7 +153,7 @@ void DS1302_write_time(uint8_t *data,uint8_t dataType)
 		break;
 	}
 
-	DS1302_write_byte(DS1302_control_add,0x80);		//???????�
+	DS1302_write_byte(DS1302_control_add,0x80);
 }
 
 //***********************************************************************
@@ -158,21 +161,21 @@ void DS1302_write_time(uint8_t *data,uint8_t dataType)
 //***********************************************************************
 
 void DS1302_read_time(uint8_t *data,uint8_t dataType)
-{ 
+{
 	switch(dataType){
 		case RealTime:{
-			data[1]=DS1302_read_byte(DS1302_year_add);	    //?�
-			data[2]=DS1302_read_byte(DS1302_month_add);	    //?�
-			data[3]=DS1302_read_byte(DS1302_day_add);	    //?�
-			data[4]=DS1302_read_byte(DS1302_hr_add);		    //?�
-			data[5]=DS1302_read_byte(DS1302_min_add);		    //?�
-			data[6]=(DS1302_read_byte(DS1302_sec_add))&0x7F;  //?�
-			data[7]=DS1302_read_byte(DS1302_week_add);		    //?�
+			data[1]=DS1302_read_byte(DS1302_year_add);	    //年
+			data[2]=DS1302_read_byte(DS1302_month_add);	    //月
+			data[3]=DS1302_read_byte(DS1302_day_add);	    //日
+			data[4]=DS1302_read_byte(DS1302_hr_add);		    //时
+			data[5]=DS1302_read_byte(DS1302_min_add);		    //分
+			data[6]=(DS1302_read_byte(DS1302_sec_add))&0x7F;  //秒
+			data[7]=DS1302_read_byte(DS1302_week_add);		    //weekday
 		}
 		break;
 		case AlarmData:{
-			data[0]=DS1302_read_byte(DS1302_clock_hr_add);	//clock?�
-			data[1]=DS1302_read_byte(DS1302_clock_min_add);	//clock?�
+			data[0]=DS1302_read_byte(DS1302_clock_hr_add);	//clock_hour
+			data[1]=DS1302_read_byte(DS1302_clock_min_add);	//clock_min
 		}
 		break;
 		case InnerRam:{
@@ -185,7 +188,7 @@ void DS1302_read_time(uint8_t *data,uint8_t dataType)
 //***********************************************************************
 //               DS302初始化
 //***********************************************************************
-void g_Device_ExtRTC_Init(void) 
+void g_Device_ExtRTC_Init(void)
 {
 	RESET_CLR;			                        //RESET脚置低
 	SCK_CLR;			                        //SCK脚置低
@@ -249,17 +252,17 @@ void g_Device_InnerRTC_Init(uint8_t *date)
     RTCYEAR 	= 0x2000 + date[1];		//初始时间：从硬件时钟读取
 	RTCMON  	= date[2];
     RTCDAY  	= date[3];
-	RTCHOUR 	= date[4];        
+	RTCHOUR 	= date[4];
     RTCMIN  	= date[5];
     RTCSEC  	= date[6];
-	RTCADOWDAY  = date[7];    
+	RTCADOWDAY  = date[7];
     RTCCTL01 &= ~RTCHOLD;//启动实时时钟
 
     RTCCTL0 |= RTCTEVIE;//打开每分钟中断标志
 //    RTCCTL0 |= RTCRDYIE;//打开每秒钟中断标志
 }
 
-//????????TC???
+
 void Write_info_RTC(uint8_t *time)
 {
     RTCCTL01 |= RTCHOLD;//关闭实时时钟
@@ -304,7 +307,7 @@ uint32_t UnixTimeStamp=0;
 uint8_t isLeapYear(uint16_t year)
 {
 	uint8_t res=0;
-	
+
 	if(year%4 == 0) // 能够被4整除
 	{
 		if((year%100 == 0) && (year%400 != 0))	//能够被100整除，但是不能够被400整除
@@ -401,7 +404,7 @@ uint32_t cov2UnixTimeStp(RtcStruct* rtcTime)
 	}
 
 	//4.时分秒
-	secDayNum = daynum * 24 * 60 * 60; //s    
+	secDayNum = daynum * 24 * 60 * 60; //s
 	secHourNum = (rtcTime->Hour) * 60 * 60;
 	secMinNum = (rtcTime->Minute) * 60;
 	secSecNum = rtcTime->Second;
@@ -417,10 +420,10 @@ uint32_t covBeijing2UnixTimeStp(RtcStruct *beijingTime)
 {
 	uint32_t daynum=0,secNum=0,secDayNum=0,secHourNum=0,secMinNum=0,secSecNum=0; //保存北京时间到起始时间的天数
 	uint16_t tempYear=1970, tempMonth=0;
- 
- 
+
+
 	//1.年的天数
-	while(tempYear < beijingTime->Year) 
+	while(tempYear < beijingTime->Year)
 	{
 		if(isLeapYear(tempYear)){
 			daynum += 366;
@@ -447,13 +450,13 @@ uint32_t covBeijing2UnixTimeStp(RtcStruct *beijingTime)
 	if(beijingTime->Day > 1){
 		daynum += (beijingTime->Day)-1;
 	}
- 
+
     //4.时分秒
-    secDayNum = daynum*24*60*60; //s    
-    secHourNum = (beijingTime->Hour)*60*60;    
-    secMinNum = (beijingTime->Minute)*60;    
+    secDayNum = daynum*24*60*60; //s
+    secHourNum = (beijingTime->Hour)*60*60;
+    secMinNum = (beijingTime->Minute)*60;
     secSecNum = beijingTime->Second;
- 
+
  	secNum = secDayNum + secHourNum + secMinNum + secSecNum;
 
     //5.时区调整
@@ -467,7 +470,7 @@ uint32_t covBeijing2UnixTimeStp(RtcStruct *beijingTime)
 #pragma vector=RTC_VECTOR
 __interrupt void RTC_ISR(void)
 {
-	uint16_t min;
+	volatile uint16_t min;
     switch (__even_in_range(RTCIV, RTC_RT1PSIFG))
     {
         case RTC_NONE:
@@ -475,40 +478,50 @@ __interrupt void RTC_ISR(void)
 
         case RTC_RTCTEVIFG:		//分钟
 			{
+			#if(PRODUCT_TYPE == IntegratedPitWell)
+				g_Countmin ++;
+				if((g_Countmin % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)) 	 //当前为低功耗状态
+				{
+					g_Countmin = 0;
+					__bic_SR_register_on_exit(LPM0_bits);
+					Hal_ExitLowPower_Mode(Rtc_Int);
+				}
+			#else
 				min = BCDToHEX(RTCMIN);
 				if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //上传频率大于5min才具备低功耗模式
 				{
-					
-					#if (PRODUCT_TYPE == WRain_Station)    
+					#if (PRODUCT_TYPE == WRain_Station)
 					if(min == 0)  //水雨情设备上报整点和24小时雨量
 					{
-						AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_HOUR;    
+						AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_HOUR;
 						if(RTCHOUR == 0)
 						{
 							AppDataPointer->WRainData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_DAY;
 						}
 					}
 					#endif
-					#if (PRODUCT_TYPE == Weather_Station)    
+					#if (PRODUCT_TYPE == Weather_Station)
 					if(min == 0)  //雨量设备上报整点和24小时雨量
 					{
-						AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_HOUR;    
+						AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_HOUR;
 						if(RTCHOUR == 8)
 						{
 							AppDataPointer->MeteorologyData.RainGaugeScadaStatus |= RAINGAUGE_REPORT_DAY;
 						}
 					}
 					#endif
-				#if (PRODUCT_TYPE == PipeFlow_Station)   
-					if((min % App.Data.FlowData.InqurePeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
+				#if (PRODUCT_TYPE == PipeFlow_Station)
+					if((min % App.Data.FlowData.InqurePeriod == 0) && (Hal_getCurrent_work_Mode() == 1)) 	 //当前为低功耗状态
 				#else
-					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
+					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)) 	 //当前为低功耗状态
 				#endif
+					{
 						__bic_SR_register_on_exit(LPM0_bits);
 						Hal_ExitLowPower_Mode(Rtc_Int);
 					}
 
 				}
+			#endif
 
 				g_MinuteTimeTick ++;
 				if(g_MinuteTimeTick == 60)
@@ -528,11 +541,11 @@ __interrupt void RTC_ISR(void)
 						#endif
 					}
 				}
-			} 
+			}
         	break;
         case  RTC_RTCRDYIFG:	//分钟
 			{
-        
+
 			}
         	break;
         default:

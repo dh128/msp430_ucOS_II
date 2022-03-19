@@ -533,6 +533,10 @@ void ProcessCommand()
 		g_Printf_info("Unknown command\r\n");
 	}
 }
+
+#if (PRODUCT_TYPE == PipeFlow_Station)
+extern shape_t shape;
+#endif
 /*******************************************************************************
 * 函数名    : ProcessJsonCommand
 * 描述	  	: 处理JsonCommand指令数据,下发指令
@@ -544,11 +548,9 @@ void ProcessJsonCommand(unsigned char *p)
 	char *CommandBuff;
 	uint8_t CommandBuffData[10]={0};
 	uint8_t CommandBuffNum = 0;;
-	uint8_t cmdData[50];
+	uint8_t cmdData[200];
 	uint16_t Temp_SendPeriod;
 	unsigned char Flash_Tmp[14];  //flash操作中间变量
-//	unsigned char TimebuffNum=0;
-//	unsigned char TimeBuff_Hex[8] = {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00}; //16进制的时间Buffer  2018年3月15号 20时50分00秒 星期4
 	HexStrToByte(p,cmdData);
 	if(Hal_CheckString((char *)cmdData,"\"Period\":")) //修改上报周期
 	{
@@ -569,8 +571,6 @@ void ProcessJsonCommand(unsigned char *p)
 		if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
 		{
 			App.Data.TerminalInfoData.SendPeriod = (unsigned char)(Temp_SendPeriod & 0x00FF);
-			// Send_Buffer[31] = (App.Data.TerminalInfoData.SendPeriod>>8) & 0x00FF;
-			// Send_Buffer[32] = App.Data.TerminalInfoData.SendPeriod & 0x00FF;
 			g_Printf_info("NB Set SendPeriod as %d OK\r\n",(uint32_t)Temp_SendPeriod);
 			//将发送周期的信息存入Flash
 			// delay_ms(10);
@@ -581,7 +581,7 @@ void ProcessJsonCommand(unsigned char *p)
 		}
 		else
 		{
-			g_Printf_info("NB Set SendPeriod Failed！\r\n");
+			g_Printf_info("NB Set SendPeriod Failed!\r\n");
 		}
 	}
 	else if(Hal_CheckString((char *)cmdData,"\"reset\":true")) //复位设备
@@ -624,10 +624,114 @@ void ProcessJsonCommand(unsigned char *p)
 		}
 		else
 		{
-			g_Printf_info("NB Set Height Failed！\r\n");
+			g_Printf_info("NB Set Height Failed!\r\n");
 		}
 	}
 #endif // 0
+#if (PRODUCT_TYPE == PipeFlow_Station)
+	else if(Hal_CheckString((char *)cmdData,"\"Shigh\":")) //修改上报周期
+	{
+		/* 传感器高度 */
+		memset(CommandBuffData, 0, 10);
+		CommandBuffNum = 0;
+		CommandBuff = strstr((char *)cmdData,"\"Shigh\":");         //判断接收到的数据是否有效
+		while(*(CommandBuff+8) != ',')
+		{
+			CommandBuffData[CommandBuffNum] = *(CommandBuff+8);
+			CommandBuffNum++;
+			CommandBuff++;
+			if(CommandBuffNum > 4)		/* 超出范围 最大1000 */
+				break;
+		}
+		CommandBuffData[CommandBuffNum] = '\0';
+		uint16_t temp_para = 0;
+		if(CommandBuffNum <= 4){
+			temp_para= (uint16_t)atoi((char *)CommandBuffData);
+		}
+		if( (temp_para > 0) && ( temp_para<= 1000) ){
+			Flash_Tmp[5] = (uint8_t)((temp_para & 0xFF00)>>8);
+			Flash_Tmp[6] = (uint8_t)(temp_para & 0x00FF);
+			shape.high = (float)temp_para / 100;	//转成米单位
+			g_Printf_info("NB get high as %d OK\r\n",(uint32_t)temp_para);
+		}else{
+			g_Printf_info("NB get high failed %d !\r\n",(uint32_t)temp_para);
+		}
+		/* 管道高度 */
+		memset(CommandBuffData, 0, 10);
+		CommandBuffNum = 0;
+		CommandBuff = strstr((char *)cmdData,"\"Sheight\":");         //判断接收到的数据是否有效
+		while(*(CommandBuff+10) != ',')
+		{
+			CommandBuffData[CommandBuffNum] = *(CommandBuff+10);
+			CommandBuffNum++;
+			CommandBuff++;
+			if(CommandBuffNum > 4)		/* 超出范围 最大1000 */
+				break;
+		}
+		CommandBuffData[CommandBuffNum] = '\0';
+
+		if(CommandBuffNum <= 4){
+			temp_para= (uint16_t)atoi((char *)CommandBuffData);
+		}
+		if( (temp_para > 0) && ( temp_para<= 1000) ){
+			Flash_Tmp[3] = (uint8_t)((temp_para & 0xFF00)>>8);
+			Flash_Tmp[4] = (uint8_t)(temp_para & 0x00FF);
+			shape.height = (float)temp_para / 100;	//转成米单位
+			g_Printf_info("NB get Height as %d OK\r\n",(uint32_t)temp_para);
+		}else{
+			g_Printf_info("NB get height failed %d !\r\n",(uint32_t)temp_para);
+		}
+		/* 管道宽度 */
+		memset(CommandBuffData, 0, 10);
+		CommandBuffNum = 0;
+		CommandBuff = strstr((char *)cmdData,"\"SWidth\":");         //判断接收到的数据是否有效
+		while(*(CommandBuff+9) != ',' || *(CommandBuff+9) != '}')
+		{
+			CommandBuffData[CommandBuffNum] = *(CommandBuff+9);
+			CommandBuffNum++;
+			CommandBuff++;
+			if(CommandBuffNum > 4)		/* 超出范围 最大1000 */
+				break;
+		}
+		CommandBuffData[CommandBuffNum] = '\0';
+		if(CommandBuffNum <= 4){
+			temp_para= (uint16_t)atoi((char *)CommandBuffData);
+		}
+		if( (temp_para > 0) && ( temp_para<= 1000) ){
+			Flash_Tmp[1] = (uint8_t)((temp_para & 0xFF00)>>8);
+			Flash_Tmp[2] = (uint8_t)(temp_para & 0x00FF);
+			shape.width = (float)temp_para / 100;	//转成米单位
+			g_Printf_info("NB get width as %d OK\r\n",(uint32_t)temp_para);
+		}else{
+			g_Printf_info("NB get width failed %d !\r\n",(uint32_t)temp_para);
+		}
+		/* 管道类型 */
+		memset(CommandBuffData, 0, 10);
+		CommandBuffNum = 0;
+		CommandBuff = strstr((char *)cmdData,"\"SType\":");         //判断接收到的数据是否有效
+		while(*(CommandBuff+8) != ',' || *(CommandBuff+8) != '}')
+		{
+			CommandBuffData[CommandBuffNum] = *(CommandBuff+8);
+			CommandBuffNum++;
+			CommandBuff++;
+			if(CommandBuffNum > 2)		/* 超出范围 最大3 */
+				break;
+		}
+		CommandBuffData[CommandBuffNum] = '\0';
+		if(CommandBuffNum <= 4){
+			temp_para= (uint16_t)atoi((char *)CommandBuffData);
+		}
+		if( (temp_para > 0) && ( temp_para<= 3) ){
+			Flash_Tmp[0] = (uint8_t)(temp_para & 0x00FF);
+			shape.type = temp_para;
+			g_Printf_info("NB get type as %d OK\r\n",(uint32_t)temp_para);
+		}else{
+			g_Printf_info("NB get type failed %d!\r\n",(uint32_t)temp_para);
+		}
+		OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[0], 7, infor_ChargeAddr, 48);//把高度信息写入FLASH
+
+	}
+#endif
 	else
 	{
 		g_Printf_info("Unknown command\r\n");
