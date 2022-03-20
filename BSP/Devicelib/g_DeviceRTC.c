@@ -486,6 +486,12 @@ __interrupt void RTC_ISR(void)
 					__bic_SR_register_on_exit(LPM0_bits);
 					Hal_ExitLowPower_Mode(Rtc_Int);
 				}
+				else if(g_Countmin % 60 == 0 &&(Hal_getCurrent_work_Mode() == 1))
+				{
+					/* 低功耗模式下1小时唤醒一次喂狗 */
+					__bic_SR_register_on_exit(LPM0_bits);
+					Hal_ExitLowPower_Mode(Wdt_Int);
+				}
 			#else
 				min = BCDToHEX(RTCMIN);
 				if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //上传频率大于5min才具备低功耗模式

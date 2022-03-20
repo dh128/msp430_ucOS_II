@@ -51,7 +51,8 @@ typedef union
 
 enum Int_Src{                 //GLZ
 	Rtc_Int = 0x1,
-	Uart_Int
+	Uart_Int,
+	Wdt_Int,
 };
 
 

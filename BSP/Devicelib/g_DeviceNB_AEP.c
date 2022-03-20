@@ -618,7 +618,7 @@ void ProcessJsonCommand(unsigned char *p)
 #endif
 			g_Printf_info("NB Set Height as %f OK\r\n",temp_Height);
 			OSTimeDly(5);
-			Flash_Tmp[9] = ((uint16_t)(temp_Height*1000) & 0xFF00)>>8;	//修改周期存储值（min）
+			Flash_Tmp[9] = ((uint16_t)(temp_Height*1000) & 0xFF00)>>8;	//修改单位mm
 			Flash_Tmp[10] = (uint16_t)(temp_Height*1000) & 0x00FF;
 			OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[9], 2, infor_ChargeAddr, 53);//把高度信息写入FLASH
 		}
@@ -644,17 +644,17 @@ void ProcessJsonCommand(unsigned char *p)
 				break;
 		}
 		CommandBuffData[CommandBuffNum] = '\0';
-		uint16_t temp_para = 0;
+		float temp_para = 0;
 		if(CommandBuffNum <= 4){
-			temp_para= (uint16_t)atoi((char *)CommandBuffData);
+			temp_para= (float)atof((char *)CommandBuffData);
 		}
-		if( (temp_para > 0) && ( temp_para<= 1000) ){
-			Flash_Tmp[5] = (uint8_t)((temp_para & 0xFF00)>>8);
-			Flash_Tmp[6] = (uint8_t)(temp_para & 0x00FF);
-			shape.high = (float)temp_para / 100;	//转成米单位
-			g_Printf_info("NB get high as %d OK\r\n",(uint32_t)temp_para);
+		if( (temp_para > 0) && ( temp_para<= 10) ){
+			Flash_Tmp[5] = ((uint8_t)(temp_para*100) & 0xFF00)>>8;	/* 修改单位cm */
+			Flash_Tmp[6] = (uint8_t)(temp_para*100) & 0x00FF;
+			shape.high = (float)temp_para;	//转成米单位
+			g_Printf_info("NB get high as %f OK\r\n",temp_para);
 		}else{
-			g_Printf_info("NB get high failed %d !\r\n",(uint32_t)temp_para);
+			g_Printf_info("NB get high failed %f !\r\n",temp_para);
 		}
 		/* 管道高度 */
 		memset(CommandBuffData, 0, 10);
@@ -671,15 +671,15 @@ void ProcessJsonCommand(unsigned char *p)
 		CommandBuffData[CommandBuffNum] = '\0';
 
 		if(CommandBuffNum <= 4){
-			temp_para= (uint16_t)atoi((char *)CommandBuffData);
+			temp_para= (float)atof((char *)CommandBuffData);
 		}
-		if( (temp_para > 0) && ( temp_para<= 1000) ){
-			Flash_Tmp[3] = (uint8_t)((temp_para & 0xFF00)>>8);
-			Flash_Tmp[4] = (uint8_t)(temp_para & 0x00FF);
-			shape.height = (float)temp_para / 100;	//转成米单位
-			g_Printf_info("NB get Height as %d OK\r\n",(uint32_t)temp_para);
+		if( (temp_para > 0) && ( temp_para<= 10) ){
+			Flash_Tmp[3] = ((uint8_t)(temp_para*100) & 0xFF00)>>8;	/* 修改单位cm */
+			Flash_Tmp[4] = (uint8_t)(temp_para*100) & 0x00FF;
+			shape.height = (float)temp_para;
+			g_Printf_info("NB get Height as %f OK\r\n",temp_para);
 		}else{
-			g_Printf_info("NB get height failed %d !\r\n",(uint32_t)temp_para);
+			g_Printf_info("NB get height failed %f !\r\n",temp_para);
 		}
 		/* 管道宽度 */
 		memset(CommandBuffData, 0, 10);
@@ -695,17 +695,18 @@ void ProcessJsonCommand(unsigned char *p)
 		}
 		CommandBuffData[CommandBuffNum] = '\0';
 		if(CommandBuffNum <= 4){
-			temp_para= (uint16_t)atoi((char *)CommandBuffData);
+			temp_para= (float)atof((char *)CommandBuffData);
 		}
-		if( (temp_para > 0) && ( temp_para<= 1000) ){
-			Flash_Tmp[1] = (uint8_t)((temp_para & 0xFF00)>>8);
-			Flash_Tmp[2] = (uint8_t)(temp_para & 0x00FF);
-			shape.width = (float)temp_para / 100;	//转成米单位
-			g_Printf_info("NB get width as %d OK\r\n",(uint32_t)temp_para);
+		if( (temp_para > 0) && ( temp_para<= 10) ){
+			Flash_Tmp[1] = ((uint8_t)(temp_para*100) & 0xFF00)>>8;	/* 修改单位cm */
+			Flash_Tmp[2] = (uint8_t)(temp_para*100) & 0x00FF;
+			shape.width = (float)temp_para;
+			g_Printf_info("NB get width as %f OK\r\n",(uint32_t)temp_para);
 		}else{
-			g_Printf_info("NB get width failed %d !\r\n",(uint32_t)temp_para);
+			g_Printf_info("NB get width failed %f !\r\n",(uint32_t)temp_para);
 		}
 		/* 管道类型 */
+		uint8_t temp_type;
 		memset(CommandBuffData, 0, 10);
 		CommandBuffNum = 0;
 		CommandBuff = strstr((char *)cmdData,"\"SType\":");         //判断接收到的数据是否有效
@@ -719,14 +720,14 @@ void ProcessJsonCommand(unsigned char *p)
 		}
 		CommandBuffData[CommandBuffNum] = '\0';
 		if(CommandBuffNum <= 4){
-			temp_para= (uint16_t)atoi((char *)CommandBuffData);
+			temp_type= (uint16_t)atoi((char *)CommandBuffData);
 		}
-		if( (temp_para > 0) && ( temp_para<= 3) ){
-			Flash_Tmp[0] = (uint8_t)(temp_para & 0x00FF);
-			shape.type = temp_para;
-			g_Printf_info("NB get type as %d OK\r\n",(uint32_t)temp_para);
+		if( (temp_type > 0) && ( temp_type<= 3) ){
+			Flash_Tmp[0] = (uint8_t)(temp_type & 0x00FF);
+			shape.type = temp_type;
+			g_Printf_info("NB get type as %d OK\r\n",(uint32_t)temp_type);
 		}else{
-			g_Printf_info("NB get type failed %d!\r\n",(uint32_t)temp_para);
+			g_Printf_info("NB get type failed %d!\r\n",(uint32_t)temp_type);
 		}
 		OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[0], 7, infor_ChargeAddr, 48);//把高度信息写入FLASH
 

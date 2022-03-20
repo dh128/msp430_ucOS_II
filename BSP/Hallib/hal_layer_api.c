@@ -977,6 +977,9 @@ void Hal_ExitLowPower_Mode(uint8_t int_Src)
         AppDataPointer->TransMethodData.LoRaStatus = LoRa_Wait_Idle;
         #endif
 
+    }else if(int_Src == Wdt_Int){
+        /* 唤醒喂狗 */
+        InitWatchDog();
     }
 #if (ACCESSORY_TYPR == GPS_Mode)
     OSBsp.Device.IOControl.PowerSet(GPS_Power_On);
