@@ -110,13 +110,13 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 					SensorData.Hex[3] = data[5];
 
 					AppDataPointer->FlowData.IFlowS = SensorData.Data;
-					if(FlowStimes < WQ_FlowD_Num){
+					if(FlowStimes < WQ_FlowS_Num){
 						WQ_FlowS[FlowStimes++] = AppDataPointer->FlowData.IFlowS;
 					}else{
-						for(i=0; i<WQ_FlowD_Num-1; i++){
+						for(i=0; i<WQ_FlowS_Num-1; i++){
 							WQ_FlowS[i] = WQ_FlowS[i+1];
 						}
-						WQ_FlowS[FlowStimes] = AppDataPointer->FlowData.IFlowS;
+						WQ_FlowS[WQ_FlowS_Num-1] = AppDataPointer->FlowData.IFlowS;
 					}
 					break;
 				case 0x08:	//返回8字节，水温，液位
@@ -138,7 +138,7 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 						for(i=0; i<WQ_FlowD_Num-1; i++){
 							WQ_FlowD[i] = WQ_FlowD[i+1];
 						}
-						WQ_FlowD[FlowDtimes] = SensorData.Data;
+						WQ_FlowD[WQ_FlowD_Num-1] = SensorData.Data;
 					}
 					AppDataPointer->FlowData.IFlowL = SensorData.Data;
 					/* 方向1或-1 */

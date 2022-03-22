@@ -568,7 +568,7 @@ void ProcessJsonCommand(unsigned char *p)
 			Temp_SendPeriod = (uint16_t)atoi((char *)CommandBuffData);
 		}
 
-		if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 240) )
+		if( (Temp_SendPeriod >= 5) && (Temp_SendPeriod <= 360) )
 		{
 			App.Data.TerminalInfoData.SendPeriod = (unsigned char)(Temp_SendPeriod & 0x00FF);
 			g_Printf_info("NB Set SendPeriod as %d OK\r\n",(uint32_t)Temp_SendPeriod);
