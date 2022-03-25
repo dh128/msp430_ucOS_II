@@ -578,6 +578,7 @@ float CalcFlow(float sl, float speed)
 	float s = 0.0;		//流量
 	float hu = 0.0;		//弧度
 	float dis = 0.0;		//液面与圆心距离
+	float radius = 0.0;		//圆形半径
 
 //	wl = sl + shape.high;	//计算管道水深度
 
@@ -587,18 +588,19 @@ float CalcFlow(float sl, float speed)
 	}
 	else if(shape.type==0)	//圆形
 	{
-		if(sl>shape.width)	//水位高于圆半径
+		radius = shape.width / 2;
+		if(sl>radius)	//水位高于圆半径
 		{
-			dis = sl - shape.width;		//计算液位-圆心距离
-			hu = 2 * PI - 2 * acos(dis / shape.width);//计算弧度
-			s = pow(shape.width, 2) * (hu / 2) + dis * shape.width * sin(hu / 2);//计算截面积
+			dis = sl - radius;		//计算液位-圆心距离
+			hu = 2 * PI - 2 * acos(dis / radius);//计算弧度
+			s = pow(radius, 2) * (hu / 2) + dis * radius * sin(hu / 2);//计算截面积
 			s = s * speed;	//计算流量
 		}
 		else//水位低于圆半径
 		{
-			dis = shape.width - sl;//计算页面-圆心距离
-			hu = 2*acos(dis / shape.width);//计算弧度
-			s = pow(shape.width,2) * (hu / 2) - dis*shape.width * sin(hu / 2);//计算截面积
+			dis = radius - sl;//计算页面-圆心距离
+			hu = 2*acos(dis / radius);//计算弧度
+			s = pow(radius,2) * (hu / 2) - dis*radius * sin(hu / 2);//计算截面积
 			s = s * speed;	//计算流量
 		}
 	}

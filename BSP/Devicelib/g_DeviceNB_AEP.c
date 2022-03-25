@@ -629,7 +629,7 @@ void ProcessJsonCommand(unsigned char *p)
 	}
 #endif // 0
 #if (PRODUCT_TYPE == PipeFlow_Station)
-	else if(Hal_CheckString((char *)cmdData,"\"Shigh\":")) //修改上报周期
+	else if(Hal_CheckString((char *)cmdData,"\"Shigh\":")) //修改传感器高度
 	{
 		/* 传感器高度 */
 		memset(CommandBuffData, 0, 10);
