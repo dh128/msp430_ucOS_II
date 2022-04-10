@@ -293,3 +293,5 @@ There are four threads in the app.c,which are scada task, transmission task , ma
 3、重写传感器记录初步测试，Water、WRain、PitWell、PipeFlow四类设备。
 2022-3-19	dingh	AEP
 1、添加管网流量设备下发管道参数，下发参数单位采用cm。
+2022-4-10	dingh	AEP
+1、修改窨井液位设备周期超过60min时，按正点上报数据。

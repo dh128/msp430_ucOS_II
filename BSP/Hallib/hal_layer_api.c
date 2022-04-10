@@ -651,7 +651,7 @@ float Hal_getSensorHeight(void)
     if(temp == 0xFFFF)
         temp = 15000;
     g_Printf_info("%s %d\n",__func__,temp);
-    return (float)temp/1000;
+    return (float)temp/100;
 }
 #endif
 #if (PRODUCT_TYPE == IntegratedPitWell)
@@ -663,8 +663,8 @@ float Hal_getSensorHeight(void)
 	temp += OSBsp.Device.InnerFlash.innerFLASHRead(54,infor_ChargeAddr);
     if(temp == 0xFFFF)
         temp = 5000;
-    g_Printf_info("%s %d\n",__func__,temp);
-    return (float)temp/1000;
+    g_Printf_info("%s %d\r\n",__func__,temp);
+    return (float)temp/100;
 }
 #endif
 

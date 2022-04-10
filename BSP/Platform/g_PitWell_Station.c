@@ -421,8 +421,8 @@ void Terminal_Para_Init(void)
 	Send_Buffer[34] = App.Data.TerminalInfoData.Version;
 
 	App.Data.PitWellData.Height = Hal_getSensorHeight();
-	App.Data.PitWellData.WarningHeight = App.Data.PitWellData.Height - 1;
-	App.Data.PitWellData.DangerHeight = App.Data.PitWellData.Height - 0.5;
+	App.Data.PitWellData.WarningHeight = App.Data.PitWellData.Height - 0.8;
+	App.Data.PitWellData.DangerHeight = App.Data.PitWellData.Height - 0.4;
 
 	/**************************未读取Flash中存储的传感器状态***********************/
 	App.Data.TerminalInfoData.SensorReadStatus = SENSOR_STATUS_READ_NOTYET;

@@ -28,9 +28,9 @@
 
 static uint32_t g_MinuteTimeTick = 0;
 static uint32_t g_HourTimeTick = 0;
-#if(PRODUCT_TYPE == IntegratedPitWell)
-static uint32_t g_Countmin = 0;		//计算周期时间
-#endif
+//#if(PRODUCT_TYPE == IntegratedPitWell)
+////static uint32_t g_Countmin = 0;		//计算周期时间
+//#endif
 //static uint32_t g_DayTimeTick = 0;
 
 RtcStruct Rtctime;
@@ -471,6 +471,9 @@ uint32_t covBeijing2UnixTimeStp(RtcStruct *beijingTime)
 __interrupt void RTC_ISR(void)
 {
 	volatile uint16_t min;
+	#if(PRODUCT_TYPE == IntegratedPitWell)
+	volatile uint16_t hour;
+	#endif
     switch (__even_in_range(RTCIV, RTC_RT1PSIFG))
     {
         case RTC_NONE:
@@ -478,22 +481,32 @@ __interrupt void RTC_ISR(void)
 
         case RTC_RTCTEVIFG:		//分钟
 			{
+				min = BCDToHEX(RTCMIN);
 			#if(PRODUCT_TYPE == IntegratedPitWell)
-				g_Countmin ++;
-				if((g_Countmin % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)) 	 //当前为低功耗状态
-				{
-					g_Countmin = 0;
-					__bic_SR_register_on_exit(LPM0_bits);
-					Hal_ExitLowPower_Mode(Rtc_Int);
-				}
-				else if(g_Countmin % 60 == 0 &&(Hal_getCurrent_work_Mode() == 1))
-				{
-					/* 低功耗模式下1小时唤醒一次喂狗 */
-					__bic_SR_register_on_exit(LPM0_bits);
-					Hal_ExitLowPower_Mode(Wdt_Int);
+				hour = BCDToHEX(RTCHOUR);
+				if(App.Data.TerminalInfoData.SendPeriod <= 60){
+					if((min % App.Data.TerminalInfoData.SendPeriod == 0) && (Hal_getCurrent_work_Mode() == 1)){ 	 //当前为低功耗状态
+						// g_Countmin = 0;
+						__bic_SR_register_on_exit(LPM0_bits);
+						Hal_ExitLowPower_Mode(Rtc_Int);
+					}
+				}else{
+					/* 整点时 min==0 时判断退出低功耗或者喂狗 */
+					if(min == 0){
+						/* 周期超过60分钟，按小时计算，hour可以被周期整除(period/60),period 只支持60整数倍，小数不计入，min==0时唤醒 */
+						if((hour % (App.Data.TerminalInfoData.SendPeriod/60) == 0) && (Hal_getCurrent_work_Mode() == 1)){
+							__bic_SR_register_on_exit(LPM0_bits);
+							Hal_ExitLowPower_Mode(Rtc_Int);
+						}else if(Hal_getCurrent_work_Mode() == 1){
+							/* 低功耗模式下1小时唤醒一次喂狗 */
+							__bic_SR_register_on_exit(LPM0_bits);
+							Hal_ExitLowPower_Mode(Wdt_Int);
+						}
+
+					}
+
 				}
 			#else
-				min = BCDToHEX(RTCMIN);
 				if(App.Data.TerminalInfoData.SendPeriod > NO_LOWPER_PERIOD) //上传频率大于5min才具备低功耗模式
 				{
 					#if (PRODUCT_TYPE == WRain_Station)
