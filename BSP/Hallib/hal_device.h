@@ -54,6 +54,8 @@
 #define HAVE_LOG_STORE_SERVICE
 // 定义是否具备SD存储功能
 #define HAVE_SDCARD_SERVICE 			           	0
+// 使用锂亚电池
+#define BAT_LITHIUM
 //*****************终端类型*********************//
 #define Air_Station           		0x01	 //空气监测仪
 #define Voc_Station           		0x02	 //VOC监测仪
