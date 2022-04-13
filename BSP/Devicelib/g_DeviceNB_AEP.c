@@ -618,8 +618,8 @@ void ProcessJsonCommand(unsigned char *p)
 #endif
 			g_Printf_info("NB Set Height as %f OK\r\n",temp_Height);
 			OSTimeDly(5);
-			Flash_Tmp[9] = ((uint16_t)(temp_Height*1000) & 0xFF00)>>8;	//修改单位mm
-			Flash_Tmp[10] = (uint16_t)(temp_Height*1000) & 0x00FF;
+			Flash_Tmp[9] = ((uint16_t)(temp_Height*100) & 0xFF00)>>8;	//修改单位cm
+			Flash_Tmp[10] = (uint16_t)(temp_Height*100) & 0x00FF;
 			OSBsp.Device.InnerFlash.FlashRsvWrite(&Flash_Tmp[9], 2, infor_ChargeAddr, 53);//把高度信息写入FLASH
 		}
 		else
