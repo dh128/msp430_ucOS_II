@@ -79,13 +79,14 @@
 #define MagicSTICK_Station    		0x0B	 //MagicSTICK监测仪
 #define AliveNest_Station     		0x0C	 //AliveNest监测仪     一体化空气检测仪
 #define CLCupboard_Station    		0x0D	 //氯离子柜式监测站
+#define Hydrology_Station    		0x0E	 //水文监测站
 #define Custom_Station	      		0x55	 //定制需求监测站
 
 
 //#define PRODUCT_TYPE                Air_Station
 // #define PRODUCT_TYPE                Water_Station
 //#define PRODUCT_TYPE                MagicSTICK_Station
-#define PRODUCT_TYPE                Weather_Station
+// #define PRODUCT_TYPE                Weather_Station
 //#define PRODUCT_TYPE                Soil_Station
 //#define PRODUCT_TYPE 	             Voc_Station
 //#define PRODUCT_TYPE	             Flowmeter_Station
@@ -93,6 +94,7 @@
 // #define PRODUCT_TYPE	             Seeper_Station
 // #define PRODUCT_TYPE	             IntegratedPitWell
 // #define PRODUCT_TYPE				PipeFlow_Station
+#define PRODUCT_TYPE				Hydrology_Station
 //*****************通信方式*********************//
 #define GPRS_Mode		      		0x01
 #define NBIoT_BC95_Mode	      		0x02

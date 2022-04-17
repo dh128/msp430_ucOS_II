@@ -551,6 +551,9 @@ int Hal_getProductName(char *proName)
 #elif (PRODUCT_TYPE == PipeFlow_Station)
 	strncpy(proName, "FlowData", PRODUCT_NAMES_LEN-1);
 	return 0;
+#elif (PRODUCT_TYPE == Hydrology_Station)
+	strncpy(proName, "HydrologyData", PRODUCT_NAMES_LEN-1);
+	return 0;
 #endif
 }
 

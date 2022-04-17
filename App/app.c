@@ -237,8 +237,11 @@ static  void  ScadaTaskStart (void *p_arg)
                     // hal_Reboot();  //复位 是否需要主机都复位？或者只需要
                 }
             }
-
+#if (PRODUCT_TYPE == Hydrology_Station)
+            OSTimeDlyHMSM(0u, 0u, 1u, 0u);
+#else
             OSTimeDlyHMSM(0u, 0u, 2u, 0u);    //放弃控制权，让上传函数运行
+#endif
 
         }
         else

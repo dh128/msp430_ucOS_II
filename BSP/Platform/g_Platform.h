@@ -328,6 +328,11 @@ typedef struct
 
 typedef struct
 {
+	float Radar;		        //液位
+	float IFlowS;		        //流速
+}HydrologyPlatform;         //雷达液位流速监测仪
+typedef struct
+{
 	float Temperature;		     //空气温度          0~99.0         ℃
 	float Humidity;				 //空气湿度          0~99.0    %
 	uint16_t PM25;			     //PM2.5     0~500     ug/m3
@@ -388,6 +393,8 @@ typedef struct
     AirPlatform                AirData;
 #elif (PRODUCT_TYPE == IntegratedPitWell)
 	PitWellPlatform            PitWellData;
+#elif (PRODUCT_TYPE == Hydrology_Station)
+	HydrologyPlatform			HydrologyData;
 #endif
 
 	NoxiousGasPlatform         NoxiousGasData;
