@@ -164,6 +164,7 @@ typedef struct
 	float PM25;			         //PM2.5     0~6000     ug/m3
 	float PM10;			      	 //PM10      0~6000     ug/m3
 	float Illumination;       //光照                  0~200KLux
+	uint16_t Mor;					//能见度
 	uint16_t  Radiation;             //总辐射                 0~2000    W/m2
 }MeteorologyPlatform;//气象检测平台
 

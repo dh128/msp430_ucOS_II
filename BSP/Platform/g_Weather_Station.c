@@ -34,15 +34,16 @@
 
 #if (PRODUCT_TYPE == Weather_Station)
 
-#define SensorNum			4
+#define SensorNum			5
 #define CMDLength        	8
-#define SensorKind          0x03
+#define SensorKind          0x1F
 
 /* Sensor Exist flag */
 #define WS				0
 #define WD				1
 #define THLP			2
 #define RAIN			3
+#define MOR				4
 uint8_t SensorRecord = 0;	/* 传感器记录标志，1--记录，0--不记录 */
 uint16_t SensorExist = SensorKind;
 
@@ -56,12 +57,13 @@ uint32_t Send_Buffer[60] = {0xaa,0x00,0x00,0x01,0x01,0x00,0x00,
 //                          /-------/ /--/ /-----------------/ /-----------------/ /-----------------/ /-------/ /-------/ /-------/ /-------/ /-------/ /-------/ /--/
 //                            Period   ver		timestamp            Lng经度             lat纬度          海拔      RSRP      SINR       PCI      保留		模拟  	 保留
 
-const uint8_t Inqure_WindSpeed[CMDLength]={0x01,0x03,0x00,0x00,0x00,0x01,0x84,0x0A};          //风速
-const uint8_t Inqure_WindDirection[CMDLength]={0x02,0x03,0x00,0x01,0x00,0x01,0xD5,0xF9};      //风向
-const uint8_t Inqure_THLP[CMDLength] = {0x03,0x03,0x01,0xF4,0x00,0x08,0x05,0xE0};				  //温湿度光照气压
+const uint8_t Inqure_WindSpeed[CMDLength]={0x01,0x03,0x00,0x00,0x00,0x01,0x84,0x0A};          	//风速
+const uint8_t Inqure_WindDirection[CMDLength]={0x02,0x03,0x00,0x01,0x00,0x01,0xD5,0xF9};      	//风向
+const uint8_t Inqure_THLP[CMDLength] = {0x03,0x03,0x01,0xF4,0x00,0x08,0x05,0xE0};				//温湿度光照气压
 
-// const uint8_t ScadaMetOne_YS_HCD6816[CMDLength]={0xFF,0x03,0x00,0x07,0x00,0x0A,0x61,0xD2};        //光照-YS
-const uint8_t ScadaRainGauge_XPH[CMDLength]={0x08,0x03,0x00,0x00,0x00,0x01,0x84,0x93};            //雨量-XPH
+// const uint8_t ScadaMetOne_YS_HCD6816[CMDLength]={0xFF,0x03,0x00,0x07,0x00,0x0A,0x61,0xD2};   //光照-YS
+const uint8_t ScadaRainGauge_XPH[CMDLength]={0x08,0x03,0x00,0x00,0x00,0x01,0x84,0x93};          //雨量-XPH
+const uint8_t Inqure_Mor[CMDLength]={0x0A,0x03,0x00,0x00,0x00,0x01,0x85,0x71};					//能见度传感器
 
 
 
@@ -162,6 +164,11 @@ static int AnalyzeComand(uint8_t *data,uint8_t Len)
 						Send_Buffer[41] = data[17];
 						Send_Buffer[42] = data[18];
 						break;
+					case 0x0A: //能见度
+						hal_SetBit(SensorStatus_L, MOR);     //传感器状态位置1
+						sensorCahe = (uint32_t)data[3]*256 + data[4];
+						AppDataPointer->MeteorologyData.Mor = sensorCahe;
+						break;
 					default:
 						break;
 				}//switch(data[0]) END
@@ -245,6 +252,10 @@ void InqureSensor(void)
 							OSBsp.Device.Usart3.WriteNData((uint8_t *)ScadaRainGauge_XPH,CMDLength);
 						}
 						break;
+					case 5:
+						sensorSN = 5;
+						hal_ResetBit(SensorStatus_L, MOR);
+						OSBsp.Device.Usart3.WriteNData((uint8_t *)Inqure_Mor,CMDLength);
 					default:
 						break;
 				}
@@ -326,6 +337,9 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	if(hal_GetBit(SensorStatus_L, RAIN)) {
 		cJSON_AddNumberToObject(pJsonRoot,"RainH",DataPointer->MeteorologyData.RainGaugeH);
 		cJSON_AddNumberToObject(pJsonRoot,"RainD",DataPointer->MeteorologyData.RainGaugeD);
+	}
+	if(hal_GetBit(SensorStatus_L, MOR)) {
+		cJSON_AddNumberToObject(pJsonRoot,"MOR",DataPointer->MeteorologyData.Mor);
 	}
 
 #if (TRANSMIT_TYPE == GPRS_Mode)
@@ -549,6 +563,7 @@ void Teminal_Data_Init(void)
 	App.Data.MeteorologyData.AirHumidity  = 0.0;
 	App.Data.MeteorologyData.AirPressure = 0.0;
 	App.Data.MeteorologyData.RainGauge = 0;
+	App.Data.MeteorologyData.Mor = 0;
 }
 
 
