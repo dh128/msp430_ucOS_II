@@ -183,7 +183,7 @@ void InqureSensor(void)
 				Recive_485_Enable;
 
 				LED_ON;
-				OSTimeDly(100); //任务挂起 3000ms,等待传感器回复，接收完毕
+				OSTimeDly(400); //任务挂起 8000ms,等待传感器回复，此设备传感器回复较慢
 				int ret = AnalyzeComand(dRxBuff, dRxNum);
 				OSTimeDly(50); //挂起 100ms
 				uint32_t times = sensorSN;
@@ -248,11 +248,11 @@ char *MakeJsonBodyData(DataStruct *DataPointer)
 	cJSON_AddNumberToObject(pJsonRoot, "SeqNum", DataPointer->TransMethodData.SeqNumber);
 	cJSON_AddNumberToObject(pJsonRoot, "serviceId", 12);
 
-	if (hal_GetBit(SensorStatus_L, SPEED))
+	if (hal_GetBit(SensorStatus_L, DEEP))
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "Radar", DataPointer->HydrologyData.Radar);
 	}
-	if (hal_GetBit(SensorStatus_L, DEEP))
+	if (hal_GetBit(SensorStatus_L, SPEED))
 	{
 		cJSON_AddNumberToObject(pJsonRoot, "IFlowS", DataPointer->HydrologyData.IFlowS);
 	}
